@@ -601,15 +601,25 @@ ${text}`
                 </div>
                 {/* 문구 목록 - 모바일 2개까지, 데스크탑 4개까지 2열 */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {templates.slice(0, typeof window !== 'undefined' && window.innerWidth >= 640 ? 4 : 2).map(t => (
-                    <button
-                      key={t.id}
-                      onClick={() => setEditingTemplateId(t.id)}
-                      className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold text-slate-600 bg-sky-50/50 active:bg-sky-100 transition-all truncate"
-                    >
-                      {t.title}
-                    </button>
-                  ))}
+                  {templates.slice(0, typeof window !== 'undefined' && window.innerWidth >= 640 ? 4 : 2).map((t, idx) => {
+                    const colors = [
+                      'bg-sky-50 border-sky-200 text-sky-700',
+                      'bg-pink-50 border-pink-200 text-pink-700',
+                      'bg-violet-50 border-violet-200 text-violet-700',
+                      'bg-amber-50 border-amber-200 text-amber-700',
+                      'bg-teal-50 border-teal-200 text-teal-700',
+                      'bg-orange-50 border-orange-200 text-orange-700',
+                    ];
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => setEditingTemplateId(t.id)}
+                        className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold border active:scale-95 transition-all truncate ${colors[idx % colors.length]}`}
+                      >
+                        {t.title}
+                      </button>
+                    );
+                  })}
                 </div>
                 <div className="mt-2">
                   {templates.length > 2 && (
