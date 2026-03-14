@@ -487,7 +487,7 @@ ${text}`
           <div className="flex items-center gap-2 sm:gap-3">
             <img src="/favicon.png" alt="logo" className="w-12 h-12 sm:w-14 sm:h-14 object-contain filter drop-shadow hover:scale-110 transition-transform cursor-pointer" onClick={() => setActiveTab('home')} />
             <div>
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900">Blue Review</h2>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 cursor-pointer hover:text-sky-600 transition-colors" onClick={() => setActiveTab('home')}>Blue Review</h2>
               <p className="text-[10px] sm:text-[12px] font-bold text-slate-400 mt-0.5 hidden sm:block">블로거를 위한 협찬 관리</p>
             </div>
           </div>
@@ -506,7 +506,7 @@ ${text}`
             </button>
           </div>
         </div>
-        <button onClick={() => setLocationPopup(true)} className={`w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-lg flex items-center gap-3 sm:gap-4 text-left active:scale-[0.99] transition-all ${
+        {activeTab === 'home' && <button onClick={() => setLocationPopup(true)} className={`w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-lg flex items-center gap-3 sm:gap-4 text-left active:scale-[0.99] transition-all ${
           weather.icon === 'sun' ? 'bg-gradient-to-r from-blue-400 to-sky-400 shadow-sky-200' :
           weather.icon === 'cloud-sun' ? 'bg-gradient-to-r from-sky-400 to-slate-400 shadow-slate-200' :
           weather.icon === 'cloud' ? 'bg-gradient-to-r from-slate-400 to-slate-500 shadow-slate-200' :
@@ -528,7 +528,7 @@ ${text}`
             <p className="text-lg sm:text-2xl font-black leading-tight">{new Date().getMonth() + 1}/{new Date().getDate()}</p>
             <p className="text-[10px] sm:text-xs font-bold opacity-80">{['일', '월', '화', '수', '목', '금', '토'][new Date().getDay()]}요일</p>
           </div>
-        </button>
+        </button>}
       </header>
 
       {/* 위치 동의 팝업 */}
