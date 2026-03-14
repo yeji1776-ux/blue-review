@@ -480,7 +480,7 @@ ${text}`
         {activeTab === 'home' && (
           <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
             {/* Quick Copy(왼) + 신청 문구(오) 2컬럼 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-4">
               {/* 왼쪽: Quick Copy */}
               <section className="jelly-card p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -510,23 +510,25 @@ ${text}`
                     <Plus size={14}/> 추가
                   </button>
                 </div>
-                {/* 문구 목록 (버튼) - 2개까지만 표시 */}
-                <div className="space-y-2">
-                  {templates.slice(0, 2).map(t => (
+                {/* 문구 목록 - 모바일 2개까지, 데스크탑 4개까지 2열 */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {templates.slice(0, typeof window !== 'undefined' && window.innerWidth >= 640 ? 4 : 2).map(t => (
                     <button
                       key={t.id}
                       onClick={() => setEditingTemplateId(t.id)}
-                      className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold text-slate-600 bg-sky-50/50 active:bg-sky-100 transition-all"
+                      className="w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold text-slate-600 bg-sky-50/50 active:bg-sky-100 transition-all truncate"
                     >
                       {t.title}
                     </button>
                   ))}
+                </div>
+                <div className="mt-2">
                   {templates.length > 2 && (
                     <button
                       onClick={() => setEditingTemplateId('list')}
                       className="w-full text-center py-2 rounded-xl text-[10px] font-bold text-sky-400 bg-sky-50 active:bg-sky-100 transition-all"
                     >
-                      +{templates.length - 2}개 더보기
+                      +{templates.length - (typeof window !== 'undefined' && window.innerWidth >= 640 ? 4 : 2)}개 더보기
                     </button>
                   )}
                 </div>
