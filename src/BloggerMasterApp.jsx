@@ -487,16 +487,16 @@ ${text}`
                   <h3 className="text-[10px] font-black text-slate-400 uppercase">Quick Copy</h3>
                   <p className="text-[10px] font-bold text-slate-400">누르면 주소가 복사됩니다</p>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-4 sm:grid-cols-2 gap-1 sm:gap-2">
                   {[
                     { label: '블로그', value: profile.blogUrl, icon: <Heart size={14}/>, bg: 'bg-sky-50 text-sky-500' },
                     { label: '인스타', value: profile.instaId, icon: <Heart size={14}/>, bg: 'bg-pink-50 text-pink-500' },
                     { label: '릴스', value: profile.reelsUrl, icon: <Heart size={14}/>, bg: 'bg-violet-50 text-violet-500' },
                     { label: '페이스북', value: profile.facebookUrl, icon: <Heart size={14}/>, bg: 'bg-blue-50 text-blue-500' },
                   ].map(({ label, value, icon, bg }) => (
-                    <button key={label} onClick={() => copyToClipboard(value || `프로필에서 ${label}을 설정하세요`)} className="flex flex-col items-center gap-1.5 py-3 rounded-2xl active:bg-sky-50 transition-all">
-                      <div className={`p-2 rounded-xl ${bg}`}>{icon}</div>
-                      <span className="text-[10px] font-bold text-slate-600">{label}</span>
+                    <button key={label} onClick={() => copyToClipboard(value || `프로필에서 ${label}을 설정하세요`)} className="flex flex-col items-center gap-1 sm:gap-1.5 py-2 sm:py-3 rounded-xl sm:rounded-2xl active:bg-sky-50 transition-all">
+                      <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${bg}`}>{icon}</div>
+                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-600">{label}</span>
                     </button>
                   ))}
                 </div>
