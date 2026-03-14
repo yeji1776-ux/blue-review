@@ -4,7 +4,7 @@ import {
   ClipboardList, ExternalLink, Calculator, BarChart3,
   CheckCircle2, Globe, Map as MapIcon, DollarSign, Sun, Star, X, Check,
   ChevronRight, Hash, Eye, Heart, Type, Gift, AlertTriangle, CalendarDays,
-  Download, ChevronLeft, User, Save, Instagram, Pencil
+  Download, ChevronLeft, User, Save, Instagram, Pencil, Cloud, CloudRain, CloudSun, Snowflake
 } from 'lucide-react';
 import { domToPng } from 'modern-screenshot';
 import { useAuth } from './hooks/useAuth';
@@ -16,6 +16,32 @@ const BloggerMasterApp = () => {
   const [authError, setAuthError] = useState('');
   const [isGuest, setIsGuest] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
+
+  // --- 날씨 ---
+  const [weather, setWeather] = useState({ temp: '', desc: '', icon: 'sun', score: 95, tip: '채광이 완벽해요! 오늘 맛집 사진 최고입니다.' });
+  useEffect(() => {
+    fetch('https://wttr.in/Seoul?format=j1')
+      .then(r => r.json())
+      .then(data => {
+        const cur = data.current_condition?.[0];
+        if (!cur) return;
+        const code = parseInt(cur.weatherCode);
+        const temp = cur.temp_C;
+        const cloud = parseInt(cur.cloudcover);
+        const humidity = parseInt(cur.humidity);
+        // 촬영 지수 계산 (맑을수록 높음)
+        let score = Math.max(20, 100 - cloud);
+        let tip, icon;
+        if (code === 113) { icon = 'sun'; tip = '채광이 완벽해요! 맛집 사진 찍기 최고의 날!'; }
+        else if (code <= 122) { icon = 'cloud-sun'; tip = '구름 살짝! 부드러운 자연광으로 촬영하세요.'; score = Math.max(60, score); }
+        else if (code <= 200) { icon = 'cloud'; tip = '흐린 날이지만 실내 촬영은 괜찮아요!'; score = Math.max(40, score); }
+        else if (code <= 399) { icon = 'rain'; tip = '비 오는 날, 아늑한 카페 촬영 추천!'; score = Math.max(30, score); }
+        else { icon = 'snow'; tip = '눈 오는 감성! 따뜻한 음식 촬영 추천!'; score = Math.max(35, score); }
+        if (humidity > 80) tip += ' 습도 높아요, 렌즈 김서림 주의!';
+        setWeather({ temp, desc: cur.weatherDesc?.[0]?.value || '', icon, score, tip });
+      })
+      .catch(() => {});
+  }, []);
 
   // --- 프로필 ---
   const [profile, setProfile] = useState(() => {
@@ -423,15 +449,26 @@ ${text}`
             <button onClick={handleLogout} className="p-2.5 sm:p-3 bg-slate-100 text-slate-400 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm hover:text-rose-500 transition-colors"><LogOut size={18} /></button>
           </div>
         </div>
-        <div className="bg-gradient-to-r from-blue-400 to-sky-400 p-4 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-lg shadow-sky-200 flex items-center gap-3 sm:gap-4">
-          <Sun size={24} className="animate-spin-slow sm:hidden" />
-          <Sun size={32} className="animate-spin-slow hidden sm:block" />
+        <div className={`p-4 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-lg flex items-center gap-3 sm:gap-4 ${
+          weather.icon === 'sun' ? 'bg-gradient-to-r from-blue-400 to-sky-400 shadow-sky-200' :
+          weather.icon === 'cloud-sun' ? 'bg-gradient-to-r from-sky-400 to-slate-400 shadow-slate-200' :
+          weather.icon === 'cloud' ? 'bg-gradient-to-r from-slate-400 to-slate-500 shadow-slate-200' :
+          weather.icon === 'rain' ? 'bg-gradient-to-r from-slate-500 to-blue-600 shadow-blue-200' :
+          'bg-gradient-to-r from-blue-300 to-indigo-400 shadow-indigo-200'
+        }`}>
+          {weather.icon === 'sun' && <Sun size={28} className="shrink-0" />}
+          {weather.icon === 'cloud-sun' && <CloudSun size={28} className="shrink-0" />}
+          {weather.icon === 'cloud' && <Cloud size={28} className="shrink-0" />}
+          {weather.icon === 'rain' && <CloudRain size={28} className="shrink-0" />}
+          {weather.icon === 'snow' && <Snowflake size={28} className="shrink-0" />}
           <div className="flex-1 min-w-0">
-            <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest opacity-80">촬영 지수 95%</p>
-            <p className="font-bold text-sm sm:text-base">채광이 완벽해요! 오늘 맛집 사진 최고입니다.</p>
+            <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest opacity-80">
+              촬영 지수 {weather.score}% {weather.temp && `· ${weather.temp}°C`}
+            </p>
+            <p className="font-bold text-xs sm:text-base leading-snug">{weather.tip}</p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-lg sm:text-2xl font-black">{new Date().getMonth() + 1}월 {new Date().getDate()}일</p>
+            <p className="text-lg sm:text-2xl font-black leading-tight">{new Date().getMonth() + 1}/{new Date().getDate()}</p>
             <p className="text-[10px] sm:text-xs font-bold opacity-80">{['일', '월', '화', '수', '목', '금', '토'][new Date().getDay()]}요일</p>
           </div>
         </div>
