@@ -33,10 +33,10 @@ const LoginPage = ({ onEmailSignIn, onEmailSignUp, onSocialLogin, onGuestLogin, 
       <div className="max-w-md w-full jelly-card shadow-2xl p-10">
         {/* Logo */}
         <div className="w-[100px] h-[100px] mx-auto flex items-center justify-center mb-6">
-          <img src="/favicon.png" alt="Blogger Partner Pro" className="w-full h-full object-contain filter drop-shadow-lg drop-shadow-sky-300 transition-transform hover:scale-105" />
+          <img src="/favicon.png" alt="Blue Review" className="w-full h-full object-contain filter drop-shadow-lg drop-shadow-sky-300 transition-transform hover:scale-105" />
         </div>
         <h1 className="text-3xl font-black text-slate-800 text-center leading-tight mb-2">
-          Blogger<br/><span className="text-sky-500 bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-blue-500">Partner Pro</span>
+          Blue<br/><span className="text-sky-500 bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-blue-500">Review</span>
         </h1>
         <p className="text-center text-slate-400 text-sm mb-8">귀하의 파워블로거 도약을 응원합니다.</p>
 

@@ -406,37 +406,38 @@ ${text}`
   }
 
   return (
-    <div className="min-h-screen bg-sky-50 pb-36 font-sans select-none">
+    <div className="min-h-screen bg-sky-50 pb-28 sm:pb-36 font-sans select-none">
       {/* 1. 상단 날씨 & 퀵 버튼 */}
-      <header className="bg-white/80 backdrop-blur-md px-6 pt-8 pb-6 sticky top-0 z-30 border-b border-sky-100">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-3">
-            <img src="/favicon.png" alt="logo" className="w-12 h-12 object-contain filter drop-shadow hover:scale-110 transition-transform cursor-pointer" onClick={() => setActiveTab('home')} />
+      <header className="bg-white/80 backdrop-blur-md px-4 sm:px-6 pt-6 sm:pt-8 pb-4 sm:pb-6 sticky top-0 z-30 border-b border-sky-100">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <img src="/favicon.png" alt="logo" className="w-10 h-10 sm:w-12 sm:h-12 object-contain filter drop-shadow hover:scale-110 transition-transform cursor-pointer" onClick={() => setActiveTab('home')} />
             <div>
-              <h2 className="text-2xl font-black text-slate-900">Blue Review</h2>
-              <p className="text-[12px] font-bold text-slate-400 mt-0.5">블로거를 위한 협찬 관리</p>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900">Blue Review</h2>
+              <p className="text-[10px] sm:text-[12px] font-bold text-slate-400 mt-0.5 hidden sm:block">블로거를 위한 협찬 관리</p>
             </div>
           </div>
-          <div className="flex gap-2">
-            <a href="https://adpost.naver.com/" target="_blank" className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100 shadow-sm"><DollarSign size={20} /></a>
-            <a href="https://blog.naver.com/" target="_blank" className="p-3 bg-sky-50 text-sky-600 rounded-2xl border border-sky-100 shadow-sm"><Globe size={20} /></a>
-            <button onClick={handleLogout} className="p-3 bg-slate-100 text-slate-400 rounded-2xl border border-slate-200 shadow-sm hover:text-rose-500 transition-colors"><LogOut size={20} /></button>
+          <div className="flex gap-1.5 sm:gap-2">
+            <a href="https://adpost.naver.com/" target="_blank" className="p-2.5 sm:p-3 bg-emerald-50 text-emerald-600 rounded-xl sm:rounded-2xl border border-emerald-100 shadow-sm"><DollarSign size={18} /></a>
+            <a href="https://blog.naver.com/" target="_blank" className="p-2.5 sm:p-3 bg-sky-50 text-sky-600 rounded-xl sm:rounded-2xl border border-sky-100 shadow-sm"><Globe size={18} /></a>
+            <button onClick={handleLogout} className="p-2.5 sm:p-3 bg-slate-100 text-slate-400 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm hover:text-rose-500 transition-colors"><LogOut size={18} /></button>
           </div>
         </div>
-        <div className="bg-gradient-to-r from-blue-400 to-sky-400 p-5 rounded-3xl text-white shadow-lg shadow-sky-200 flex items-center gap-4">
-          <Sun size={32} className="animate-spin-slow" />
-          <div className="flex-1">
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-80">촬영 지수 95%</p>
-            <p className="font-bold">채광이 완벽해요! 오늘 맛집 사진 최고입니다.</p>
+        <div className="bg-gradient-to-r from-blue-400 to-sky-400 p-4 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-lg shadow-sky-200 flex items-center gap-3 sm:gap-4">
+          <Sun size={24} className="animate-spin-slow sm:hidden" />
+          <Sun size={32} className="animate-spin-slow hidden sm:block" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest opacity-80">촬영 지수 95%</p>
+            <p className="font-bold text-sm sm:text-base">채광이 완벽해요! 오늘 맛집 사진 최고입니다.</p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-2xl font-black">{new Date().getMonth() + 1}월 {new Date().getDate()}일</p>
-            <p className="text-xs font-bold opacity-80">{['일', '월', '화', '수', '목', '금', '토'][new Date().getDay()]}요일</p>
+            <p className="text-lg sm:text-2xl font-black">{new Date().getMonth() + 1}월 {new Date().getDate()}일</p>
+            <p className="text-[10px] sm:text-xs font-bold opacity-80">{['일', '월', '화', '수', '목', '금', '토'][new Date().getDay()]}요일</p>
           </div>
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto p-6 space-y-10">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-10">
 
         {/* 탭 메뉴 */}
         {activeTab === 'home' && (
@@ -1368,12 +1369,12 @@ ${text}`
       )}
 
       {/* 탭 바 */}
-      <nav className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-xl px-6 py-5 rounded-full flex items-center gap-6 shadow-[0_25px_50px_rgba(0,0,0,0.3)] z-40 border border-white/10">
-        <button onClick={() => setActiveTab('home')} className={`transition-all ${activeTab === 'home' ? 'text-white scale-110' : 'text-slate-500'}`}><ClipboardList size={22} /></button>
-        <button onClick={() => setActiveTab('calendar')} className={`transition-all ${activeTab === 'calendar' ? 'text-white scale-110' : 'text-slate-500'}`}><Calendar size={22} /></button>
-        <button onClick={() => { setRawText(''); setParsedData({ ...emptyParsed }); setIsModalOpen(true); }} className="bg-white text-slate-900 p-4 rounded-full -mt-20 shadow-xl shadow-slate-900/20 active:rotate-12 transition-all border-4 border-slate-900"><Plus size={28} /></button>
-        <button onClick={() => setActiveTab('tool')} className={`transition-all ${activeTab === 'tool' ? 'text-white scale-110' : 'text-slate-500'}`}><Calculator size={22} /></button>
-        <button onClick={() => setActiveTab('profile')} className={`transition-all ${activeTab === 'profile' ? 'text-white scale-110' : 'text-slate-500'}`}><User size={22} /></button>
+      <nav className="fixed bottom-4 sm:bottom-10 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-xl px-5 sm:px-6 py-4 sm:py-5 rounded-full flex items-center gap-5 sm:gap-6 shadow-[0_25px_50px_rgba(0,0,0,0.3)] z-40 border border-white/10">
+        <button onClick={() => setActiveTab('home')} className={`transition-all ${activeTab === 'home' ? 'text-white scale-110' : 'text-slate-500'}`}><ClipboardList size={20} /></button>
+        <button onClick={() => setActiveTab('calendar')} className={`transition-all ${activeTab === 'calendar' ? 'text-white scale-110' : 'text-slate-500'}`}><Calendar size={20} /></button>
+        <button onClick={() => { setRawText(''); setParsedData({ ...emptyParsed }); setIsModalOpen(true); }} className="bg-white text-slate-900 p-3 sm:p-4 rounded-full -mt-16 sm:-mt-20 shadow-xl shadow-slate-900/20 active:rotate-12 transition-all border-4 border-slate-900"><Plus size={24} /></button>
+        <button onClick={() => setActiveTab('tool')} className={`transition-all ${activeTab === 'tool' ? 'text-white scale-110' : 'text-slate-500'}`}><Calculator size={20} /></button>
+        <button onClick={() => setActiveTab('profile')} className={`transition-all ${activeTab === 'profile' ? 'text-white scale-110' : 'text-slate-500'}`}><User size={20} /></button>
       </nav>
 
       {/* 스타일 애니메이션 (CSS) */}
