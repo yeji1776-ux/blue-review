@@ -4,7 +4,8 @@ import {
   ClipboardList, ExternalLink, Calculator, BarChart3,
   CheckCircle2, Globe, Map as MapIcon, DollarSign, Sun, Star, X, Check,
   ChevronRight, Hash, Eye, Heart, Type, Gift, AlertTriangle, CalendarDays,
-  Download, ChevronLeft, User, Save, Instagram, Pencil, Cloud, CloudRain, CloudSun, Snowflake
+  Download, ChevronLeft, User, Save, Instagram, Pencil, Cloud, CloudRain, CloudSun, Snowflake,
+  Wallet, PenTool
 } from 'lucide-react';
 import { domToPng } from 'modern-screenshot';
 import { useAuth } from './hooks/useAuth';
@@ -20,27 +21,36 @@ const BloggerMasterApp = () => {
   // --- 날씨 ---
   const [weather, setWeather] = useState({ temp: '', desc: '', icon: 'sun', score: 95, tip: '채광이 완벽해요! 오늘 맛집 사진 최고입니다.' });
   useEffect(() => {
-    fetch('https://wttr.in/Seoul?format=j1')
-      .then(r => r.json())
-      .then(data => {
-        const cur = data.current_condition?.[0];
-        if (!cur) return;
-        const code = parseInt(cur.weatherCode);
-        const temp = cur.temp_C;
-        const cloud = parseInt(cur.cloudcover);
-        const humidity = parseInt(cur.humidity);
-        // 촬영 지수 계산 (맑을수록 높음)
-        let score = Math.max(20, 100 - cloud);
-        let tip, icon;
-        if (code === 113) { icon = 'sun'; tip = '채광이 완벽해요! 맛집 사진 찍기 최고의 날!'; }
-        else if (code <= 122) { icon = 'cloud-sun'; tip = '구름 살짝! 부드러운 자연광으로 촬영하세요.'; score = Math.max(60, score); }
-        else if (code <= 200) { icon = 'cloud'; tip = '흐린 날이지만 실내 촬영은 괜찮아요!'; score = Math.max(40, score); }
-        else if (code <= 399) { icon = 'rain'; tip = '비 오는 날, 아늑한 카페 촬영 추천!'; score = Math.max(30, score); }
-        else { icon = 'snow'; tip = '눈 오는 감성! 따뜻한 음식 촬영 추천!'; score = Math.max(35, score); }
-        if (humidity > 80) tip += ' 습도 높아요, 렌즈 김서림 주의!';
-        setWeather({ temp, desc: cur.weatherDesc?.[0]?.value || '', icon, score, tip });
-      })
-      .catch(() => {});
+    const fetchWeather = (loc) => {
+      fetch(`https://wttr.in/${loc}?format=j1`)
+        .then(r => r.json())
+        .then(data => {
+          const cur = data.current_condition?.[0];
+          if (!cur) return;
+          const code = parseInt(cur.weatherCode);
+          const temp = cur.temp_C;
+          const cloud = parseInt(cur.cloudcover);
+          const humidity = parseInt(cur.humidity);
+          let score = Math.max(20, 100 - cloud);
+          let tip, icon;
+          if (code === 113) { icon = 'sun'; tip = '채광이 완벽해요! 맛집 사진 찍기 최고의 날!'; }
+          else if (code <= 122) { icon = 'cloud-sun'; tip = '구름 살짝! 부드러운 자연광으로 촬영하세요.'; score = Math.max(60, score); }
+          else if (code <= 200) { icon = 'cloud'; tip = '흐린 날이지만 실내 촬영은 괜찮아요!'; score = Math.max(40, score); }
+          else if (code <= 399) { icon = 'rain'; tip = '비 오는 날, 아늑한 카페 촬영 추천!'; score = Math.max(30, score); }
+          else { icon = 'snow'; tip = '눈 오는 감성! 따뜻한 음식 촬영 추천!'; score = Math.max(35, score); }
+          if (humidity > 80) tip += ' 습도 높아요, 렌즈 김서림 주의!';
+          setWeather({ temp, desc: cur.weatherDesc?.[0]?.value || '', icon, score, tip });
+        })
+        .catch(() => {});
+    };
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => fetchWeather(`${pos.coords.latitude},${pos.coords.longitude}`),
+        () => fetchWeather('Seoul')
+      );
+    } else {
+      fetchWeather('Seoul');
+    }
   }, []);
 
   // --- 프로필 ---
@@ -133,7 +143,7 @@ const BloggerMasterApp = () => {
   ]);
 
   const emptyParsed = {
-    brand: '기타', type: '맛집', title: '', address: '', contact: '',
+    brand: '리뷰노트', type: '맛집', title: '', address: '', contact: '',
     mission: '', personalMission: '', experiencePeriod: '', deadline: '', provided: '',
     visitDays: '', visitTime: '', visitDate: '', visitSetTime: '', caution: '', ftcImageUrl: ''
   };
@@ -165,6 +175,17 @@ const BloggerMasterApp = () => {
     deadlineDate.setHours(0, 0, 0, 0);
     const diff = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
     return diff;
+  };
+
+  const getBrandBadge = (brand) => {
+    const map = {
+      '리뷰노트': 'bg-teal-50 text-teal-600 border-teal-100',
+      '강남맛집': 'bg-orange-50 text-orange-600 border-orange-100',
+      '레뷰': 'bg-pink-50 text-pink-600 border-pink-100',
+      '슈퍼멤버스': 'bg-violet-50 text-violet-600 border-violet-100',
+      '디너의여왕': 'bg-amber-50 text-amber-600 border-amber-100',
+    };
+    return map[brand] || 'bg-slate-50 text-slate-600 border-slate-100';
   };
 
   const getDdayLabel = (deadlineStr) => {
@@ -388,7 +409,9 @@ ${text}`
 
   const saveNewSchedule = () => {
     if (!parsedData.title) return alert('최소한 업체명은 있어야 합니다!');
-    const newItem = { ...parsedData, id: Date.now(), isDone: false };
+    const finalBrand = parsedData.brand === '기타(수기)' ? (parsedData.brandCustom || '기타') : parsedData.brand;
+    const newItem = { ...parsedData, brand: finalBrand, id: Date.now(), isDone: false };
+    delete newItem.brandCustom;
     setSchedules([...schedules, newItem]);
     setIsModalOpen(false);
     setRawText('');
@@ -444,9 +467,18 @@ ${text}`
             </div>
           </div>
           <div className="flex gap-1.5 sm:gap-2">
-            <a href="https://adpost.naver.com/" target="_blank" className="p-2.5 sm:p-3 bg-emerald-50 text-emerald-600 rounded-xl sm:rounded-2xl border border-emerald-100 shadow-sm"><DollarSign size={18} /></a>
-            <a href="https://blog.naver.com/" target="_blank" className="p-2.5 sm:p-3 bg-sky-50 text-sky-600 rounded-xl sm:rounded-2xl border border-sky-100 shadow-sm"><Globe size={18} /></a>
-            <button onClick={handleLogout} className="p-2.5 sm:p-3 bg-slate-100 text-slate-400 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm hover:text-rose-500 transition-colors"><LogOut size={18} /></button>
+            <a href="https://adpost.naver.com/" target="_blank" className="flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 bg-emerald-50 text-emerald-600 rounded-xl sm:rounded-2xl border border-emerald-100 shadow-sm">
+              <Wallet size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <span className="text-[7px] sm:text-[9px] font-bold leading-tight">에드포스트</span>
+            </a>
+            <a href="https://blog.naver.com/" target="_blank" className="flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 bg-sky-50 text-sky-600 rounded-xl sm:rounded-2xl border border-sky-100 shadow-sm">
+              <PenTool size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <span className="text-[7px] sm:text-[9px] font-bold leading-tight">블로그</span>
+            </a>
+            <button onClick={handleLogout} className="flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 bg-slate-100 text-slate-400 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm hover:text-rose-500 transition-colors">
+              <LogOut size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <span className="text-[7px] sm:text-[9px] font-bold leading-tight">로그아웃</span>
+            </button>
           </div>
         </div>
         <div className={`p-4 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-lg flex items-center gap-3 sm:gap-4 ${
@@ -480,7 +512,7 @@ ${text}`
         {activeTab === 'home' && (
           <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
             {/* Quick Copy(왼) + 신청 문구(오) 2컬럼 */}
-            <div className="grid grid-cols-1 sm:grid-cols-[200px_1fr] gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-[280px_1fr] gap-4">
               {/* 왼쪽: Quick Copy */}
               <section className="jelly-card p-4">
                 <div className="flex items-center justify-between mb-3">
@@ -535,7 +567,7 @@ ${text}`
               </section>
             </div>
 
-            {/* 일정 리스트 (진행중만) */}
+            {/* 일정 리스트 - 브랜드별 분할 */}
             <section>
               <div className="flex items-center justify-between mb-4 px-1">
                 <h3 className="text-sm font-black text-slate-400 uppercase tracking-tighter">Schedules</h3>
@@ -543,28 +575,63 @@ ${text}`
                   전체 관리 <ChevronRight size={12}/>
                 </button>
               </div>
-              <div className="jelly-card overflow-hidden divide-y divide-slate-100">
-                {schedules.filter(s => !s.isDone).length > 0 ? (
-                  schedules.filter(s => !s.isDone).map(item => {
-                    const dday = getDdayLabel(item.deadline);
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => setSelectedScheduleId(item.id)}
-                        className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-sky-50 transition-all"
-                      >
-                        <span className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] font-black border ${item.brand === '레뷰' ? 'bg-pink-50 text-pink-600 border-pink-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>{item.brand}</span>
-                        <span className="text-[10px] font-bold text-sky-500 shrink-0">{item.type}</span>
-                        <span className="text-sm font-bold truncate flex-1 text-slate-700">{item.title}</span>
-                        {dday && <span className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] font-black text-white ${dday.color}`}>{dday.text}</span>}
-                        <ChevronRight size={14} className="text-slate-300 shrink-0" />
-                      </button>
-                    );
-                  })
+              {(() => {
+                const ongoing = schedules.filter(s => !s.isDone);
+                const brandGroups = {};
+                ongoing.forEach(item => {
+                  const brand = item.brand || '기타';
+                  if (!brandGroups[brand]) brandGroups[brand] = [];
+                  brandGroups[brand].push(item);
+                });
+                const brandNames = Object.keys(brandGroups);
+                const brandColors = {
+                  '리뷰노트': { bg: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-600', badge: 'bg-teal-100 text-teal-600', dot: 'bg-teal-400' },
+                  '강남맛집': { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-600', badge: 'bg-orange-100 text-orange-600', dot: 'bg-orange-400' },
+                  '레뷰': { bg: 'bg-pink-50', border: 'border-pink-200', text: 'text-pink-600', badge: 'bg-pink-100 text-pink-600', dot: 'bg-pink-400' },
+                  '슈퍼멤버스': { bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-600', badge: 'bg-violet-100 text-violet-600', dot: 'bg-violet-400' },
+                  '디너의여왕': { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-600', badge: 'bg-amber-100 text-amber-600', dot: 'bg-amber-400' },
+                  '기타': { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-600', badge: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400' },
+                };
+                const getColor = (brand) => brandColors[brand] || { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-600', badge: 'bg-blue-100 text-blue-600', dot: 'bg-blue-400' };
+                const colClass = brandNames.length <= 2 ? 'sm:grid-cols-2' : brandNames.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-4';
+
+                return brandNames.length > 0 ? (
+                  <div className={`grid grid-cols-2 ${colClass} gap-2 sm:gap-3`}>
+                    {brandNames.map(brand => {
+                      const c = getColor(brand);
+                      return (
+                        <div key={brand} className={`jelly-card p-2.5 sm:p-4 ${c.bg} ${c.border} border`}>
+                          <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                            <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${c.dot}`}></span>
+                            <h4 className={`text-[10px] sm:text-xs font-black ${c.text} truncate`}>{brand}</h4>
+                            <span className={`ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full ${c.badge}`}>{brandGroups[brand].length}</span>
+                          </div>
+                          <div className="space-y-2">
+                            {brandGroups[brand].map(item => {
+                              const dday = getDdayLabel(item.deadline);
+                              return (
+                                <button
+                                  key={item.id}
+                                  onClick={() => setSelectedScheduleId(item.id)}
+                                  className="w-full flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-white/80 active:bg-white transition-all text-left shadow-sm"
+                                >
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-[9px] sm:text-[10px] font-bold text-sky-500 mb-0.5">{item.type}</p>
+                                    <p className="text-[11px] sm:text-xs font-bold text-slate-700 truncate">{item.title}</p>
+                                  </div>
+                                  {dday && <span className={`shrink-0 px-1.5 py-0.5 rounded-full text-[8px] font-black text-white ${dday.color}`}>{dday.text}</span>}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : (
-                  <div className="p-8 text-center text-slate-300 text-sm font-bold">진행중인 일정이 없습니다</div>
-                )}
-              </div>
+                  <div className="jelly-card p-8 text-center text-slate-300 text-sm font-bold">진행중인 일정이 없습니다</div>
+                );
+              })()}
             </section>
           </div>
         )}
@@ -572,11 +639,15 @@ ${text}`
         {/* 스케줄 전체 관리 */}
         {activeTab === 'scheduleManage' && (() => {
           const { year, month } = calendarMonth;
-          const manageLabel = `${year}년 ${month + 1}월`;
           const monthFiltered = schedules.filter(s => {
             const d = parseDeadlineToDate(s.deadline);
             if (!d) return false;
             return d.getFullYear() === year && d.getMonth() === month;
+          });
+          const yearFiltered = schedules.filter(s => {
+            const d = parseDeadlineToDate(s.deadline);
+            if (!d) return false;
+            return d.getFullYear() === year;
           });
           const mOngoing = monthFiltered.filter(s => !s.isDone);
           const mDone = monthFiltered.filter(s => s.isDone);
@@ -588,84 +659,246 @@ ${text}`
                 <h3 className="text-lg font-black text-slate-900">스케줄 관리</h3>
               </div>
 
-              {/* 월 네비게이션 */}
-              <div className="flex justify-between items-center">
-                <button onClick={() => setCalendarMonth(prev => {
-                  const d = new Date(prev.year, prev.month - 1);
-                  return { year: d.getFullYear(), month: d.getMonth() };
-                })} className="p-2 bg-white rounded-xl border border-sky-100"><ChevronLeft size={20}/></button>
-                <h3 className="font-black text-xl text-slate-800">{manageLabel}</h3>
-                <button onClick={() => setCalendarMonth(prev => {
-                  const d = new Date(prev.year, prev.month + 1);
-                  return { year: d.getFullYear(), month: d.getMonth() };
-                })} className="p-2 bg-white rounded-xl border border-sky-100"><ChevronRight size={20}/></button>
+              {/* 연도 네비게이션 */}
+              <div className="flex justify-center items-center gap-4">
+                <button onClick={() => setCalendarMonth(prev => ({ ...prev, year: prev.year - 1 }))} className="p-1.5 bg-white rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600"><ChevronLeft size={16}/></button>
+                <h3 className="font-black text-lg text-slate-800">{year}년</h3>
+                <button onClick={() => setCalendarMonth(prev => ({ ...prev, year: prev.year + 1 }))} className="p-1.5 bg-white rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600"><ChevronRight size={16}/></button>
+              </div>
+
+              {/* 월 선택 탭 */}
+              <div className="grid grid-cols-6 sm:grid-cols-12 gap-1.5">
+                {Array.from({ length: 12 }, (_, i) => {
+                  const mCount = schedules.filter(s => {
+                    const d = parseDeadlineToDate(s.deadline);
+                    return d && d.getFullYear() === year && d.getMonth() === i;
+                  }).length;
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => setCalendarMonth(prev => ({ ...prev, month: i }))}
+                      className={`py-2 rounded-xl text-xs font-bold transition-all relative ${month === i ? 'bg-sky-500 text-white shadow-md' : 'bg-white text-slate-500 border border-slate-100 hover:border-sky-200'}`}
+                    >
+                      {i + 1}월
+                      {mCount > 0 && <span className={`absolute -top-1 -right-1 w-4 h-4 rounded-full text-[8px] font-black flex items-center justify-center ${month === i ? 'bg-white text-sky-500' : 'bg-sky-100 text-sky-500'}`}>{mCount}</span>}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* 요약 */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="jelly-card p-4 text-center">
-                  <p className="text-[9px] font-black text-slate-400 mb-1">전체</p>
-                  <p className="text-2xl font-black text-slate-800">{monthFiltered.length}</p>
+              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                <div className="jelly-card p-3 sm:p-4 text-center">
+                  <p className="text-[8px] sm:text-[9px] font-black text-slate-400 mb-1">전체</p>
+                  <p className="text-lg sm:text-2xl font-black text-slate-800">{monthFiltered.length}</p>
                 </div>
-                <div className="jelly-card p-4 text-center">
-                  <p className="text-[9px] font-black text-sky-400 mb-1">진행중</p>
-                  <p className="text-2xl font-black text-sky-600">{mOngoing.length}</p>
+                <div className="jelly-card p-3 sm:p-4 text-center">
+                  <p className="text-[8px] sm:text-[9px] font-black text-sky-400 mb-1">진행중</p>
+                  <p className="text-lg sm:text-2xl font-black text-sky-600">{mOngoing.length}</p>
                 </div>
-                <div className="jelly-card p-4 text-center">
-                  <p className="text-[9px] font-black text-emerald-400 mb-1">완료</p>
-                  <p className="text-2xl font-black text-emerald-600">{mDone.length}</p>
+                <div className="jelly-card p-3 sm:p-4 text-center">
+                  <p className="text-[8px] sm:text-[9px] font-black text-emerald-400 mb-1">완료</p>
+                  <p className="text-lg sm:text-2xl font-black text-emerald-600">{mDone.length}</p>
                 </div>
               </div>
 
-              {/* 진행중 */}
-              <section>
-                <h4 className="text-xs font-black text-sky-500 mb-3 px-1 flex items-center gap-1"><Clock size={14}/> 진행중 ({mOngoing.length})</h4>
-                <div className="jelly-card overflow-hidden divide-y divide-slate-100">
-                  {mOngoing.length > 0 ? (
-                    mOngoing.map(item => {
-                      const dday = getDdayLabel(item.deadline);
-                      return (
+              {/* 진행중 + 완료 2분할 */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* 진행중 */}
+                <section>
+                  <h4 className="text-xs font-black text-sky-500 mb-3 px-1 flex items-center gap-1"><Clock size={14}/> 진행중 ({mOngoing.length})</h4>
+                  <div className="jelly-card overflow-hidden divide-y divide-slate-100">
+                    {mOngoing.length > 0 ? (
+                      mOngoing.map(item => {
+                        const dday = getDdayLabel(item.deadline);
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => setSelectedScheduleId(item.id)}
+                            className="w-full flex items-center gap-2 px-3 py-3 text-left active:bg-sky-50 transition-all"
+                          >
+                            <span className={`shrink-0 px-1.5 py-0.5 rounded-full text-[8px] font-black border ${getBrandBadge(item.brand)}`}>{item.brand}</span>
+                            <span className="text-xs font-bold truncate flex-1 text-slate-700">{item.title}</span>
+                            {dday && <span className={`shrink-0 px-1.5 py-0.5 rounded-full text-[8px] font-black text-white ${dday.color}`}>{dday.text}</span>}
+                          </button>
+                        );
+                      })
+                    ) : (
+                      <div className="p-6 text-center text-slate-300 text-sm font-bold">진행중인 일정이 없습니다</div>
+                    )}
+                  </div>
+                </section>
+
+                {/* 완료 */}
+                <section>
+                  <h4 className="text-xs font-black text-emerald-500 mb-3 px-1 flex items-center gap-1"><CheckCircle2 size={14}/> 완료 ({mDone.length})</h4>
+                  <div className="jelly-card overflow-hidden divide-y divide-slate-100">
+                    {mDone.length > 0 ? (
+                      mDone.map(item => (
                         <button
                           key={item.id}
                           onClick={() => setSelectedScheduleId(item.id)}
-                          className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-sky-50 transition-all"
+                          className="w-full flex items-center gap-2 px-3 py-3 text-left active:bg-sky-50 transition-all opacity-60"
                         >
-                          <span className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] font-black border ${item.brand === '레뷰' ? 'bg-pink-50 text-pink-600 border-pink-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>{item.brand}</span>
-                          <span className="text-[10px] font-bold text-sky-500 shrink-0">{item.type}</span>
-                          <span className="text-sm font-bold truncate flex-1 text-slate-700">{item.title}</span>
-                          {dday && <span className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] font-black text-white ${dday.color}`}>{dday.text}</span>}
-                          <ChevronRight size={14} className="text-slate-300 shrink-0" />
+                          <span className={`shrink-0 px-1.5 py-0.5 rounded-full text-[8px] font-black border ${getBrandBadge(item.brand)}`}>{item.brand}</span>
+                          <span className="text-xs font-bold truncate flex-1 text-slate-300 line-through">{item.title}</span>
+                          <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
                         </button>
-                      );
-                    })
+                      ))
+                    ) : (
+                      <div className="p-6 text-center text-slate-300 text-sm font-bold">완료된 일정이 없습니다</div>
+                    )}
+                  </div>
+                </section>
+              </div>
+
+              {/* 협찬 분석 */}
+              <section>
+                <h4 className="text-xs font-black text-slate-400 mb-3 px-1 flex items-center gap-1 uppercase tracking-tighter"><BarChart3 size={14}/> {year}년 {month + 1}월 협찬 분석</h4>
+                {(() => {
+                  const brandStats = {};
+                  const typeStats = {};
+                  monthFiltered.forEach(s => {
+                    const brand = s.brand || '기타';
+                    const type = s.type || '기타';
+                    brandStats[brand] = (brandStats[brand] || 0) + 1;
+                    typeStats[type] = (typeStats[type] || 0) + 1;
+                  });
+                  const brandColors = {
+                    '리뷰노트': 'bg-teal-400', '강남맛집': 'bg-orange-400', '레뷰': 'bg-pink-400',
+                    '슈퍼멤버스': 'bg-violet-400', '디너의여왕': 'bg-amber-400', '기타': 'bg-slate-400',
+                  };
+                  const typeColors = {
+                    '맛집': 'bg-orange-400', '뷰티': 'bg-rose-400', '숙박': 'bg-indigo-400',
+                    '체험': 'bg-emerald-400', '배송': 'bg-sky-400', '기타': 'bg-slate-400',
+                  };
+                  const maxBrand = Math.max(...Object.values(brandStats), 1);
+                  const maxType = Math.max(...Object.values(typeStats), 1);
+
+                  return monthFiltered.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* 브랜드별 */}
+                      <div className="jelly-card p-4">
+                        <p className="text-[10px] font-black text-slate-500 mb-3">브랜드별</p>
+                        <div className="space-y-2.5">
+                          {Object.entries(brandStats).sort((a,b) => b[1]-a[1]).map(([brand, count]) => (
+                            <div key={brand}>
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-[11px] font-bold text-slate-600">{brand}</span>
+                                <span className="text-[10px] font-black text-slate-400">{count}건</span>
+                              </div>
+                              <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full transition-all duration-500 ${brandColors[brand] || 'bg-blue-400'}`} style={{ width: `${(count / maxBrand) * 100}%` }}></div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {/* 카테고리별 */}
+                      <div className="jelly-card p-4">
+                        <p className="text-[10px] font-black text-slate-500 mb-3">카테고리별</p>
+                        <div className="space-y-2.5">
+                          {Object.entries(typeStats).sort((a,b) => b[1]-a[1]).map(([type, count]) => (
+                            <div key={type}>
+                              <div className="flex justify-between items-center mb-1">
+                                <span className="text-[11px] font-bold text-slate-600">{type}</span>
+                                <span className="text-[10px] font-black text-slate-400">{count}건</span>
+                              </div>
+                              <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full transition-all duration-500 ${typeColors[type] || 'bg-blue-400'}`} style={{ width: `${(count / maxType) * 100}%` }}></div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   ) : (
-                    <div className="p-6 text-center text-slate-300 text-sm font-bold">진행중인 일정이 없습니다</div>
-                  )}
-                </div>
+                    <div className="jelly-card p-6 text-center text-slate-300 text-sm font-bold">이번 달 데이터가 없습니다</div>
+                  );
+                })()}
               </section>
 
-              {/* 완료 */}
+              {/* 연간 분석 */}
               <section>
-                <h4 className="text-xs font-black text-emerald-500 mb-3 px-1 flex items-center gap-1"><CheckCircle2 size={14}/> 완료 ({mDone.length})</h4>
-                <div className="jelly-card overflow-hidden divide-y divide-slate-100">
-                  {mDone.length > 0 ? (
-                    mDone.map(item => (
-                      <button
-                        key={item.id}
-                        onClick={() => setSelectedScheduleId(item.id)}
-                        className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-sky-50 transition-all opacity-60"
-                      >
-                        <span className={`shrink-0 px-2 py-0.5 rounded-full text-[9px] font-black border ${item.brand === '레뷰' ? 'bg-pink-50 text-pink-600 border-pink-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>{item.brand}</span>
-                        <span className="text-[10px] font-bold text-sky-500 shrink-0">{item.type}</span>
-                        <span className="text-sm font-bold truncate flex-1 text-slate-300 line-through">{item.title}</span>
-                        <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
-                        <ChevronRight size={14} className="text-slate-300 shrink-0" />
-                      </button>
-                    ))
-                  ) : (
-                    <div className="p-6 text-center text-slate-300 text-sm font-bold">완료된 일정이 없습니다</div>
-                  )}
-                </div>
+                <h4 className="text-xs font-black text-slate-400 mb-3 px-1 flex items-center gap-1 uppercase tracking-tighter"><BarChart3 size={14}/> {year}년 연간 분석</h4>
+                {(() => {
+                  if (yearFiltered.length === 0) return <div className="jelly-card p-6 text-center text-slate-300 text-sm font-bold">{year}년 데이터가 없습니다</div>;
+                  const yBrandStats = {};
+                  const yTypeStats = {};
+                  yearFiltered.forEach(s => {
+                    const brand = s.brand || '기타';
+                    const type = s.type || '기타';
+                    yBrandStats[brand] = (yBrandStats[brand] || 0) + 1;
+                    yTypeStats[type] = (yTypeStats[type] || 0) + 1;
+                  });
+                  // 월별 건수
+                  const monthlyData = Array.from({ length: 12 }, (_, i) => {
+                    return yearFiltered.filter(s => {
+                      const d = parseDeadlineToDate(s.deadline);
+                      return d && d.getMonth() === i;
+                    }).length;
+                  });
+                  const maxMonthly = Math.max(...monthlyData, 1);
+                  const yDone = yearFiltered.filter(s => s.isDone).length;
+                  const brandColors = {
+                    '리뷰노트': 'bg-teal-400', '강남맛집': 'bg-orange-400', '레뷰': 'bg-pink-400',
+                    '슈퍼멤버스': 'bg-violet-400', '디너의여왕': 'bg-amber-400', '기타': 'bg-slate-400',
+                  };
+
+                  return (
+                    <div className="space-y-4">
+                      {/* 연간 요약 카드 */}
+                      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                        <div className="jelly-card p-2.5 sm:p-3 text-center">
+                          <p className="text-[8px] sm:text-[9px] font-black text-slate-400 mb-1">총 협찬</p>
+                          <p className="text-lg sm:text-xl font-black text-slate-800">{yearFiltered.length}<span className="text-[9px] sm:text-[10px] text-slate-400 ml-0.5">건</span></p>
+                        </div>
+                        <div className="jelly-card p-2.5 sm:p-3 text-center">
+                          <p className="text-[8px] sm:text-[9px] font-black text-emerald-400 mb-1">완료율</p>
+                          <p className="text-lg sm:text-xl font-black text-emerald-600">{yearFiltered.length > 0 ? Math.round((yDone / yearFiltered.length) * 100) : 0}<span className="text-[9px] sm:text-[10px] text-emerald-400 ml-0.5">%</span></p>
+                        </div>
+                        <div className="jelly-card p-2.5 sm:p-3 text-center">
+                          <p className="text-[8px] sm:text-[9px] font-black text-sky-400 mb-1">월 평균</p>
+                          <p className="text-lg sm:text-xl font-black text-sky-600">{(yearFiltered.length / 12).toFixed(1)}<span className="text-[9px] sm:text-[10px] text-sky-400 ml-0.5">건</span></p>
+                        </div>
+                      </div>
+
+                      {/* 월별 추이 차트 */}
+                      <div className="jelly-card p-3 sm:p-4">
+                        <p className="text-[9px] sm:text-[10px] font-black text-slate-500 mb-3">월별 추이</p>
+                        <div className="flex items-end gap-0.5 sm:gap-1 h-20 sm:h-24">
+                          {monthlyData.map((count, i) => (
+                            <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                              <span className="text-[8px] font-bold text-slate-400">{count || ''}</span>
+                              <div className="w-full rounded-t-md bg-sky-100 relative" style={{ height: `${Math.max((count / maxMonthly) * 100, 4)}%` }}>
+                                <div className={`absolute inset-0 rounded-t-md ${month === i ? 'bg-sky-500' : 'bg-sky-300'} transition-all`}></div>
+                              </div>
+                              <span className={`text-[8px] font-bold ${month === i ? 'text-sky-600' : 'text-slate-300'}`}>{i + 1}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* 연간 브랜드 비율 (도넛 스타일 바) */}
+                      <div className="jelly-card p-3 sm:p-4">
+                        <p className="text-[9px] sm:text-[10px] font-black text-slate-500 mb-3">브랜드 비율</p>
+                        <div className="h-4 rounded-full overflow-hidden flex bg-slate-100">
+                          {Object.entries(yBrandStats).sort((a,b) => b[1]-a[1]).map(([brand, count]) => (
+                            <div key={brand} className={`${brandColors[brand] || 'bg-blue-400'} transition-all`} style={{ width: `${(count / yearFiltered.length) * 100}%` }} title={`${brand}: ${count}건`}></div>
+                          ))}
+                        </div>
+                        <div className="flex flex-wrap gap-2 sm:gap-3 mt-2">
+                          {Object.entries(yBrandStats).sort((a,b) => b[1]-a[1]).map(([brand, count]) => (
+                            <span key={brand} className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-slate-500">
+                              <span className={`w-2 h-2 rounded-full ${brandColors[brand] || 'bg-blue-400'}`}></span>
+                              {brand} {Math.round((count / yearFiltered.length) * 100)}%
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </section>
             </div>
           );
@@ -824,7 +1057,7 @@ ${text}`
                   return (
                     <div key={item.id} onClick={() => setSelectedScheduleId(item.id)} className="jelly-card p-5 cursor-pointer active:scale-[0.98] transition-all">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${item.brand === '레뷰' ? 'bg-pink-50 text-pink-600 border-pink-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>{item.brand}</span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${getBrandBadge(item.brand)}`}>{item.brand}</span>
                         <span className="text-[10px] font-bold text-sky-500">{item.type}</span>
                         {dday && <span className={`px-2 py-0.5 rounded-full text-[10px] font-black text-white ${dday.color}`}>{dday.text}</span>}
                       </div>
@@ -916,7 +1149,7 @@ ${text}`
               <div className="flex justify-between items-start" ref={el => cardRefs.current[item.id] = el} data-card-id={item.id}>
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black border ${item.brand === '레뷰' ? 'bg-pink-50 text-pink-600 border-pink-100' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>{item.brand}</span>
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-black border ${getBrandBadge(item.brand)}`}>{item.brand}</span>
                     <span className="text-[10px] font-bold text-sky-500">{item.type}</span>
                     {dday && <span className={`px-2 py-0.5 rounded-full text-[10px] font-black text-white ${dday.color}`}>{dday.text}</span>}
                   </div>
@@ -1293,6 +1526,21 @@ ${text}`
             <div className="bg-sky-50/50 p-6 rounded-3xl border border-sky-100 space-y-4">
               <p className="text-[10px] font-black text-sky-400 uppercase tracking-widest">추출된 정보 미리보기</p>
               <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 shrink-0 text-[10px] font-bold text-sky-300">브랜드</div>
+                  <div className="flex-1 relative flex gap-2">
+                    {parsedData.brand === '기타(수기)' ? (
+                      <input className="w-full bg-sky-50 border border-sky-100 rounded-xl font-bold text-slate-700 outline-none text-sm py-2 px-3" placeholder="브랜드명 직접 입력" value={parsedData.brandCustom || ''} onChange={(e) => setParsedData({ ...parsedData, brandCustom: e.target.value })} />
+                    ) : (
+                      <select className="w-full bg-sky-50 border border-sky-100 rounded-xl font-bold text-slate-700 outline-none appearance-none text-sm py-2 px-3 pr-8" value={parsedData.brand || '리뷰노트'} onChange={(e) => setParsedData({ ...parsedData, brand: e.target.value, brandCustom: '' })}>{['리뷰노트', '강남맛집', '레뷰', '슈퍼멤버스', '디너의여왕', '기타(수기)'].map(t => <option key={t}>{t}</option>)}</select>
+                    )}
+                    {parsedData.brand === '기타(수기)' ? (
+                      <button onClick={() => setParsedData({ ...parsedData, brand: '리뷰노트', brandCustom: '' })} className="shrink-0 text-[9px] font-bold text-sky-500 bg-sky-50 border border-sky-100 rounded-xl px-2.5">목록</button>
+                    ) : (
+                      <ChevronRight size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-sky-400 pointer-events-none"/>
+                    )}
+                  </div>
+                </div>
                 <div className="flex items-center gap-3">
                   <div className="w-14 shrink-0 text-[10px] font-bold text-sky-300">카테고리</div>
                   <div className="flex-1 relative">
