@@ -32,7 +32,7 @@ const LoginPage = ({ onEmailSignIn, onEmailSignUp, onSocialLogin, onGuestLogin, 
     <div className="min-h-screen bg-sky-50 flex items-center justify-center p-6">
       <div className="max-w-md w-full jelly-card shadow-2xl p-10">
         {/* Logo */}
-        <div className="w-[100px] h-[100px] mx-auto flex items-center justify-center mb-6">
+        <div className="w-[120px] h-[120px] mx-auto flex items-center justify-center mb-6">
           <img src="/favicon.png" alt="Blue Review" className="w-full h-full object-contain filter drop-shadow-lg drop-shadow-sky-300 transition-transform hover:scale-105" />
         </div>
         <h1 className="text-3xl font-black text-slate-800 text-center leading-tight mb-2">

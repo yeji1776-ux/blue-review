@@ -5,7 +5,7 @@ import {
   CheckCircle2, Globe, Map as MapIcon, DollarSign, Sun, Star, X, Check,
   ChevronRight, Hash, Eye, Heart, Type, Gift, AlertTriangle, CalendarDays,
   Download, ChevronLeft, User, Save, Instagram, Pencil, Cloud, CloudRain, CloudSun, Snowflake,
-  Wallet, PenTool
+  Wallet, PenTool, Youtube, Mail
 } from 'lucide-react';
 import { domToPng } from 'modern-screenshot';
 import { useAuth } from './hooks/useAuth';
@@ -19,37 +19,61 @@ const BloggerMasterApp = () => {
   const [activeTab, setActiveTab] = useState('home');
 
   // --- 날씨 ---
-  const [weather, setWeather] = useState({ temp: '', desc: '', icon: 'sun', score: 95, tip: '채광이 완벽해요! 오늘 맛집 사진 최고입니다.' });
+  const [weather, setWeather] = useState({ temp: '', desc: '', icon: 'sun', score: 95, tip: '채광이 완벽해요! 오늘 맛집 사진 최고입니다.', location: '서울' });
+  const [locationPopup, setLocationPopup] = useState(false);
+
+  const fetchWeather = (loc, locationName) => {
+    fetch(`https://wttr.in/${loc}?format=j1`)
+      .then(r => r.json())
+      .then(data => {
+        const cur = data.current_condition?.[0];
+        if (!cur) return;
+        const code = parseInt(cur.weatherCode);
+        const temp = cur.temp_C;
+        const cloud = parseInt(cur.cloudcover);
+        const humidity = parseInt(cur.humidity);
+        let score = Math.max(20, 100 - cloud);
+        let tip, icon;
+        if (code === 113) { icon = 'sun'; tip = '채광이 완벽해요! 맛집 사진 찍기 최고의 날!'; }
+        else if (code <= 122) { icon = 'cloud-sun'; tip = '구름 살짝! 부드러운 자연광으로 촬영하세요.'; score = Math.max(60, score); }
+        else if (code <= 200) { icon = 'cloud'; tip = '흐린 날이지만 실내 촬영은 괜찮아요!'; score = Math.max(40, score); }
+        else if (code <= 399) { icon = 'rain'; tip = '비 오는 날, 아늑한 카페 촬영 추천!'; score = Math.max(30, score); }
+        else { icon = 'snow'; tip = '눈 오는 감성! 따뜻한 음식 촬영 추천!'; score = Math.max(35, score); }
+        if (humidity > 80) tip += ' 습도 높아요, 렌즈 김서림 주의!';
+        const name = locationName || data.nearest_area?.[0]?.areaName?.[0]?.value || '서울';
+        setWeather({ temp, desc: cur.weatherDesc?.[0]?.value || '', icon, score, tip, location: name });
+      })
+      .catch(() => {});
+  };
+
+  const requestLocation = (mode) => {
+    if (mode === 'always') localStorage.setItem('location_perm', 'always');
+    if (mode === 'session') sessionStorage.setItem('location_perm', 'session');
+    setLocationPopup(false);
+    if (mode === 'deny') return;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=ko`)
+          .then(r => r.json())
+          .then(geo => {
+            const addr = geo.address || {};
+            const locName = [addr.city || addr.state || '', addr.borough || addr.suburb || addr.county || ''].filter(Boolean).join(' ') || '현재 위치';
+            fetchWeather(`${latitude},${longitude}`, locName);
+          })
+          .catch(() => fetchWeather(`${latitude},${longitude}`));
+      },
+      () => {}
+    );
+  };
+
   useEffect(() => {
-    const fetchWeather = (loc) => {
-      fetch(`https://wttr.in/${loc}?format=j1`)
-        .then(r => r.json())
-        .then(data => {
-          const cur = data.current_condition?.[0];
-          if (!cur) return;
-          const code = parseInt(cur.weatherCode);
-          const temp = cur.temp_C;
-          const cloud = parseInt(cur.cloudcover);
-          const humidity = parseInt(cur.humidity);
-          let score = Math.max(20, 100 - cloud);
-          let tip, icon;
-          if (code === 113) { icon = 'sun'; tip = '채광이 완벽해요! 맛집 사진 찍기 최고의 날!'; }
-          else if (code <= 122) { icon = 'cloud-sun'; tip = '구름 살짝! 부드러운 자연광으로 촬영하세요.'; score = Math.max(60, score); }
-          else if (code <= 200) { icon = 'cloud'; tip = '흐린 날이지만 실내 촬영은 괜찮아요!'; score = Math.max(40, score); }
-          else if (code <= 399) { icon = 'rain'; tip = '비 오는 날, 아늑한 카페 촬영 추천!'; score = Math.max(30, score); }
-          else { icon = 'snow'; tip = '눈 오는 감성! 따뜻한 음식 촬영 추천!'; score = Math.max(35, score); }
-          if (humidity > 80) tip += ' 습도 높아요, 렌즈 김서림 주의!';
-          setWeather({ temp, desc: cur.weatherDesc?.[0]?.value || '', icon, score, tip });
-        })
-        .catch(() => {});
-    };
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => fetchWeather(`${pos.coords.latitude},${pos.coords.longitude}`),
-        () => fetchWeather('Seoul')
-      );
+    const alwaysPerm = localStorage.getItem('location_perm');
+    const sessionPerm = sessionStorage.getItem('location_perm');
+    if (alwaysPerm === 'always' || sessionPerm === 'session') {
+      requestLocation(alwaysPerm || sessionPerm);
     } else {
-      fetchWeather('Seoul');
+      fetchWeather('Seoul', '서울');
     }
   }, []);
 
@@ -62,6 +86,7 @@ const BloggerMasterApp = () => {
       instaId: '',
       reelsUrl: '',
       facebookUrl: '',
+      youtubeUrl: '',
       phone: '',
       email: '',
     };
@@ -460,7 +485,7 @@ ${text}`
       <header className="bg-white/80 backdrop-blur-md px-4 sm:px-6 pt-6 sm:pt-8 pb-4 sm:pb-6 sticky top-0 z-30 border-b border-sky-100">
         <div className="flex justify-between items-center mb-4 sm:mb-6">
           <div className="flex items-center gap-2 sm:gap-3">
-            <img src="/favicon.png" alt="logo" className="w-10 h-10 sm:w-12 sm:h-12 object-contain filter drop-shadow hover:scale-110 transition-transform cursor-pointer" onClick={() => setActiveTab('home')} />
+            <img src="/favicon.png" alt="logo" className="w-12 h-12 sm:w-14 sm:h-14 object-contain filter drop-shadow hover:scale-110 transition-transform cursor-pointer" onClick={() => setActiveTab('home')} />
             <div>
               <h2 className="text-xl sm:text-2xl font-black text-slate-900">Blue Review</h2>
               <p className="text-[10px] sm:text-[12px] font-bold text-slate-400 mt-0.5 hidden sm:block">블로거를 위한 협찬 관리</p>
@@ -469,7 +494,7 @@ ${text}`
           <div className="flex gap-1.5 sm:gap-2">
             <a href="https://adpost.naver.com/" target="_blank" className="flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 bg-emerald-50 text-emerald-600 rounded-xl sm:rounded-2xl border border-emerald-100 shadow-sm">
               <Wallet size={16} className="sm:w-[18px] sm:h-[18px]" />
-              <span className="text-[7px] sm:text-[9px] font-bold leading-tight">에드포스트</span>
+              <span className="text-[7px] sm:text-[9px] font-bold leading-tight">애드포스트</span>
             </a>
             <a href="https://blog.naver.com/" target="_blank" className="flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 bg-sky-50 text-sky-600 rounded-xl sm:rounded-2xl border border-sky-100 shadow-sm">
               <PenTool size={16} className="sm:w-[18px] sm:h-[18px]" />
@@ -481,7 +506,7 @@ ${text}`
             </button>
           </div>
         </div>
-        <div className={`p-4 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-lg flex items-center gap-3 sm:gap-4 ${
+        <button onClick={() => setLocationPopup(true)} className={`w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-lg flex items-center gap-3 sm:gap-4 text-left active:scale-[0.99] transition-all ${
           weather.icon === 'sun' ? 'bg-gradient-to-r from-blue-400 to-sky-400 shadow-sky-200' :
           weather.icon === 'cloud-sun' ? 'bg-gradient-to-r from-sky-400 to-slate-400 shadow-slate-200' :
           weather.icon === 'cloud' ? 'bg-gradient-to-r from-slate-400 to-slate-500 shadow-slate-200' :
@@ -495,7 +520,7 @@ ${text}`
           {weather.icon === 'snow' && <Snowflake size={28} className="shrink-0" />}
           <div className="flex-1 min-w-0">
             <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest opacity-80">
-              촬영 지수 {weather.score}% {weather.temp && `· ${weather.temp}°C`}
+              촬영 지수 {weather.score}% {weather.temp && `· ${weather.temp}°C`} · <MapPin size={10} className="inline -mt-0.5"/>{weather.location}
             </p>
             <p className="font-bold text-xs sm:text-base leading-snug">{weather.tip}</p>
           </div>
@@ -503,8 +528,38 @@ ${text}`
             <p className="text-lg sm:text-2xl font-black leading-tight">{new Date().getMonth() + 1}/{new Date().getDate()}</p>
             <p className="text-[10px] sm:text-xs font-bold opacity-80">{['일', '월', '화', '수', '목', '금', '토'][new Date().getDay()]}요일</p>
           </div>
-        </div>
+        </button>
       </header>
+
+      {/* 위치 동의 팝업 */}
+      {locationPopup && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setLocationPopup(false)}>
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-sky-100 rounded-2xl"><MapPin size={24} className="text-sky-500"/></div>
+              <div>
+                <h3 className="font-black text-slate-900">위치 정보 사용</h3>
+                <p className="text-[11px] text-slate-400 font-bold">정확한 날씨와 촬영 지수를 위해</p>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 leading-relaxed mb-5">
+              현재 위치 기반으로 정확한 날씨와 촬영 지수를 제공합니다. 위치 정보는 날씨 조회에만 사용되며 저장되지 않습니다.
+            </p>
+            <div className="space-y-2">
+              <button onClick={() => requestLocation('always')} className="w-full py-3.5 rounded-2xl bg-sky-500 text-white font-bold text-sm active:scale-95 transition-all shadow-md">
+                항상 허용
+              </button>
+              <button onClick={() => requestLocation('session')} className="w-full py-3.5 rounded-2xl bg-sky-50 text-sky-600 font-bold text-sm active:scale-95 transition-all border border-sky-100">
+                앱 사용 중에만 허용
+              </button>
+              <button onClick={() => { setLocationPopup(false); }} className="w-full py-3.5 rounded-2xl bg-slate-100 text-slate-400 font-bold text-sm active:scale-95 transition-all">
+                거부
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-300 text-center mt-3 font-bold">현재: {weather.location} 기준</p>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-10">
 
@@ -512,19 +567,21 @@ ${text}`
         {activeTab === 'home' && (
           <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
             {/* Quick Copy(왼) + 신청 문구(오) 2컬럼 */}
-            <div className="grid grid-cols-1 sm:grid-cols-[280px_1fr] gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-[300px_1fr] gap-4">
               {/* 왼쪽: Quick Copy */}
               <section className="jelly-card p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-[10px] font-black text-slate-400 uppercase">Quick Copy</h3>
                   <p className="text-[10px] font-bold text-slate-400">누르면 주소가 복사됩니다</p>
                 </div>
-                <div className="grid grid-cols-4 sm:grid-cols-2 gap-1 sm:gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-3 gap-1 sm:gap-2">
                   {[
-                    { label: '블로그', value: profile.blogUrl, icon: <Heart size={14}/>, bg: 'bg-sky-50 text-sky-500' },
-                    { label: '인스타', value: profile.instaId, icon: <Heart size={14}/>, bg: 'bg-pink-50 text-pink-500' },
-                    { label: '릴스', value: profile.reelsUrl, icon: <Heart size={14}/>, bg: 'bg-violet-50 text-violet-500' },
-                    { label: '페이스북', value: profile.facebookUrl, icon: <Heart size={14}/>, bg: 'bg-blue-50 text-blue-500' },
+                    { label: '블로그', value: profile.blogUrl, icon: <PenTool size={14}/>, bg: 'bg-sky-50 text-sky-500' },
+                    { label: '인스타', value: profile.instaId, icon: <Instagram size={14}/>, bg: 'bg-pink-50 text-pink-500' },
+                    { label: '릴스', value: profile.reelsUrl, icon: <Eye size={14}/>, bg: 'bg-violet-50 text-violet-500' },
+                    { label: '페이스북', value: profile.facebookUrl, icon: <Globe size={14}/>, bg: 'bg-blue-50 text-blue-500' },
+                    { label: '유튜브', value: profile.youtubeUrl, icon: <Youtube size={14}/>, bg: 'bg-rose-50 text-rose-500' },
+                    { label: '이메일', value: profile.email, icon: <Mail size={14}/>, bg: 'bg-emerald-50 text-emerald-500' },
                   ].map(({ label, value, icon, bg }) => (
                     <button key={label} onClick={() => copyToClipboard(value || `프로필에서 ${label}을 설정하세요`)} className="flex flex-col items-center gap-1 sm:gap-1.5 py-2 sm:py-3 rounded-xl sm:rounded-2xl active:bg-sky-50 transition-all">
                       <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${bg}`}>{icon}</div>
@@ -703,7 +760,7 @@ ${text}`
               </div>
 
               {/* 진행중 + 완료 2분할 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {/* 진행중 */}
                 <section>
                   <h4 className="text-xs font-black text-sky-500 mb-3 px-1 flex items-center gap-1"><Clock size={14}/> 진행중 ({mOngoing.length})</h4>
@@ -776,16 +833,16 @@ ${text}`
                   const maxType = Math.max(...Object.values(typeStats), 1);
 
                   return monthFiltered.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
                       {/* 브랜드별 */}
-                      <div className="jelly-card p-4">
+                      <div className="jelly-card p-3 sm:p-4">
                         <p className="text-[10px] font-black text-slate-500 mb-3">브랜드별</p>
                         <div className="space-y-2.5">
                           {Object.entries(brandStats).sort((a,b) => b[1]-a[1]).map(([brand, count]) => (
                             <div key={brand}>
                               <div className="flex justify-between items-center mb-1">
-                                <span className="text-[11px] font-bold text-slate-600">{brand}</span>
-                                <span className="text-[10px] font-black text-slate-400">{count}건</span>
+                                <span className="text-[10px] sm:text-[11px] font-bold text-slate-600">{brand}</span>
+                                <span className="text-[9px] sm:text-[10px] font-black text-slate-400">{count}건</span>
                               </div>
                               <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                                 <div className={`h-full rounded-full transition-all duration-500 ${brandColors[brand] || 'bg-blue-400'}`} style={{ width: `${(count / maxBrand) * 100}%` }}></div>
@@ -795,14 +852,14 @@ ${text}`
                         </div>
                       </div>
                       {/* 카테고리별 */}
-                      <div className="jelly-card p-4">
-                        <p className="text-[10px] font-black text-slate-500 mb-3">카테고리별</p>
+                      <div className="jelly-card p-3 sm:p-4">
+                        <p className="text-[9px] sm:text-[10px] font-black text-slate-500 mb-3">카테고리별</p>
                         <div className="space-y-2.5">
                           {Object.entries(typeStats).sort((a,b) => b[1]-a[1]).map(([type, count]) => (
                             <div key={type}>
                               <div className="flex justify-between items-center mb-1">
-                                <span className="text-[11px] font-bold text-slate-600">{type}</span>
-                                <span className="text-[10px] font-black text-slate-400">{count}건</span>
+                                <span className="text-[10px] sm:text-[11px] font-bold text-slate-600">{type}</span>
+                                <span className="text-[9px] sm:text-[10px] font-black text-slate-400">{count}건</span>
                               </div>
                               <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                                 <div className={`h-full rounded-full transition-all duration-500 ${typeColors[type] || 'bg-blue-400'}`} style={{ width: `${(count / maxType) * 100}%` }}></div>
@@ -1603,17 +1660,19 @@ ${text}`
               <h4 className="text-xs font-black text-slate-400">Quick Copy</h4>
               <p className="text-[10px] font-bold text-slate-400">버튼을 누르면 정보가 복사됩니다</p>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-3 gap-1.5 sm:gap-2">
               {[
                 { label: '블로그', value: profile.blogUrl },
                 { label: '인스타', value: profile.instaId },
                 { label: '릴스', value: profile.reelsUrl },
                 { label: '페이스북', value: profile.facebookUrl },
+                { label: '유튜브', value: profile.youtubeUrl },
+                { label: '이메일', value: profile.email },
               ].map(({ label, value }) => (
                 <button
                   key={label}
                   onClick={() => copyToClipboard(value || `${label}을 입력해주세요`)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-sky-50 text-xs font-bold text-slate-600 active:bg-sky-100 transition-all"
+                  className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-sky-50 text-[10px] sm:text-xs font-bold text-slate-600 active:bg-sky-100 transition-all"
                 >
                   <Copy size={12} /> {label}
                 </button>
@@ -1625,10 +1684,10 @@ ${text}`
             {[
               { key: 'blogUrl', label: '블로그 주소', placeholder: 'https://blog.naver.com/myid', icon: <Globe size={18} /> },
               { key: 'instaId', label: '인스타그램 ID', placeholder: '@my_instagram', icon: <Instagram size={18} /> },
-              { key: 'reelsUrl', label: '릴스/유튜브 주소', placeholder: 'https://www.instagram.com/reels/...', icon: <Eye size={18} /> },
+              { key: 'reelsUrl', label: '릴스 주소', placeholder: 'https://www.instagram.com/reels/...', icon: <Eye size={18} /> },
               { key: 'facebookUrl', label: '페이스북 주소', placeholder: 'https://facebook.com/mypage', icon: <ExternalLink size={18} /> },
-
-              { key: 'email', label: '이메일', placeholder: 'my@email.com', icon: <Heart size={18} /> },
+              { key: 'youtubeUrl', label: '유튜브 채널', placeholder: 'https://youtube.com/@mychannel', icon: <Youtube size={18} /> },
+              { key: 'email', label: '이메일', placeholder: 'my@email.com', icon: <Mail size={18} /> },
             ].map(({ key, label, placeholder, icon }) => (
               <div key={key} className="jelly-card p-4">
                 <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-2">
