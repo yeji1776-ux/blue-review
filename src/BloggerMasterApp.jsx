@@ -132,6 +132,25 @@ const BloggerMasterApp = () => {
     if (editingTemplateId === id) setEditingTemplateId(null);
   };
 
+  // --- 해시태그 모음 ---
+  const [hashtags, setHashtags] = useState(() => {
+    const saved = localStorage.getItem('blogger_hashtags');
+    return saved ? JSON.parse(saved) : {
+      '맛집': ['#맛집추천', '#맛집탐방', '#먹스타그램', '#맛스타그램', '#푸드스타그램', '#맛집리뷰', '#오늘뭐먹지', '#맛집블로거'],
+      '뷰티': ['#뷰티블로거', '#뷰티리뷰', '#화장품추천', '#스킨케어', '#데일리메이크업', '#뷰티스타그램'],
+      '카페': ['#카페추천', '#카페스타그램', '#카페투어', '#디저트맛집', '#브런치카페', '#감성카페'],
+      '숙박': ['#호텔추천', '#숙소추천', '#여행숙소', '#호캉스', '#펜션추천', '#숙박리뷰'],
+      '체험': ['#체험단', '#협찬', '#블로거체험단', '#리뷰어', '#체험단모집', '#인플루언서'],
+    };
+  });
+  const [editingHashtagCat, setEditingHashtagCat] = useState(null);
+  const [newHashtag, setNewHashtag] = useState('');
+
+  const saveHashtags = (updated) => {
+    setHashtags(updated);
+    localStorage.setItem('blogger_hashtags', JSON.stringify(updated));
+  };
+
   const [selectedScheduleId, setSelectedScheduleId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [textToCount, setTextToCount] = useState('');
@@ -566,6 +585,38 @@ ${text}`
         {/* 탭 메뉴 */}
         {activeTab === 'home' && (
           <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+            {/* 마감 알림 배너 */}
+            {(() => {
+              const urgent = schedules.filter(s => {
+                if (s.isDone) return false;
+                const diff = getDday(s.deadline);
+                return diff !== null && diff >= 0 && diff <= 3;
+              }).sort((a, b) => getDday(a.deadline) - getDday(b.deadline));
+              if (urgent.length === 0) return null;
+              return (
+                <div className="space-y-2">
+                  {urgent.map(item => {
+                    const d = getDday(item.deadline);
+                    const isToday = d === 0;
+                    return (
+                      <button key={item.id} onClick={() => setSelectedScheduleId(item.id)} className={`w-full flex items-center gap-3 p-3 sm:p-4 rounded-2xl text-left active:scale-[0.99] transition-all ${isToday ? 'bg-rose-50 border border-rose-200 shadow-rose-100' : 'bg-amber-50 border border-amber-200 shadow-amber-100'} shadow-md`}>
+                        <div className={`p-2 rounded-xl ${isToday ? 'bg-rose-100' : 'bg-amber-100'}`}>
+                          <AlertTriangle size={18} className={isToday ? 'text-rose-500' : 'text-amber-500'} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-[10px] font-black ${isToday ? 'text-rose-500' : 'text-amber-500'}`}>
+                            {isToday ? '오늘 마감!' : `D-${d} 마감 임박`}
+                          </p>
+                          <p className="text-sm font-bold text-slate-700 truncate">{item.title}</p>
+                        </div>
+                        <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black border ${getBrandBadge(item.brand)}`}>{item.brand}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
             {/* Quick Copy(왼) + 신청 문구(오) 2컬럼 */}
             <div className="grid grid-cols-1 sm:grid-cols-[300px_1fr] gap-4">
               {/* 왼쪽: Quick Copy */}
@@ -989,6 +1040,74 @@ ${text}`
                   <p className="text-[10px] font-black text-slate-400 mb-1">공백 제외</p>
                   <p className="text-2xl font-black text-slate-800">{textToCount.replace(/\s+/g, '').length}</p>
                 </div>
+              </div>
+            </section>
+
+            {/* 해시태그 모음 */}
+            <section className="jelly-card p-5 sm:p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-black text-xl text-slate-800 flex items-center gap-2"><Hash size={24} className="text-sky-500" /> 해시태그 모음</h3>
+                <span className="text-[10px] font-bold text-slate-400">카테고리별 저장 & 복사</span>
+              </div>
+              <div className="space-y-4">
+                {Object.entries(hashtags).map(([cat, tags]) => {
+                  const catColors = { '맛집': 'border-orange-200 bg-orange-50', '뷰티': 'border-rose-200 bg-rose-50', '카페': 'border-amber-200 bg-amber-50', '숙박': 'border-indigo-200 bg-indigo-50', '체험': 'border-teal-200 bg-teal-50' };
+                  const dotColors = { '맛집': 'bg-orange-400', '뷰티': 'bg-rose-400', '카페': 'bg-amber-400', '숙박': 'bg-indigo-400', '체험': 'bg-teal-400' };
+                  return (
+                    <div key={cat} className={`rounded-2xl border p-3 sm:p-4 ${catColors[cat] || 'border-slate-200 bg-slate-50'}`}>
+                      <div className="flex items-center justify-between mb-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className={`w-2 h-2 rounded-full ${dotColors[cat] || 'bg-slate-400'}`}></span>
+                          <h4 className="text-xs font-black text-slate-700">{cat}</h4>
+                          <span className="text-[9px] font-bold text-slate-400">{tags.length}개</span>
+                        </div>
+                        <div className="flex gap-1.5">
+                          <button onClick={() => { copyToClipboard(tags.join(' ')); }} className="text-[9px] font-bold text-sky-500 bg-white px-2 py-1 rounded-lg border border-sky-100 active:scale-95 transition-all">전체 복사</button>
+                          <button onClick={() => setEditingHashtagCat(editingHashtagCat === cat ? null : cat)} className="text-[9px] font-bold text-slate-400 bg-white px-2 py-1 rounded-lg border border-slate-100 active:scale-95 transition-all">
+                            {editingHashtagCat === cat ? '완료' : '편집'}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {tags.map((tag, i) => (
+                          <button
+                            key={i}
+                            onClick={() => editingHashtagCat === cat
+                              ? saveHashtags({ ...hashtags, [cat]: tags.filter((_, idx) => idx !== i) })
+                              : copyToClipboard(tag)
+                            }
+                            className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all active:scale-95 ${editingHashtagCat === cat ? 'bg-rose-100 text-rose-500 border border-rose-200' : 'bg-white text-slate-600 border border-slate-100'}`}
+                          >
+                            {editingHashtagCat === cat ? `${tag} ✕` : tag}
+                          </button>
+                        ))}
+                      </div>
+                      {editingHashtagCat === cat && (
+                        <div className="flex gap-2 mt-2.5">
+                          <input
+                            className="flex-1 px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-sky-300"
+                            placeholder="#해시태그 입력"
+                            value={newHashtag}
+                            onChange={e => setNewHashtag(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter' && newHashtag.trim()) {
+                                const tag = newHashtag.trim().startsWith('#') ? newHashtag.trim() : `#${newHashtag.trim()}`;
+                                saveHashtags({ ...hashtags, [cat]: [...tags, tag] });
+                                setNewHashtag('');
+                              }
+                            }}
+                          />
+                          <button onClick={() => {
+                            if (!newHashtag.trim()) return;
+                            const tag = newHashtag.trim().startsWith('#') ? newHashtag.trim() : `#${newHashtag.trim()}`;
+                            saveHashtags({ ...hashtags, [cat]: [...tags, tag] });
+                            setNewHashtag('');
+                          }} className="px-3 py-2 bg-sky-500 text-white rounded-xl text-xs font-bold active:scale-95 transition-all">추가</button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </section>
           </div>
@@ -1721,6 +1840,36 @@ ${text}`
             <Save size={20} />
             {profileSaved ? '저장 완료!' : '프로필 저장'}
           </button>
+
+          {/* 포트폴리오 - 완료한 협찬 */}
+          <section className="mt-8">
+            <div className="flex items-center justify-between mb-4 px-1">
+              <h3 className="text-sm font-black text-slate-400 uppercase tracking-tighter flex items-center gap-2"><Star size={16}/> Portfolio</h3>
+              <span className="text-[10px] font-bold text-slate-400">{schedules.filter(s => s.isDone).length}건 완료</span>
+            </div>
+            {schedules.filter(s => s.isDone).length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {schedules.filter(s => s.isDone).map(item => (
+                  <button key={item.id} onClick={() => setSelectedScheduleId(item.id)} className="jelly-card p-3 sm:p-4 text-left active:scale-[0.98] transition-all">
+                    <span className={`inline-block px-1.5 py-0.5 rounded-full text-[8px] font-black border mb-2 ${getBrandBadge(item.brand)}`}>{item.brand}</span>
+                    <p className="text-xs sm:text-sm font-bold text-slate-700 truncate mb-1">{item.title}</p>
+                    <p className="text-[10px] font-bold text-sky-500">{item.type}</p>
+                    <div className="flex items-center gap-1 mt-2">
+                      <CheckCircle2 size={12} className="text-emerald-400"/>
+                      <span className="text-[9px] font-bold text-emerald-400">리뷰 완료</span>
+                    </div>
+                    {item.reviewUrl && (
+                      <a href={item.reviewUrl} target="_blank" className="flex items-center gap-1 mt-1 text-[9px] font-bold text-sky-400" onClick={e => e.stopPropagation()}>
+                        <ExternalLink size={10}/> 리뷰 보기
+                      </a>
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="jelly-card p-8 text-center text-slate-300 text-sm font-bold">완료한 협찬이 없습니다</div>
+            )}
+          </section>
         </main>
       )}
 
