@@ -158,6 +158,7 @@ const BloggerMasterApp = () => {
   const [isParsing, setIsParsing] = useState(false);
   const [confirmDoneId, setConfirmDoneId] = useState(null); // 리뷰 등록 확인 팝업용
   const [confirmVisitDate, setConfirmVisitDate] = useState(null); // { id, date } 체험일 등록 확인 팝업용
+  const [notePopupId, setNotePopupId] = useState(null); // 체험 느낌 메모 팝업
   const [editingScheduleId, setEditingScheduleId] = useState(null); // 스케줄 수정 모드
 
   // 체험단 일정 데이터
@@ -1340,16 +1341,21 @@ ${text}`
                     {dday && <span className={`px-2 py-0.5 rounded-full text-[10px] font-black text-white ${dday.color}`}>{dday.text}</span>}
                   </div>
                   <h3 className={`text-xl font-black ${item.isDone ? 'text-slate-300 line-through' : 'text-slate-800'}`}>{item.title}</h3>
-                  {item.visitDate ? (
-                    <p className="text-[11px] font-bold text-sky-500 mt-1.5 flex items-center gap-1">
-                      <CalendarDays size={11}/> {item.visitDate} {item.visitSetTime && `· ${item.visitSetTime}`}
-                      <button onClick={() => setConfirmVisitDate({ id: item.id, date: item.visitDate, time: item.visitSetTime || '' })} className="ml-1 text-sky-400 underline">변경</button>
-                    </p>
-                  ) : (
-                    <button onClick={() => setConfirmVisitDate({ id: item.id, date: '', time: '' })} className="mt-1.5 text-[11px] font-black text-amber-700 flex items-center gap-1 bg-amber-300 px-4 py-2 rounded-full shadow-md shadow-amber-200 active:scale-95 transition-all">
-                      <CalendarDays size={12}/> 체험일 설정
+                  <div className="flex items-center gap-2 mt-1.5">
+                    {item.visitDate ? (
+                      <p className="text-[11px] font-bold text-sky-500 flex items-center gap-1">
+                        <CalendarDays size={11}/> {item.visitDate} {item.visitSetTime && `· ${item.visitSetTime}`}
+                        <button onClick={() => setConfirmVisitDate({ id: item.id, date: item.visitDate, time: item.visitSetTime || '' })} className="ml-1 text-sky-400 underline">변경</button>
+                      </p>
+                    ) : (
+                      <button onClick={() => setConfirmVisitDate({ id: item.id, date: '', time: '' })} className="text-[11px] font-black text-white flex items-center gap-1 bg-sky-500 px-4 py-2 rounded-full shadow-md shadow-sky-200 active:scale-95 transition-all">
+                        <CalendarDays size={12}/> 체험일 설정
+                      </button>
+                    )}
+                    <button onClick={() => setNotePopupId(item.id)} className={`text-[11px] font-black flex items-center gap-1 px-4 py-2 rounded-full shadow-md active:scale-95 transition-all ${item.experienceNote ? 'bg-violet-500 text-white shadow-violet-200' : 'bg-violet-100 text-violet-500 shadow-violet-100'}`}>
+                      <PenTool size={12}/> {item.experienceNote ? '메모 보기' : '체험 메모'}
                     </button>
-                  )}
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => setEditingScheduleId(editingScheduleId === item.id ? null : item.id)} className={`p-2 rounded-xl active:scale-90 transition-all ${editingScheduleId === item.id ? 'bg-sky-500 text-white' : 'bg-sky-50 text-sky-400'}`}><Pencil size={16}/></button>
@@ -1365,7 +1371,7 @@ ${text}`
                   <div className="flex items-center gap-3">
                     <div className="w-14 shrink-0 text-[10px] font-bold text-sky-400">카테고리</div>
                     <select className="flex-1 bg-white px-3 py-2 rounded-xl ring-1 ring-sky-100 focus:ring-2 focus:ring-sky-300 outline-none text-sm font-bold text-slate-700" value={item.type || '맛집'} onChange={(e) => updateField('type', e.target.value)}>
-                      {['맛집', '기자단', '제품', '헤어', '뷰티', '운동', '기타'].map(t => <option key={t}>{t}</option>)}
+                      {['맛집', '카페', '숙박', '체험', '기자단', '제품', '헤어', '뷰티', '운동', '기타'].map(t => <option key={t}>{t}</option>)}
                     </select>
                   </div>
                   {[
@@ -1567,6 +1573,51 @@ ${text}`
         );
       })()}
 
+      {/* --- 체험 느낌 메모 팝업 --- */}
+      {notePopupId && (() => {
+        const noteItem = schedules.find(s => s.id === notePopupId);
+        if (!noteItem) return null;
+        return (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setNotePopupId(null)}>
+            <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-violet-100 rounded-xl"><PenTool size={18} className="text-violet-500"/></div>
+                  <div>
+                    <h3 className="font-black text-slate-900 text-sm">체험 느낌 메모</h3>
+                    <p className="text-[10px] text-slate-400 font-bold">{noteItem.title}</p>
+                  </div>
+                </div>
+                <button onClick={() => setNotePopupId(null)} className="p-2 bg-slate-100 rounded-full"><X size={16}/></button>
+              </div>
+              <textarea
+                className="w-full px-4 py-3 rounded-2xl bg-violet-50/50 ring-1 ring-violet-100 focus:ring-2 focus:ring-violet-300 outline-none text-sm leading-relaxed resize-none h-40 transition-all"
+                placeholder="분위기, 맛, 서비스, 사진 포인트 등 자유롭게 메모하세요!"
+                value={noteItem.experienceNote || ''}
+                onChange={(e) => setSchedules(schedules.map(s => s.id === notePopupId ? { ...s, experienceNote: e.target.value } : s))}
+              />
+              <div className="flex gap-2 mt-4">
+                <button onClick={() => { localStorage.setItem('blogSchedules', JSON.stringify(schedules)); setNotePopupId(null); }} className="flex-1 bg-violet-500 text-white py-3 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                  <Save size={14}/> 저장
+                </button>
+                <button onClick={() => copyToClipboard(noteItem.experienceNote || '')} className="flex-1 bg-violet-50 text-violet-600 py-3 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 border border-violet-100">
+                  <Copy size={14}/> 복사
+                </button>
+                <button onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({ title: `${noteItem.title} 체험 메모`, text: noteItem.experienceNote || '' });
+                  } else {
+                    copyToClipboard(noteItem.experienceNote || '');
+                  }
+                }} className="flex-1 bg-violet-50 text-violet-600 py-3 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 border border-violet-100">
+                  <ExternalLink size={14}/> 공유
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* --- 리뷰 등록 확인 팝업 --- */}
       {confirmDoneId && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
@@ -1730,7 +1781,7 @@ ${text}`
                 <div className="flex items-center gap-3">
                   <div className="w-14 shrink-0 text-[10px] font-bold text-sky-300">카테고리</div>
                   <div className="flex-1 relative">
-                    <select className="w-full bg-sky-50 border border-sky-100 rounded-xl font-bold text-slate-700 outline-none appearance-none text-sm py-2 px-3 pr-8" value={parsedData.type} onChange={(e) => setParsedData({ ...parsedData, type: e.target.value })}>{['맛집', '기자단', '제품', '헤어', '뷰티', '운동', '기타'].map(t => <option key={t}>{t}</option>)}</select>
+                    <select className="w-full bg-sky-50 border border-sky-100 rounded-xl font-bold text-slate-700 outline-none appearance-none text-sm py-2 px-3 pr-8" value={parsedData.type} onChange={(e) => setParsedData({ ...parsedData, type: e.target.value })}>{['맛집', '카페', '숙박', '체험', '기자단', '제품', '헤어', '뷰티', '운동', '기타'].map(t => <option key={t}>{t}</option>)}</select>
                     <ChevronRight size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-sky-400 pointer-events-none"/>
                   </div>
                 </div>
@@ -1835,41 +1886,12 @@ ${text}`
 
           <button
             onClick={saveProfile}
-            className="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold text-lg hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+            className="w-full bg-slate-900 text-white py-3 rounded-2xl font-bold text-sm hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
           >
             <Save size={20} />
             {profileSaved ? '저장 완료!' : '프로필 저장'}
           </button>
 
-          {/* 포트폴리오 - 완료한 협찬 */}
-          <section className="mt-8">
-            <div className="flex items-center justify-between mb-4 px-1">
-              <h3 className="text-sm font-black text-slate-400 uppercase tracking-tighter flex items-center gap-2"><Star size={16}/> Portfolio</h3>
-              <span className="text-[10px] font-bold text-slate-400">{schedules.filter(s => s.isDone).length}건 완료</span>
-            </div>
-            {schedules.filter(s => s.isDone).length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {schedules.filter(s => s.isDone).map(item => (
-                  <button key={item.id} onClick={() => setSelectedScheduleId(item.id)} className="jelly-card p-3 sm:p-4 text-left active:scale-[0.98] transition-all">
-                    <span className={`inline-block px-1.5 py-0.5 rounded-full text-[8px] font-black border mb-2 ${getBrandBadge(item.brand)}`}>{item.brand}</span>
-                    <p className="text-xs sm:text-sm font-bold text-slate-700 truncate mb-1">{item.title}</p>
-                    <p className="text-[10px] font-bold text-sky-500">{item.type}</p>
-                    <div className="flex items-center gap-1 mt-2">
-                      <CheckCircle2 size={12} className="text-emerald-400"/>
-                      <span className="text-[9px] font-bold text-emerald-400">리뷰 완료</span>
-                    </div>
-                    {item.reviewUrl && (
-                      <a href={item.reviewUrl} target="_blank" className="flex items-center gap-1 mt-1 text-[9px] font-bold text-sky-400" onClick={e => e.stopPropagation()}>
-                        <ExternalLink size={10}/> 리뷰 보기
-                      </a>
-                    )}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="jelly-card p-8 text-center text-slate-300 text-sm font-bold">완료한 협찬이 없습니다</div>
-            )}
-          </section>
         </main>
       )}
 
