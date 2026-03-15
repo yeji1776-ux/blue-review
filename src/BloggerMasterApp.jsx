@@ -145,6 +145,10 @@ const BloggerMasterApp = () => {
   });
   const [editingHashtagCat, setEditingHashtagCat] = useState(null);
   const [newHashtag, setNewHashtag] = useState('');
+  const [newCatName, setNewCatName] = useState('');
+  const [showAddCat, setShowAddCat] = useState(false);
+  const [renamingCat, setRenamingCat] = useState(null);
+  const [renameCatValue, setRenameCatValue] = useState('');
 
   const saveHashtags = (updated) => {
     setHashtags(updated);
@@ -688,7 +692,7 @@ ${text}`
 
             {/* 일정 리스트 - 브랜드별 분할 */}
             <section>
-              <div className="flex items-center justify-between mb-4 px-1">
+              <div className="flex items-center gap-3 mb-4 px-1">
                 <h3 className="text-sm font-black text-slate-400 uppercase tracking-tighter">Schedules</h3>
                 <button onClick={() => setActiveTab('scheduleManage')} className="flex items-center gap-1 text-[10px] font-bold text-sky-500 active:scale-95 transition-all">
                   전체 관리 <ChevronRight size={12}/>
@@ -1048,8 +1052,33 @@ ${text}`
             <section className="jelly-card p-5 sm:p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-black text-xl text-slate-800 flex items-center gap-2"><Hash size={24} className="text-sky-500" /> 해시태그 모음</h3>
-                <span className="text-[10px] font-bold text-slate-400">카테고리별 저장 & 복사</span>
+                <button onClick={() => setShowAddCat(!showAddCat)} className="text-[10px] font-bold text-sky-500 bg-sky-50 px-3 py-1.5 rounded-lg border border-sky-100 active:scale-95 transition-all">
+                  {showAddCat ? '닫기' : '+ 분류 추가'}
+                </button>
               </div>
+              {showAddCat && (
+                <div className="flex gap-2 mb-4">
+                  <input
+                    className="flex-1 px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-sky-300"
+                    placeholder="새 분류명 입력 (예: 운동, 여행...)"
+                    value={newCatName}
+                    onChange={e => setNewCatName(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && newCatName.trim() && !hashtags[newCatName.trim()]) {
+                        saveHashtags({ ...hashtags, [newCatName.trim()]: [] });
+                        setNewCatName('');
+                        setShowAddCat(false);
+                      }
+                    }}
+                  />
+                  <button onClick={() => {
+                    if (!newCatName.trim() || hashtags[newCatName.trim()]) return;
+                    saveHashtags({ ...hashtags, [newCatName.trim()]: [] });
+                    setNewCatName('');
+                    setShowAddCat(false);
+                  }} className="px-4 py-2.5 bg-sky-500 text-white rounded-xl text-xs font-bold active:scale-95 transition-all whitespace-nowrap">추가</button>
+                </div>
+              )}
               <div className="space-y-4">
                 {Object.entries(hashtags).map(([cat, tags]) => {
                   const catColors = { '맛집': 'border-orange-200 bg-orange-50', '뷰티': 'border-rose-200 bg-rose-50', '카페': 'border-amber-200 bg-amber-50', '숙박': 'border-indigo-200 bg-indigo-50', '체험': 'border-teal-200 bg-teal-50' };
@@ -1059,11 +1088,48 @@ ${text}`
                       <div className="flex items-center justify-between mb-2.5">
                         <div className="flex items-center gap-2">
                           <span className={`w-2 h-2 rounded-full ${dotColors[cat] || 'bg-slate-400'}`}></span>
-                          <h4 className="text-xs font-black text-slate-700">{cat}</h4>
+                          {renamingCat === cat ? (
+                            <input
+                              className="px-2 py-0.5 rounded-lg bg-white border border-sky-300 text-xs font-bold outline-none w-20"
+                              value={renameCatValue}
+                              onChange={e => setRenameCatValue(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' && renameCatValue.trim() && renameCatValue.trim() !== cat && !hashtags[renameCatValue.trim()]) {
+                                  const entries = Object.entries(hashtags).map(([k, v]) => k === cat ? [renameCatValue.trim(), v] : [k, v]);
+                                  saveHashtags(Object.fromEntries(entries));
+                                  setRenamingCat(null);
+                                }
+                                if (e.key === 'Escape') setRenamingCat(null);
+                              }}
+                              onBlur={() => {
+                                if (renameCatValue.trim() && renameCatValue.trim() !== cat && !hashtags[renameCatValue.trim()]) {
+                                  const entries = Object.entries(hashtags).map(([k, v]) => k === cat ? [renameCatValue.trim(), v] : [k, v]);
+                                  saveHashtags(Object.fromEntries(entries));
+                                }
+                                setRenamingCat(null);
+                              }}
+                              autoFocus
+                            />
+                          ) : (
+                            <h4 className="text-xs font-black text-slate-700">{cat}</h4>
+                          )}
                           <span className="text-[9px] font-bold text-slate-400">{tags.length}개</span>
                         </div>
                         <div className="flex gap-1.5">
                           <button onClick={() => { copyToClipboard(tags.join(' ')); }} className="text-[9px] font-bold text-sky-500 bg-white px-2 py-1 rounded-lg border border-sky-100 active:scale-95 transition-all">전체 복사</button>
+                          {editingHashtagCat === cat && (
+                            <>
+                              <button onClick={() => { setRenamingCat(cat); setRenameCatValue(cat); }} className="text-[9px] font-bold text-amber-500 bg-white px-2 py-1 rounded-lg border border-amber-100 active:scale-95 transition-all">이름 변경</button>
+                              <button onClick={() => {
+                                if (window.confirm(`'${cat}' 분류를 삭제할까요?`)) {
+                                  const updated = { ...hashtags };
+                                  delete updated[cat];
+                                  saveHashtags(updated);
+                                  setEditingHashtagCat(null);
+                                }
+                              }} className="text-[9px] font-bold text-rose-500 bg-white px-2 py-1 rounded-lg border border-rose-100 active:scale-95 transition-all">분류 삭제</button>
+                            </>
+                          )}
                           <button onClick={() => setEditingHashtagCat(editingHashtagCat === cat ? null : cat)} className="text-[9px] font-bold text-slate-400 bg-white px-2 py-1 rounded-lg border border-slate-100 active:scale-95 transition-all">
                             {editingHashtagCat === cat ? '완료' : '편집'}
                           </button>
@@ -1896,6 +1962,19 @@ ${text}`
       )}
 
       {/* 탭 바 */}
+      {/* 하단 제작자 & 경고문 */}
+      <footer className="text-center py-6 pb-28 sm:pb-32 space-y-2">
+        <p className="text-[10px] text-slate-300 leading-relaxed">본 앱은 협찬 일정 관리를 위한 개인 보조 도구이며, 각 플랫폼의 공식 서비스가 아닙니다.<br/>협찬 콘텐츠 작성 시 공정위 광고 표시 가이드라인을 준수해주세요.</p>
+        <div className="flex items-center justify-center gap-3">
+          <a href="/guide.html" className="text-[10px] text-slate-400 hover:text-sky-500 transition-colors">사용 가이드</a>
+          <span className="text-slate-300 text-[10px]">·</span>
+          <a href="/terms.html" className="text-[10px] text-slate-400 hover:text-sky-500 transition-colors">이용약관</a>
+          <span className="text-slate-300 text-[10px]">·</span>
+          <a href="/privacy.html" className="text-[10px] text-slate-400 hover:text-sky-500 transition-colors">개인정보처리방침</a>
+        </div>
+        <p className="text-[10px] text-slate-300">© 2026 Blue Review · 제작자 <span className="font-bold text-slate-400">hare_table</span></p>
+      </footer>
+
       <nav className="fixed bottom-4 sm:bottom-10 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-xl px-5 sm:px-6 py-4 sm:py-5 rounded-full flex items-center gap-5 sm:gap-6 shadow-[0_25px_50px_rgba(0,0,0,0.3)] z-40 border border-white/10">
         <button onClick={() => setActiveTab('home')} className={`transition-all ${activeTab === 'home' ? 'text-white scale-110' : 'text-slate-500'}`}><ClipboardList size={20} /></button>
         <button onClick={() => setActiveTab('calendar')} className={`transition-all ${activeTab === 'calendar' ? 'text-white scale-110' : 'text-slate-500'}`}><Calendar size={20} /></button>

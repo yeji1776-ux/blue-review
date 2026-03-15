@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blue Review - 협찬 블로거를 위한 올인원 관리 도구</title>
+  <meta name="description" content="AI가 협찬 정보를 자동 추출하고, 마감일 관리부터 해시태그 복사까지. 협찬 블로거의 모든 것을 한 곳에서." />
+  <link rel="icon" href="/favicon.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            }
+          },
+          fontFamily: {
+            sans: ['"Pretendard"', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+          },
+          animation: {
+            'fade-up': 'fadeUp 0.7s ease-out forwards',
+            'fade-in': 'fadeIn 0.6s ease-out forwards',
+            'float': 'float 6s ease-in-out infinite',
+            'pulse-soft': 'pulseSoft 3s ease-in-out infinite',
+            'slide-right': 'slideRight 0.8s ease-out forwards',
+          },
+          keyframes: {
+            fadeUp: {
+              '0%': { opacity: '0', transform: 'translateY(30px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-12px)' },
+            },
+            pulseSoft: {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0.7' },
+            },
+            slideRight: {
+              '0%': { opacity: '0', transform: 'translateX(-30px)' },
+              '100%': { opacity: '1', transform: 'translateX(0)' },
+            },
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet" />
+  <style>
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .glass-dark {
+      background: rgba(30, 58, 138, 0.15);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(59, 130, 246, 0.15);
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #2563eb 0%, #7c3aed 50%, #3b82f6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-gradient {
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 25%, #e0e7ff 50%, #ede9fe 75%, #eff6ff 100%);
+    }
+
+    .feature-card {
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .feature-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 40px -12px rgba(37, 99, 235, 0.18);
+    }
+
+    .blob {
+      border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+      animation: morph 8s ease-in-out infinite;
+    }
+    @keyframes morph {
+      0%, 100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+      25% { border-radius: 58% 42% 75% 25% / 76% 46% 54% 24%; }
+      50% { border-radius: 50% 50% 33% 67% / 55% 27% 73% 45%; }
+      75% { border-radius: 33% 67% 58% 42% / 63% 68% 32% 37%; }
+    }
+
+    .scroll-reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .scroll-reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .cta-glow {
+      box-shadow: 0 0 30px rgba(37, 99, 235, 0.35), 0 0 60px rgba(37, 99, 235, 0.1);
+    }
+    .cta-glow:hover {
+      box-shadow: 0 0 40px rgba(37, 99, 235, 0.5), 0 0 80px rgba(37, 99, 235, 0.2);
+    }
+
+    .nav-scrolled {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    @media (max-width: 640px) {
+      .hero-title { font-size: 2.2rem !important; line-height: 1.2 !important; }
+    }
+  </style>
+</head>
+<body class="bg-white text-gray-900 antialiased overflow-x-hidden">
+
+  <!-- ============ NAV ============ -->
+  <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 sm:h-18">
+        <a href="#" class="flex items-center gap-2.5 group">
+          <img src="/favicon.png" alt="Blue Review" class="w-8 h-8 rounded-lg shadow-sm group-hover:scale-110 transition-transform" />
+          <span class="text-lg font-bold text-brand-700 tracking-tight">Blue Review</span>
+        </a>
+        <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
+          <a href="#features" class="hover:text-brand-600 transition-colors">주요 기능</a>
+          <a href="#how" class="hover:text-brand-600 transition-colors">사용 방법</a>
+          <a href="#recommend" class="hover:text-brand-600 transition-colors">추천 대상</a>
+          <a href="#pricing" class="hover:text-brand-600 transition-colors">요금제</a>
+        </div>
+        <a href="https://blog-app-psi-neon.vercel.app" target="_blank" rel="noopener"
+           class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-5 py-2.5 rounded-full transition-all hover:shadow-lg hover:shadow-brand-600/25 active:scale-95">
+          무료로 시작하기
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero-gradient relative min-h-screen flex items-center pt-20 pb-16 overflow-hidden">
+    <!-- decorative blobs -->
+    <div class="absolute top-20 -left-32 w-96 h-96 bg-blue-300/20 blob animate-float" aria-hidden="true"></div>
+    <div class="absolute bottom-10 -right-24 w-80 h-80 bg-violet-300/20 blob animate-float" style="animation-delay: -3s;" aria-hidden="true"></div>
+    <div class="absolute top-1/3 right-1/4 w-48 h-48 bg-sky-200/30 rounded-full blur-3xl animate-pulse-soft" aria-hidden="true"></div>
+
+    <div class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+      <!-- text -->
+      <div class="flex-1 text-center lg:text-left">
+        <div class="inline-flex items-center gap-2 bg-white/60 backdrop-blur-sm border border-brand-200/60 rounded-full px-4 py-1.5 text-sm font-medium text-brand-700 mb-6 animate-fade-in">
+          <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+          협찬 블로거 필수 도구
+        </div>
+        <h1 class="hero-title text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight mb-6 animate-fade-up">
+          협찬 관리,<br/>
+          <span class="gradient-text">AI가 알아서</span><br/>
+          정리해 드립니다
+        </h1>
+        <p class="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-lg mx-auto lg:mx-0 mb-8 animate-fade-up" style="animation-delay: 0.15s;">
+          복사 붙여넣기 한 번이면 업체명, 주소, 미션, 마감일까지 자동 추출.
+          스케줄 관리부터 해시태그 복사까지, 블로거의 모든 워크플로우를 한 곳에서.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-up" style="animation-delay: 0.3s;">
+          <a href="https://blog-app-psi-neon.vercel.app" target="_blank" rel="noopener"
+             class="cta-glow inline-flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-bold text-lg px-8 py-4 rounded-2xl transition-all active:scale-95">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            지금 바로 사용하기
+          </a>
+          <a href="#features"
+             class="inline-flex items-center justify-center gap-2 bg-white/80 hover:bg-white text-brand-700 font-semibold text-lg px-8 py-4 rounded-2xl border border-brand-200 transition-all hover:shadow-md active:scale-95">
+            기능 살펴보기
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </a>
+        </div>
+        <p class="mt-5 text-sm text-gray-400 animate-fade-in" style="animation-delay: 0.5s;">
+          회원가입 없이 바로 사용 &middot; 완전 무료 &middot; PWA 지원
+        </p>
+      </div>
+
+      <!-- hero visual -->
+      <div class="flex-1 relative animate-fade-up" style="animation-delay: 0.25s;">
+        <div class="relative mx-auto w-72 sm:w-80 lg:w-[360px]">
+          <!-- phone frame -->
+          <div class="relative bg-gray-900 rounded-[3rem] p-3 shadow-2xl shadow-brand-900/20 animate-float">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-900 rounded-b-2xl z-10"></div>
+            <div class="bg-gradient-to-br from-brand-50 via-white to-blue-50 rounded-[2.4rem] overflow-hidden aspect-[9/18] flex flex-col items-center justify-center p-6 text-center">
+              <img src="/favicon.png" alt="" class="w-16 h-16 mb-4 rounded-2xl shadow-lg" />
+              <div class="text-xl font-bold text-brand-800 mb-1">Blue Review</div>
+              <div class="text-xs text-gray-500 mb-6">by hare_table</div>
+              <!-- mini feature cards -->
+              <div class="w-full space-y-2.5">
+                <div class="bg-white/90 rounded-xl px-4 py-3 shadow-sm border border-gray-100 flex items-center gap-3 text-left">
+                  <span class="text-2xl">🤖</span>
+                  <div>
+                    <div class="text-xs font-bold text-gray-800">AI 스마트 파서</div>
+                    <div class="text-[10px] text-gray-400">자동 정보 추출</div>
+                  </div>
+                </div>
+                <div class="bg-white/90 rounded-xl px-4 py-3 shadow-sm border border-gray-100 flex items-center gap-3 text-left">
+                  <span class="text-2xl">📅</span>
+                  <div>
+                    <div class="text-xs font-bold text-gray-800">캘린더 통합</div>
+                    <div class="text-[10px] text-gray-400">한눈에 일정 관리</div>
+                  </div>
+                </div>
+                <div class="bg-white/90 rounded-xl px-4 py-3 shadow-sm border border-gray-100 flex items-center gap-3 text-left">
+                  <span class="text-2xl">📊</span>
+                  <div>
+                    <div class="text-xs font-bold text-gray-800">월간 분석</div>
+                    <div class="text-[10px] text-gray-400">통계 & 트렌드</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- glow behind phone -->
+          <div class="absolute inset-0 -z-10 bg-gradient-to-r from-brand-400/30 via-violet-400/20 to-brand-400/30 blur-3xl scale-110 rounded-full" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- scroll indicator -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-400 animate-bounce">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+    </div>
+  </section>
+
+  <!-- ============ SOCIAL PROOF BAR ============ -->
+  <section class="bg-white border-b border-gray-100 py-8">
+    <div class="max-w-5xl mx-auto px-4 flex flex-wrap justify-center items-center gap-x-10 gap-y-4 text-center">
+      <div class="scroll-reveal">
+        <div class="text-3xl font-extrabold text-brand-600">11+</div>
+        <div class="text-sm text-gray-500 mt-1">강력한 기능</div>
+      </div>
+      <div class="w-px h-10 bg-gray-200 hidden sm:block"></div>
+      <div class="scroll-reveal" style="transition-delay: 0.1s;">
+        <div class="text-3xl font-extrabold text-brand-600">13개</div>
+        <div class="text-sm text-gray-500 mt-1">AI 자동 추출 항목</div>
+      </div>
+      <div class="w-px h-10 bg-gray-200 hidden sm:block"></div>
+      <div class="scroll-reveal" style="transition-delay: 0.2s;">
+        <div class="text-3xl font-extrabold text-brand-600">5+</div>
+        <div class="text-sm text-gray-500 mt-1">지원 브랜드 플랫폼</div>
+      </div>
+      <div class="w-px h-10 bg-gray-200 hidden sm:block"></div>
+      <div class="scroll-reveal" style="transition-delay: 0.3s;">
+        <div class="text-3xl font-extrabold text-brand-600">100%</div>
+        <div class="text-sm text-gray-500 mt-1">무료 사용</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FEATURES ============ -->
+  <section id="features" class="py-20 sm:py-28 bg-gradient-to-b from-white via-brand-50/40 to-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16 scroll-reveal">
+        <span class="inline-block bg-brand-100 text-brand-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-4">주요 기능</span>
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight mb-4">
+          블로거에게 필요한 <span class="gradient-text">모든 것</span>
+        </h2>
+        <p class="text-gray-500 text-lg max-w-2xl mx-auto">
+          협찬 정보 관리부터 콘텐츠 제작 지원까지,<br class="hidden sm:block"/> 블로거의 워크플로우를 혁신합니다.
+        </p>
+      </div>
+
+      <!-- feature grid -->
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- 1 AI parser -->
+        <div class="feature-card glass rounded-2xl p-6 sm:p-8 scroll-reveal lg:col-span-2 sm:col-span-2">
+          <div class="flex flex-col sm:flex-row gap-6 items-start">
+            <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-500 to-violet-500 flex items-center justify-center text-white text-2xl shadow-lg shadow-brand-500/25">
+              🤖
+            </div>
+            <div>
+              <h3 class="text-xl font-bold mb-2">AI 스마트 파서</h3>
+              <p class="text-gray-600 leading-relaxed">
+                협찬 사이트의 내용을 복사 붙여넣기만 하세요. AI가 <strong class="text-brand-700">업체명, 주소, 전화번호, 미션, 마감일, 카테고리</strong> 등
+                13개 항목을 자동으로 추출하여 정리합니다. 수작업으로 일일이 옮겨 적을 필요가 없어요.
+              </p>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <span class="text-xs bg-brand-100 text-brand-700 px-3 py-1 rounded-full font-medium">업체명</span>
+                <span class="text-xs bg-brand-100 text-brand-700 px-3 py-1 rounded-full font-medium">주소</span>
+                <span class="text-xs bg-brand-100 text-brand-700 px-3 py-1 rounded-full font-medium">미션</span>
+                <span class="text-xs bg-brand-100 text-brand-700 px-3 py-1 rounded-full font-medium">마감일</span>
+                <span class="text-xs bg-brand-100 text-brand-700 px-3 py-1 rounded-full font-medium">체험일</span>
+                <span class="text-xs bg-violet-100 text-violet-700 px-3 py-1 rounded-full font-medium">+8개 항목</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2 Brand schedule -->
+        <div class="feature-card glass rounded-2xl p-6 sm:p-8 scroll-reveal">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-2xl shadow-lg shadow-emerald-500/25 mb-4">
+            🏷️
+          </div>
+          <h3 class="text-xl font-bold mb-2">브랜드별 스케줄 관리</h3>
+          <p class="text-gray-600 leading-relaxed text-sm">
+            리뷰노트, 강남맛집, 레뷰, 슈퍼멤버스, 디너의여왕 등 브랜드별 컬러 코딩으로 한눈에 구분하고 관리하세요.
+          </p>
+        </div>
+
+        <!-- 3 Deadline -->
+        <div class="feature-card glass rounded-2xl p-6 sm:p-8 scroll-reveal">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-400 to-rose-500 flex items-center justify-center text-white text-2xl shadow-lg shadow-red-500/25 mb-4">
+            ⏰
+          </div>
+          <h3 class="text-xl font-bold mb-2">마감 알림 시스템</h3>
+          <p class="text-gray-600 leading-relaxed text-sm">
+            D-3부터 D-day까지 긴급 마감 알림으로 리뷰 마감을 절대 놓치지 않습니다. 컬러 배지로 긴급도를 한눈에 파악하세요.
+          </p>
+        </div>
+
+        <!-- 4 Calendar -->
+        <div class="feature-card glass rounded-2xl p-6 sm:p-8 scroll-reveal">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white text-2xl shadow-lg shadow-sky-500/25 mb-4">
+            📅
+          </div>
+          <h3 class="text-xl font-bold mb-2">캘린더 통합</h3>
+          <p class="text-gray-600 leading-relaxed text-sm">
+            체험일과 마감일을 캘린더에서 한눈에 확인. 일정이 겹치는지 바로 체크할 수 있어요.
+          </p>
+        </div>
+
+        <!-- 5 Analytics -->
+        <div class="feature-card glass rounded-2xl p-6 sm:p-8 scroll-reveal">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-2xl shadow-lg shadow-amber-500/25 mb-4">
+            📊
+          </div>
+          <h3 class="text-xl font-bold mb-2">월간/연간 분석</h3>
+          <p class="text-gray-600 leading-relaxed text-sm">
+            협찬 현황 통계, 브랜드 비율, 월별 트렌드 차트로 나의 블로그 활동을 데이터로 분석하세요.
+          </p>
+        </div>
+
+        <!-- 6 Quick Copy -->
+        <div class="feature-card glass rounded-2xl p-6 sm:p-8 scroll-reveal">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-400 to-fuchsia-500 flex items-center justify-center text-white text-2xl shadow-lg shadow-pink-500/25 mb-4">
+            📋
+          </div>
+          <h3 class="text-xl font-bold mb-2">Quick Copy</h3>
+          <p class="text-gray-600 leading-relaxed text-sm">
+            블로그, 인스타그램, 유튜브 등 SNS 주소를 원클릭으로 복사. 협찬 신청 시 빠르게 제출하세요.
+          </p>
+        </div>
+
+        <!-- 7 Hashtags -->
+        <div class="feature-card glass rounded-2xl p-6 sm:p-8 scroll-reveal">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-2xl shadow-lg shadow-violet-500/25 mb-4">
+            #️⃣
+          </div>
+          <h3 class="text-xl font-bold mb-2">해시태그 모음</h3>
+          <p class="text-gray-600 leading-relaxed text-sm">
+            카테고리별 해시태그를 관리하고 한 번에 일괄 복사. 매번 해시태그를 고민할 필요 없어요.
+          </p>
+        </div>
+
+        <!-- 8 Template -->
+        <div class="feature-card glass rounded-2xl p-6 sm:p-8 scroll-reveal">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-sky-500 flex items-center justify-center text-white text-2xl shadow-lg shadow-cyan-500/25 mb-4">
+            ✍️
+          </div>
+          <h3 class="text-xl font-bold mb-2">신청문구 템플릿</h3>
+          <p class="text-gray-600 leading-relaxed text-sm">
+            자주 쓰는 협찬 신청 문구를 저장하고 원클릭으로 복사. 반복 작업을 줄여드립니다.
+          </p>
+        </div>
+
+        <!-- 9 Photo Index -->
+        <div class="feature-card glass rounded-2xl p-6 sm:p-8 scroll-reveal">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-400 to-amber-500 flex items-center justify-center text-white text-2xl shadow-lg shadow-yellow-500/25 mb-4">
+            📸
+          </div>
+          <h3 class="text-xl font-bold mb-2">촬영지수</h3>
+          <p class="text-gray-600 leading-relaxed text-sm">
+            GPS 기반 날씨 정보와 촬영 적합도를 안내. 야외 촬영 최적의 타이밍을 알려드려요.
+          </p>
+        </div>
+
+        <!-- 10 Memo -->
+        <div class="feature-card glass rounded-2xl p-6 sm:p-8 scroll-reveal">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-lime-400 to-green-500 flex items-center justify-center text-white text-2xl shadow-lg shadow-lime-500/25 mb-4">
+            📝
+          </div>
+          <h3 class="text-xl font-bold mb-2">체험 느낌 메모</h3>
+          <p class="text-gray-600 leading-relaxed text-sm">
+            체험 현장에서 바로 느낌을 메모하고, 저장/복사/공유까지. 블로그 작성 시 그대로 활용하세요.
+          </p>
+        </div>
+
+        <!-- 11 Char count -->
+        <div class="feature-card glass rounded-2xl p-6 sm:p-8 scroll-reveal">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-400 to-blue-500 flex items-center justify-center text-white text-2xl shadow-lg shadow-indigo-500/25 mb-4">
+            🔤
+          </div>
+          <h3 class="text-xl font-bold mb-2">글자 수 측정</h3>
+          <p class="text-gray-600 leading-relaxed text-sm">
+            블로그 글 작성 시 글자 수를 실시간으로 체크. 미션 글자 수 조건을 정확히 맞추세요.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ HOW IT WORKS ============ -->
+  <section id="how" class="py-20 sm:py-28 bg-gradient-to-b from-white to-brand-50/50">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16 scroll-reveal">
+        <span class="inline-block bg-brand-100 text-brand-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-4">사용 방법</span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
+          <span class="gradient-text">3단계</span>로 시작하세요
+        </h2>
+        <p class="text-gray-500 text-lg">복잡한 설정 없이 바로 사용할 수 있어요.</p>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8">
+        <!-- step 1 -->
+        <div class="scroll-reveal text-center">
+          <div class="relative inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-brand-500 to-brand-700 text-white text-3xl font-extrabold shadow-xl shadow-brand-500/30 mb-6">
+            1
+            <div class="absolute -top-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-4 border-white"></div>
+          </div>
+          <h3 class="text-xl font-bold mb-3">협찬 내용 복사</h3>
+          <p class="text-gray-500 leading-relaxed">
+            협찬 사이트에서 캠페인 정보를 복사합니다. 리뷰노트, 레뷰 등 어디든 OK!
+          </p>
+        </div>
+        <!-- step 2 -->
+        <div class="scroll-reveal text-center" style="transition-delay: 0.15s;">
+          <div class="relative inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 to-purple-700 text-white text-3xl font-extrabold shadow-xl shadow-violet-500/30 mb-6">
+            2
+            <div class="absolute -top-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-4 border-white"></div>
+          </div>
+          <h3 class="text-xl font-bold mb-3">AI가 자동 분석</h3>
+          <p class="text-gray-500 leading-relaxed">
+            붙여넣기 하면 AI가 업체명, 주소, 마감일 등 13개 항목을 즉시 추출합니다.
+          </p>
+        </div>
+        <!-- step 3 -->
+        <div class="scroll-reveal text-center" style="transition-delay: 0.3s;">
+          <div class="relative inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-sky-500 to-cyan-700 text-white text-3xl font-extrabold shadow-xl shadow-sky-500/30 mb-6">
+            3
+            <div class="absolute -top-1 -right-1 w-6 h-6 bg-green-400 rounded-full border-4 border-white"></div>
+          </div>
+          <h3 class="text-xl font-bold mb-3">스마트하게 관리</h3>
+          <p class="text-gray-500 leading-relaxed">
+            캘린더, 마감 알림, 통계 분석으로 협찬 일정을 체계적으로 관리하세요.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ RECOMMEND ============ -->
+  <section id="recommend" class="py-20 sm:py-28 bg-gradient-to-b from-brand-50/50 via-white to-white">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16 scroll-reveal">
+        <span class="inline-block bg-violet-100 text-violet-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-4">추천 대상</span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
+          이런 분께 <span class="gradient-text">추천</span>해요
+        </h2>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-6 max-w-3xl mx-auto">
+        <div class="scroll-reveal glass-dark rounded-2xl p-6 flex items-start gap-4">
+          <span class="text-3xl flex-shrink-0">🙋‍♀️</span>
+          <div>
+            <h4 class="font-bold text-lg mb-1">협찬을 여러 건 동시에 진행하는 블로거</h4>
+            <p class="text-gray-500 text-sm">일정이 겹치고 마감이 헷갈릴 때, 캘린더와 알림으로 완벽 관리</p>
+          </div>
+        </div>
+        <div class="scroll-reveal glass-dark rounded-2xl p-6 flex items-start gap-4" style="transition-delay: 0.1s;">
+          <span class="text-3xl flex-shrink-0">📱</span>
+          <div>
+            <h4 class="font-bold text-lg mb-1">리뷰노트, 레뷰 등 여러 플랫폼을 이용하는 분</h4>
+            <p class="text-gray-500 text-sm">브랜드별 컬러 코딩으로 플랫폼이 많아도 깔끔하게 정리</p>
+          </div>
+        </div>
+        <div class="scroll-reveal glass-dark rounded-2xl p-6 flex items-start gap-4" style="transition-delay: 0.2s;">
+          <span class="text-3xl flex-shrink-0">⏱️</span>
+          <div>
+            <h4 class="font-bold text-lg mb-1">마감일을 자주 놓치는 분</h4>
+            <p class="text-gray-500 text-sm">D-3부터 알림이 오니까 더 이상 마감을 놓치지 않아요</p>
+          </div>
+        </div>
+        <div class="scroll-reveal glass-dark rounded-2xl p-6 flex items-start gap-4" style="transition-delay: 0.3s;">
+          <span class="text-3xl flex-shrink-0">📊</span>
+          <div>
+            <h4 class="font-bold text-lg mb-1">내 협찬 활동을 데이터로 보고 싶은 분</h4>
+            <p class="text-gray-500 text-sm">월간/연간 통계와 트렌드 차트로 나의 성장을 확인</p>
+          </div>
+        </div>
+        <div class="scroll-reveal glass-dark rounded-2xl p-6 flex items-start gap-4" style="transition-delay: 0.4s;">
+          <span class="text-3xl flex-shrink-0">✨</span>
+          <div>
+            <h4 class="font-bold text-lg mb-1">협찬 신청을 효율적으로 하고 싶은 분</h4>
+            <p class="text-gray-500 text-sm">신청문구 템플릿과 SNS 원클릭 복사로 신청 시간 단축</p>
+          </div>
+        </div>
+        <div class="scroll-reveal glass-dark rounded-2xl p-6 flex items-start gap-4" style="transition-delay: 0.5s;">
+          <span class="text-3xl flex-shrink-0">🆕</span>
+          <div>
+            <h4 class="font-bold text-lg mb-1">협찬 블로깅을 막 시작한 초보 블로거</h4>
+            <p class="text-gray-500 text-sm">체계적인 관리 도구로 처음부터 프로처럼 시작하세요</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TESTIMONIALS ============ -->
+  <section class="py-20 sm:py-24 bg-gradient-to-b from-white to-brand-50/30">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-14 scroll-reveal">
+        <span class="inline-block bg-amber-100 text-amber-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-4">사용자 후기</span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">
+          블로거들의 <span class="gradient-text">생생한 후기</span>
+        </h2>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="scroll-reveal bg-white rounded-2xl p-6 shadow-lg shadow-gray-200/50 border border-gray-100">
+          <div class="flex items-center gap-1 text-amber-400 mb-4">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <p class="text-gray-600 leading-relaxed mb-4">"협찬 10개 동시에 진행할 때 마감일 관리가 너무 힘들었는데, Blue Review 쓰고 나서 한 번도 안 놓쳤어요!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center text-white text-sm font-bold">J</div>
+            <div>
+              <div class="text-sm font-semibold">맛집탐험가J</div>
+              <div class="text-xs text-gray-400">맛집 전문 블로거</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="scroll-reveal bg-white rounded-2xl p-6 shadow-lg shadow-gray-200/50 border border-gray-100" style="transition-delay: 0.15s;">
+          <div class="flex items-center gap-1 text-amber-400 mb-4">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <p class="text-gray-600 leading-relaxed mb-4">"AI 파서가 진짜 신세계... 복붙 한 번이면 모든 정보가 정리돼요. 하루에 30분은 아끼는 느낌!"</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-sm font-bold">S</div>
+            <div>
+              <div class="text-sm font-semibold">뷰티수정</div>
+              <div class="text-xs text-gray-400">뷰티 리뷰 블로거</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="scroll-reveal bg-white rounded-2xl p-6 shadow-lg shadow-gray-200/50 border border-gray-100" style="transition-delay: 0.3s;">
+          <div class="flex items-center gap-1 text-amber-400 mb-4">
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+          </div>
+          <p class="text-gray-600 leading-relaxed mb-4">"해시태그 일괄 복사 기능이 너무 편해요. 인스타 포스팅할 때 해시태그 고민하는 시간이 0이 됐어요."</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-cyan-500 flex items-center justify-center text-white text-sm font-bold">M</div>
+            <div>
+              <div class="text-sm font-semibold">미니멀라이프M</div>
+              <div class="text-xs text-gray-400">라이프스타일 블로거</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PRICING ============ -->
+  <section id="pricing" class="py-20 sm:py-28 bg-gradient-to-b from-brand-50/30 to-white">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16 scroll-reveal">
+        <span class="inline-block bg-green-100 text-green-700 text-sm font-semibold px-4 py-1.5 rounded-full mb-4">요금제</span>
+        <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
+          지금은 <span class="gradient-text">완전 무료</span>
+        </h2>
+        <p class="text-gray-500 text-lg">모든 기능을 제한 없이 무료로 사용하세요.</p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
+        <!-- free -->
+        <div class="scroll-reveal relative bg-white rounded-3xl p-8 shadow-xl shadow-brand-200/30 border-2 border-brand-500 overflow-hidden">
+          <div class="absolute top-0 right-0 bg-brand-600 text-white text-xs font-bold px-4 py-1.5 rounded-bl-2xl">현재 플랜</div>
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-brand-700 mb-1">무료 플랜</h3>
+            <p class="text-gray-500 text-sm">모든 기능 포함</p>
+          </div>
+          <div class="flex items-end gap-1 mb-8">
+            <span class="text-5xl font-extrabold text-gray-900">0</span>
+            <span class="text-xl font-bold text-gray-400 mb-1">원</span>
+            <span class="text-sm text-gray-400 mb-1.5">/ 영원히</span>
+          </div>
+          <ul class="space-y-3 mb-8">
+            <li class="flex items-center gap-3 text-sm text-gray-700">
+              <svg class="w-5 h-5 text-brand-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              AI 스마트 파서
+            </li>
+            <li class="flex items-center gap-3 text-sm text-gray-700">
+              <svg class="w-5 h-5 text-brand-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              브랜드별 스케줄 관리
+            </li>
+            <li class="flex items-center gap-3 text-sm text-gray-700">
+              <svg class="w-5 h-5 text-brand-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              마감 알림 시스템
+            </li>
+            <li class="flex items-center gap-3 text-sm text-gray-700">
+              <svg class="w-5 h-5 text-brand-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              캘린더, 통계, 분석
+            </li>
+            <li class="flex items-center gap-3 text-sm text-gray-700">
+              <svg class="w-5 h-5 text-brand-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              Quick Copy, 해시태그, 템플릿
+            </li>
+            <li class="flex items-center gap-3 text-sm text-gray-700">
+              <svg class="w-5 h-5 text-brand-500 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              촬영지수, 메모, 글자 수 측정
+            </li>
+          </ul>
+          <a href="https://blog-app-psi-neon.vercel.app" target="_blank" rel="noopener"
+             class="block w-full text-center bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl transition-all hover:shadow-lg active:scale-[0.98]">
+            무료로 시작하기
+          </a>
+        </div>
+
+        <!-- premium -->
+        <div class="scroll-reveal relative bg-gray-50 rounded-3xl p-8 border border-gray-200 opacity-80" style="transition-delay: 0.15s;">
+          <div class="absolute top-0 right-0 bg-gray-400 text-white text-xs font-bold px-4 py-1.5 rounded-bl-2xl">준비 중</div>
+          <div class="mb-6">
+            <h3 class="text-xl font-bold text-gray-700 mb-1">프리미엄 플랜</h3>
+            <p class="text-gray-400 text-sm">추후 업데이트 예정</p>
+          </div>
+          <div class="flex items-end gap-1 mb-8">
+            <span class="text-5xl font-extrabold text-gray-400">?</span>
+            <span class="text-xl font-bold text-gray-300 mb-1">원</span>
+            <span class="text-sm text-gray-400 mb-1.5">/ 월</span>
+          </div>
+          <ul class="space-y-3 mb-8">
+            <li class="flex items-center gap-3 text-sm text-gray-500">
+              <svg class="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              무료 플랜의 모든 기능
+            </li>
+            <li class="flex items-center gap-3 text-sm text-gray-500">
+              <svg class="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              고급 AI 분석 기능
+            </li>
+            <li class="flex items-center gap-3 text-sm text-gray-500">
+              <svg class="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              데이터 클라우드 백업
+            </li>
+            <li class="flex items-center gap-3 text-sm text-gray-500">
+              <svg class="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              우선 고객 지원
+            </li>
+          </ul>
+          <div class="block w-full text-center bg-gray-200 text-gray-400 font-bold py-3.5 rounded-xl cursor-not-allowed">
+            추후 공개 예정
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FINAL CTA ============ -->
+  <section class="py-20 sm:py-28 relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-br from-brand-600 via-brand-700 to-violet-800"></div>
+    <div class="absolute inset-0 opacity-10" aria-hidden="true">
+      <div class="absolute top-10 left-10 w-64 h-64 bg-white rounded-full blur-3xl"></div>
+      <div class="absolute bottom-10 right-10 w-80 h-80 bg-violet-300 rounded-full blur-3xl"></div>
+    </div>
+
+    <div class="relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div class="scroll-reveal">
+        <img src="/favicon.png" alt="" class="w-16 h-16 rounded-2xl shadow-2xl mx-auto mb-8 animate-float" />
+        <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight mb-6">
+          협찬 관리,<br/>더 스마트하게 시작하세요
+        </h2>
+        <p class="text-blue-100 text-lg sm:text-xl leading-relaxed mb-10 max-w-xl mx-auto">
+          가입도 결제도 필요 없습니다.<br/>지금 바로 Blue Review를 경험해보세요.
+        </p>
+        <a href="https://blog-app-psi-neon.vercel.app" target="_blank" rel="noopener"
+           class="inline-flex items-center gap-3 bg-white hover:bg-gray-50 text-brand-700 font-extrabold text-lg px-10 py-5 rounded-2xl shadow-2xl transition-all hover:scale-105 active:scale-100">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+          Blue Review 시작하기
+        </a>
+        <p class="mt-6 text-blue-200 text-sm">
+          PWA 지원 &middot; 모바일 홈화면 추가 가능 &middot; 오프라인 사용 가능
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="bg-gray-950 text-gray-400 py-12">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-3">
+          <img src="/favicon.png" alt="Blue Review" class="w-8 h-8 rounded-lg" />
+          <div>
+            <span class="text-white font-bold">Blue Review</span>
+            <span class="text-gray-500 text-sm ml-2">by hare_table</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-6 text-sm">
+          <a href="#features" class="hover:text-white transition-colors">기능</a>
+          <a href="#how" class="hover:text-white transition-colors">사용 방법</a>
+          <a href="#recommend" class="hover:text-white transition-colors">추천</a>
+          <a href="#pricing" class="hover:text-white transition-colors">요금제</a>
+          <a href="https://blog-app-psi-neon.vercel.app" target="_blank" rel="noopener" class="hover:text-white transition-colors">앱 열기</a>
+        </div>
+      </div>
+      <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-500">
+        &copy; 2025 Blue Review. Made with
+        <svg class="inline w-4 h-4 text-brand-400 -mt-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        by hare_table
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============ SCRIPTS ============ -->
+  <script>
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('revealed');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.scroll-reveal').forEach(el => observer.observe(el));
+
+    // Nav background on scroll
+    const navbar = document.getElementById('navbar');
+    window.addEventListener('scroll', () => {
+      if (window.scrollY > 20) {
+        navbar.classList.add('nav-scrolled');
+      } else {
+        navbar.classList.remove('nav-scrolled');
+      }
+    }, { passive: true });
+
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
