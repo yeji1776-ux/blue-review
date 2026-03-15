@@ -11,6 +11,55 @@ import { domToPng } from 'modern-screenshot';
 import { useAuth } from './hooks/useAuth';
 import LoginPage from './components/LoginPage';
 
+const PasswordResetScreen = ({ onUpdate }) => {
+  const [pw, setPw] = useState('');
+  const [pw2, setPw2] = useState('');
+  const [msg, setMsg] = useState({ text: '', type: '' });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMsg({ text: '', type: '' });
+    if (pw.length < 6) return setMsg({ text: '비밀번호는 6자 이상이어야 합니다.', type: 'error' });
+    if (pw !== pw2) return setMsg({ text: '비밀번호가 일치하지 않아요.', type: 'error' });
+    setLoading(true);
+    const { error } = await onUpdate(pw);
+    setLoading(false);
+    if (error) setMsg({ text: error.message || '오류가 발생했습니다.', type: 'error' });
+    else setMsg({ text: '비밀번호가 변경되었습니다!', type: 'success' });
+  };
+
+  return (
+    <div className="min-h-screen bg-sky-50 flex items-center justify-center p-6 relative overflow-hidden">
+      <div className="ambient-blob bg-sky-300 w-96 h-96 top-[-10%] left-[-10%]"></div>
+      <div className="ambient-blob bg-pink-200 w-80 h-80 bottom-[-10%] right-[-10%] [animation-delay:2s]"></div>
+      <div className="max-w-sm w-full jelly-card shadow-2xl p-10 space-y-6">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <h2 className="text-xl font-black text-slate-800">새 비밀번호 설정</h2>
+          <p className="text-xs text-slate-400 mt-1">안전한 비밀번호로 변경해주세요</p>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input type="password" placeholder="새 비밀번호 (6자 이상)" value={pw} onChange={e => setPw(e.target.value)} autoComplete="new-password"
+            className="w-full px-5 py-4 rounded-2xl bg-sky-50/50 ring-1 ring-slate-100 focus:ring-2 focus:ring-sky-400 outline-none text-sm font-bold transition-all placeholder:font-medium placeholder:text-slate-400" />
+          <input type="password" placeholder="비밀번호 확인" value={pw2} onChange={e => setPw2(e.target.value)} autoComplete="new-password"
+            className="w-full px-5 py-4 rounded-2xl bg-sky-50/50 ring-1 ring-slate-100 focus:ring-2 focus:ring-sky-400 outline-none text-sm font-bold transition-all placeholder:font-medium placeholder:text-slate-400" />
+          {msg.text && (
+            <p className={`text-xs font-bold text-center py-3 rounded-2xl ${msg.type === 'error' ? 'text-rose-500 bg-rose-50' : 'text-emerald-600 bg-emerald-50'}`}>{msg.text}</p>
+          )}
+          <button disabled={loading} className="w-full jelly-button py-4 rounded-2xl font-black text-base shadow-xl shadow-sky-200/50 disabled:opacity-60">
+            {loading ? '변경 중...' : '비밀번호 변경'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 const BiometricLockScreen = ({ onUnlock, onSkip }) => {
   const [error, setError] = useState('');
   const [trying, setTrying] = useState(false);
@@ -80,7 +129,7 @@ const BiometricLockScreen = ({ onUnlock, onSkip }) => {
 
 const BloggerMasterApp = () => {
   // --- 인증 ---
-  const { user, loading, signInWithProvider, signUpWithEmail, verifyOtp, signInWithEmail, signOut, updatePassword, resetPasswordForEmail, refreshSession, deleteAccount } = useAuth();
+  const { user, loading, isRecovery, setIsRecovery, signInWithProvider, signUpWithEmail, verifyOtp, signInWithEmail, signOut, updatePassword, resetPasswordForEmail, refreshSession, deleteAccount } = useAuth();
   const [authError, setAuthError] = useState('');
   const [isGuest, setIsGuest] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
@@ -776,6 +825,14 @@ ${text}`
         </div>
       </div>
     );
+  }
+
+  if (isRecovery) {
+    return <PasswordResetScreen onUpdate={async (pw) => {
+      const { error } = await updatePassword(pw);
+      if (!error) { setIsRecovery(false); window.location.hash = ''; }
+      return { error };
+    }} />;
   }
 
   if (biometricLocked) {
