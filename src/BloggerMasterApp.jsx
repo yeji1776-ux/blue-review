@@ -11,12 +11,164 @@ import { domToPng } from 'modern-screenshot';
 import { useAuth } from './hooks/useAuth';
 import LoginPage from './components/LoginPage';
 
+const BiometricLockScreen = ({ onUnlock, onSkip }) => {
+  const [error, setError] = useState('');
+  const [trying, setTrying] = useState(false);
+
+  const attempt = async () => {
+    setError('');
+    setTrying(true);
+    try {
+      await onUnlock();
+    } catch {
+      setError('인증에 실패했습니다. 다시 시도해주세요.');
+    }
+    setTrying(false);
+  };
+
+  useEffect(() => { attempt(); }, []);
+
+  return (
+    <div className="min-h-screen bg-sky-50 flex items-center justify-center p-6 relative overflow-hidden">
+      <div className="ambient-blob bg-sky-300 w-96 h-96 top-[-10%] left-[-10%]"></div>
+      <div className="ambient-blob bg-pink-200 w-80 h-80 bottom-[-10%] right-[-10%] [animation-delay:2s]"></div>
+      <div className="max-w-sm w-full jelly-card shadow-2xl p-10 flex flex-col items-center gap-6">
+        <div className="w-[100px] h-[100px]">
+          <img src="/favicon.png" alt="Blue Review" className="w-full h-full object-contain filter drop-shadow-lg drop-shadow-sky-300" />
+        </div>
+        <div className="text-center">
+          <h1 className="text-2xl font-black text-slate-800 mb-1">Blue <span className="text-sky-500">Review</span></h1>
+          <p className="text-xs text-slate-400">생체 인증으로 잠금을 해제하세요</p>
+        </div>
+
+        {/* 얼굴/지문 아이콘 버튼 */}
+        <button
+          onClick={attempt}
+          disabled={trying}
+          className="w-24 h-24 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center shadow-xl shadow-sky-200 active:scale-95 transition-all disabled:opacity-60"
+        >
+          {trying ? (
+            <div className="w-8 h-8 border-4 border-white/40 border-t-white rounded-full animate-spin" />
+          ) : (
+            <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>
+              <path d="M8 12c0-2.21 1.79-4 4-4s4 1.79 4 4c0 1.5-.82 2.81-2.04 3.5"/>
+              <path d="M12 8v1M8.46 9.46l.7.7M15.54 9.46l-.7.7M7 12h1M16 12h1"/>
+              <circle cx="12" cy="14" r="1.5" fill="white" stroke="none"/>
+            </svg>
+          )}
+        </button>
+
+        <p className="text-sm font-bold text-slate-500">
+          {trying ? '인증 중...' : '버튼을 눌러 얼굴 / 지문 인증'}
+        </p>
+
+        {error && (
+          <p className="text-rose-500 text-xs font-bold text-center bg-rose-50 py-3 px-4 rounded-2xl w-full">{error}</p>
+        )}
+
+        <button
+          onClick={onSkip}
+          className="text-xs font-bold text-slate-400 underline underline-offset-2 hover:text-slate-600 transition-colors"
+        >
+          다른 계정으로 로그인
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const BloggerMasterApp = () => {
   // --- 인증 ---
-  const { user, loading, signInWithProvider, signUpWithEmail, signInWithEmail, signOut } = useAuth();
+  const { user, loading, signInWithProvider, signUpWithEmail, signInWithEmail, signOut, updatePassword } = useAuth();
   const [authError, setAuthError] = useState('');
   const [isGuest, setIsGuest] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
+
+  // 자동 로그인 해제: 탭 닫을 때 세션 제거
+  useEffect(() => {
+    if (!loading && user && sessionStorage.getItem('noRemember') === '1') {
+      signOut();
+    }
+  }, [loading, user]);
+
+  // --- 생체 인증 ---
+  const [biometricLocked, setBiometricLocked] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(() => localStorage.getItem('biometric_enabled') === '1');
+  const [biometricSupported, setBiometricSupported] = useState(false);
+
+  useEffect(() => {
+    if (window.PublicKeyCredential) {
+      window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable?.()
+        .then(ok => setBiometricSupported(ok))
+        .catch(() => setBiometricSupported(false));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!loading && user && biometricEnabled && !sessionStorage.getItem('biometricUnlocked')) {
+      setBiometricLocked(true);
+    }
+  }, [loading, user, biometricEnabled]);
+
+  const handleBiometricUnlock = async () => {
+    try {
+      const credIdStr = localStorage.getItem('biometric_cred_id');
+      if (!credIdStr) { setBiometricLocked(false); return; }
+      const credId = Uint8Array.from(atob(credIdStr), c => c.charCodeAt(0));
+      await navigator.credentials.get({
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rpId: window.location.hostname,
+          allowCredentials: [{ id: credId, type: 'public-key' }],
+          userVerification: 'required',
+          timeout: 60000,
+        },
+      });
+      sessionStorage.setItem('biometricUnlocked', '1');
+      setBiometricLocked(false);
+    } catch (e) {
+      // NotAllowedError = user cancelled, ignore
+    }
+  };
+
+  const handleBiometricRegister = async () => {
+    try {
+      const credential = await navigator.credentials.create({
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rp: { name: 'Blue Review', id: window.location.hostname },
+          user: {
+            id: new TextEncoder().encode(user.id),
+            name: user.email,
+            displayName: profile.nickname || user.email,
+          },
+          pubKeyCredParams: [
+            { alg: -7, type: 'public-key' },
+            { alg: -257, type: 'public-key' },
+          ],
+          authenticatorSelection: {
+            authenticatorAttachment: 'platform',
+            userVerification: 'required',
+            residentKey: 'preferred',
+          },
+          timeout: 60000,
+        },
+      });
+      const rawIdBase64 = btoa(String.fromCharCode(...new Uint8Array(credential.rawId)));
+      localStorage.setItem('biometric_cred_id', rawIdBase64);
+      localStorage.setItem('biometric_enabled', '1');
+      setBiometricEnabled(true);
+    } catch (e) {
+      if (e.name !== 'NotAllowedError') alert('생체 인증 등록에 실패했습니다. 기기가 지원하는지 확인해주세요.');
+    }
+  };
+
+  const handleBiometricDisable = () => {
+    localStorage.removeItem('biometric_enabled');
+    localStorage.removeItem('biometric_cred_id');
+    setBiometricEnabled(false);
+  };
 
   // --- 날씨 ---
   const [weather, setWeather] = useState({ temp: '', desc: '', icon: 'sun', score: 95, tip: '채광이 완벽해요! 오늘 맛집 사진 최고입니다.', location: '서울' });
@@ -43,7 +195,7 @@ const BloggerMasterApp = () => {
         const name = locationName || data.nearest_area?.[0]?.areaName?.[0]?.value || '서울';
         setWeather({ temp, desc: cur.weatherDesc?.[0]?.value || '', icon, score, tip, location: name });
       })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   const requestLocation = (mode) => {
@@ -63,7 +215,7 @@ const BloggerMasterApp = () => {
           })
           .catch(() => fetchWeather(`${latitude},${longitude}`));
       },
-      () => {}
+      () => { }
     );
   };
 
@@ -92,6 +244,9 @@ const BloggerMasterApp = () => {
     };
   });
   const [profileSaved, setProfileSaved] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMsg, setPasswordMsg] = useState({ text: '', type: '' });
 
   const saveProfile = () => {
     localStorage.setItem('blogger_profile', JSON.stringify(profile));
@@ -155,9 +310,44 @@ const BloggerMasterApp = () => {
     localStorage.setItem('blogger_hashtags', JSON.stringify(updated));
   };
 
+  // --- 글씨 크기 ---
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = localStorage.getItem('blogger_font_size');
+    if (saved) return parseInt(saved);
+    return window.innerWidth >= 640 ? 22 : 16;
+  });
+  useEffect(() => {
+    const s = fontSize / 16;
+    // Tailwind v4 named text sizes (CSS variable 방식)
+    const root = document.documentElement.style;
+    root.setProperty('--text-xs', `${0.75 * s}rem`);
+    root.setProperty('--text-sm', `${0.875 * s}rem`);
+    root.setProperty('--text-base', `${s}rem`);
+    root.setProperty('--text-lg', `${1.125 * s}rem`);
+    root.setProperty('--text-xl', `${1.25 * s}rem`);
+    root.setProperty('--text-2xl', `${1.5 * s}rem`);
+    root.setProperty('--text-3xl', `${1.875 * s}rem`);
+    // 임의 pixel 크기 클래스 오버라이드 (text-[7px] ~ text-[12px])
+    let styleEl = document.getElementById('font-scale-override');
+    if (!styleEl) {
+      styleEl = document.createElement('style');
+      styleEl.id = 'font-scale-override';
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = [7, 8, 9, 10, 11, 12].map(
+      px => `.text-\\[${px}px\\] { font-size: ${px * s}px !important; }`
+    ).join('\n');
+    localStorage.setItem('blogger_font_size', String(fontSize));
+  }, [fontSize]);
+
   const [selectedScheduleId, setSelectedScheduleId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [textToCount, setTextToCount] = useState('');
+  const [savedTexts, setSavedTexts] = useState(() => {
+    const saved = localStorage.getItem('blogger_saved_texts');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [showSavedTexts, setShowSavedTexts] = useState(false);
   const [rawText, setRawText] = useState('');
   const [isParsing, setIsParsing] = useState(false);
   const [confirmDoneId, setConfirmDoneId] = useState(null); // 리뷰 등록 확인 팝업용
@@ -166,30 +356,34 @@ const BloggerMasterApp = () => {
   const [editingScheduleId, setEditingScheduleId] = useState(null); // 스케줄 수정 모드
 
   // 체험단 일정 데이터
-  const [schedules, setSchedules] = useState([
-    {
-      id: 1, brand: '레뷰', type: '맛집', title: '청담동 파스타 맛집',
-      address: '서울 강남구 청담동 123', contact: '010-1234-5678',
-      mission: '사진 15장 이상, 영상 필수',
-      experiencePeriod: '2026-03-20 ~ 2026-03-24',
-      deadline: '2026-03-25',
-      provided: '2인 식사권 (파스타 2 + 음료 2)',
-      visitDays: '화~일', visitTime: '11:00 ~ 21:00',
-      caution: '예약 필수, 노쇼 시 패널티',
-      isDone: false
-    },
-    {
-      id: 2, brand: '강남맛집', type: '헤어', title: '역삼역 레이어드컷',
-      address: '서울 강남구 역삼동 456', contact: '02-555-7777',
-      mission: 'Before/After 사진 확실하게',
-      experiencePeriod: '2026-03-22 ~ 2026-03-26',
-      deadline: '2026-03-28',
-      provided: '레이어드컷 + 클리닉',
-      visitDays: '월~토', visitTime: '10:00 ~ 19:00',
-      caution: '당일 예약 불가',
-      isDone: true
-    }
-  ]);
+  const [schedules, setSchedules] = useState(() => {
+    const saved = localStorage.getItem('blogSchedules');
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: 1, brand: '레뷰', type: '맛집', title: '청담동 파스타 맛집',
+        address: '서울 강남구 청담동 123', contact: '010-1234-5678',
+        mission: '사진 15장 이상, 영상 필수',
+        experiencePeriod: '2026-03-20 ~ 2026-03-24',
+        deadline: '2026-03-25',
+        provided: '2인 식사권 (파스타 2 + 음료 2)',
+        visitDays: '화~일', visitTime: '11:00 ~ 21:00',
+        caution: '예약 필수, 노쇼 시 패널티',
+        isDone: false
+      },
+      {
+        id: 2, brand: '강남맛집', type: '헤어', title: '역삼역 레이어드컷',
+        address: '서울 강남구 역삼동 456', contact: '02-555-7777',
+        mission: 'Before/After 사진 확실하게',
+        experiencePeriod: '2026-03-22 ~ 2026-03-26',
+        deadline: '2026-03-28',
+        provided: '레이어드컷 + 클리닉',
+        visitDays: '월~토', visitTime: '10:00 ~ 19:00',
+        caution: '당일 예약 불가',
+        isDone: true
+      }
+    ];
+  });
 
   const emptyParsed = {
     brand: '리뷰노트', type: '맛집', title: '', address: '', contact: '',
@@ -202,6 +396,7 @@ const BloggerMasterApp = () => {
 
   // 카드 ref 맵
   const cardRefs = useRef({});
+  const imageCardRefs = useRef({});
 
   // --- D-Day 계산 ---
   const getDday = (deadlineStr) => {
@@ -249,10 +444,14 @@ const BloggerMasterApp = () => {
 
   // --- 이미지 저장 ---
   const saveCardAsImage = async (id) => {
-    const card = cardRefs.current[id];
+    const card = imageCardRefs.current[id];
     if (!card) return;
     try {
-      const dataUrl = await domToPng(card, { scale: 2, backgroundColor: '#ffffff' });
+      const dataUrl = await domToPng(card, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        filter: (node) => node.dataset?.noImage !== 'true',
+      });
       const link = document.createElement('a');
       link.download = `체험단_${id}.png`;
       link.href = dataUrl;
@@ -339,16 +538,27 @@ const BloggerMasterApp = () => {
     alert('복사되었습니다! ✨');
   };
 
-  const handleEmailSignIn = async (email, password) => {
+  const handleEmailSignIn = async (email, password, rememberMe = true) => {
     setAuthError('');
     const { error } = await signInWithEmail(email, password);
-    if (error) setAuthError(error.message);
+    if (error) { setAuthError(error.message); return; }
+    if (!rememberMe) {
+      // 탭/브라우저 닫을 때 세션 해제
+      sessionStorage.setItem('noRemember', '1');
+    } else {
+      sessionStorage.removeItem('noRemember');
+    }
   };
 
-  const handleEmailSignUp = async (email, password) => {
+  const handleEmailSignUp = async (email, password, nickname) => {
     setAuthError('');
     const { error } = await signUpWithEmail(email, password);
-    if (error) setAuthError(error.message);
+    if (error) { setAuthError(error.message); return; }
+    if (nickname) {
+      updateProfile('nickname', nickname);
+      const updated = { ...profile, nickname };
+      localStorage.setItem('blogger_profile', JSON.stringify(updated));
+    }
   };
 
   const handleSocialLogin = async (provider) => {
@@ -491,6 +701,15 @@ ${text}`
     );
   }
 
+  if (biometricLocked) {
+    return (
+      <BiometricLockScreen
+        onUnlock={handleBiometricUnlock}
+        onSkip={() => { setBiometricLocked(false); signOut(); }}
+      />
+    );
+  }
+
   if (!user && !isGuest) {
     return (
       <LoginPage
@@ -504,18 +723,29 @@ ${text}`
   }
 
   return (
-    <div className="min-h-screen bg-sky-50 pb-28 sm:pb-36 font-sans select-none">
+    <div className="min-h-screen bg-sky-50 pb-28 sm:pb-36 font-sans select-none relative overflow-hidden z-0">
+      {/* Ambient Blobs */}
+      <div className="ambient-blob bg-sky-300/40 w-[500px] h-[500px] top-[-10%] left-[-10%]"></div>
+      <div className="ambient-blob bg-pink-200/40 w-[400px] h-[400px] top-[40%] right-[-10%] [animation-delay:2s]"></div>
+      <div className="ambient-blob bg-violet-200/30 w-[600px] h-[600px] bottom-[-10%] left-[20%] [animation-delay:4s]"></div>
       {/* 1. 상단 날씨 & 퀵 버튼 */}
       <header className="bg-white/80 backdrop-blur-md px-4 sm:px-6 pt-6 sm:pt-8 pb-4 sm:pb-6 sticky top-0 z-30 border-b border-sky-100">
         <div className="flex justify-between items-center mb-4 sm:mb-6">
           <div className="flex items-center gap-2 sm:gap-3">
-            <img src="/favicon.png" alt="logo" className="w-12 h-12 sm:w-14 sm:h-14 object-contain filter drop-shadow hover:scale-110 transition-transform cursor-pointer" onClick={() => setActiveTab('home')} />
+            <img src="/favicon.png" alt="logo" className="w-12 h-12 sm:w-14 sm:h-14 object-contain hover:scale-110 transition-transform cursor-pointer" onClick={() => setActiveTab('home')} />
             <div>
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 cursor-pointer hover:text-sky-600 transition-colors" onClick={() => setActiveTab('home')}>Blue Review</h2>
               <p className="text-[10px] sm:text-[12px] font-bold text-slate-400 mt-0.5 hidden sm:block">블로거를 위한 협찬 관리</p>
             </div>
           </div>
           <div className="flex gap-1.5 sm:gap-2">
+            <div className="flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 bg-slate-50 rounded-xl sm:rounded-2xl border border-slate-100 shadow-sm">
+              <div className="flex items-center gap-1">
+                <button onClick={() => setFontSize(f => Math.max(13, f - 1))} className="w-5 h-5 flex items-center justify-center bg-white rounded-lg border border-slate-200 text-slate-500 font-black text-xs active:scale-90 transition-all leading-none">−</button>
+                <button onClick={() => setFontSize(f => Math.min(22, f + 1))} className="w-5 h-5 flex items-center justify-center bg-white rounded-lg border border-slate-200 text-slate-500 font-black text-xs active:scale-90 transition-all leading-none">+</button>
+              </div>
+              <span className="text-[7px] sm:text-[9px] font-bold leading-tight text-slate-400">글씨크기</span>
+            </div>
             <a href="https://adpost.naver.com/" target="_blank" className="flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 bg-emerald-50 text-emerald-600 rounded-xl sm:rounded-2xl border border-emerald-100 shadow-sm">
               <Wallet size={16} className="sm:w-[18px] sm:h-[18px]" />
               <span className="text-[7px] sm:text-[9px] font-bold leading-tight">애드포스트</span>
@@ -530,13 +760,12 @@ ${text}`
             </button>
           </div>
         </div>
-        {activeTab === 'home' && <button onClick={() => setLocationPopup(true)} className={`w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-lg flex items-center gap-3 sm:gap-4 text-left active:scale-[0.99] transition-all ${
-          weather.icon === 'sun' ? 'bg-gradient-to-r from-blue-400 to-sky-400 shadow-sky-200' :
+        {activeTab === 'home' && <button onClick={() => setLocationPopup(true)} className={`w-full p-4 sm:p-5 rounded-2xl sm:rounded-3xl text-white shadow-lg flex items-center gap-3 sm:gap-4 text-left active:scale-[0.99] transition-all ${weather.icon === 'sun' ? 'bg-gradient-to-r from-blue-400 to-sky-400 shadow-sky-200' :
           weather.icon === 'cloud-sun' ? 'bg-gradient-to-r from-sky-400 to-slate-400 shadow-slate-200' :
-          weather.icon === 'cloud' ? 'bg-gradient-to-r from-slate-400 to-slate-500 shadow-slate-200' :
-          weather.icon === 'rain' ? 'bg-gradient-to-r from-slate-500 to-blue-600 shadow-blue-200' :
-          'bg-gradient-to-r from-blue-300 to-indigo-400 shadow-indigo-200'
-        }`}>
+            weather.icon === 'cloud' ? 'bg-gradient-to-r from-slate-400 to-slate-500 shadow-slate-200' :
+              weather.icon === 'rain' ? 'bg-gradient-to-r from-slate-500 to-blue-600 shadow-blue-200' :
+                'bg-gradient-to-r from-blue-300 to-indigo-400 shadow-indigo-200'
+          }`}>
           {weather.icon === 'sun' && <Sun size={28} className="shrink-0" />}
           {weather.icon === 'cloud-sun' && <CloudSun size={28} className="shrink-0" />}
           {weather.icon === 'cloud' && <Cloud size={28} className="shrink-0" />}
@@ -544,7 +773,7 @@ ${text}`
           {weather.icon === 'snow' && <Snowflake size={28} className="shrink-0" />}
           <div className="flex-1 min-w-0">
             <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest opacity-80">
-              촬영 지수 {weather.score}% {weather.temp && `· ${weather.temp}°C`} · <MapPin size={10} className="inline -mt-0.5"/>{weather.location}
+              촬영 지수 {weather.score}% {weather.temp && `· ${weather.temp}°C`} · <MapPin size={10} className="inline -mt-0.5" />{weather.location}
             </p>
             <p className="font-bold text-xs sm:text-base leading-snug">{weather.tip}</p>
           </div>
@@ -557,10 +786,10 @@ ${text}`
 
       {/* 위치 동의 팝업 */}
       {locationPopup && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setLocationPopup(false)}>
+        <div className="fixed inset-0 bg-slate-400/30 backdrop-blur-md z-50 flex items-center justify-center p-6" onClick={() => setLocationPopup(false)}>
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-sky-100 rounded-2xl"><MapPin size={24} className="text-sky-500"/></div>
+              <div className="p-3 bg-sky-100 rounded-2xl"><MapPin size={24} className="text-sky-500" /></div>
               <div>
                 <h3 className="font-black text-slate-900">위치 정보 사용</h3>
                 <p className="text-[11px] text-slate-400 font-bold">정확한 날씨와 촬영 지수를 위해</p>
@@ -622,6 +851,34 @@ ${text}`
               );
             })()}
 
+            {/* 오늘의 할일 */}
+            {(() => {
+              const _now = new Date();
+              const today = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`;
+              const todayTasks = schedules.filter(s => {
+                if (s.isDone) return false;
+                return s.deadline === today || s.visitDate === today;
+              });
+              return (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-black text-sky-600 px-1">📋 오늘의 할일 {todayTasks.length > 0 ? `(${todayTasks.length}개)` : ''}</p>
+                  {todayTasks.length === 0 ? (
+                    <div className="w-full p-4 rounded-2xl bg-sky-50 border border-sky-100 text-center text-xs text-sky-300 font-bold">
+                      오늘 예정된 일정이 없어요 🎉
+                    </div>
+                  ) : todayTasks.map(task => (
+                    <button key={task.id} onClick={() => setSelectedScheduleId(task.id)} className="w-full flex items-center gap-3 p-3 rounded-2xl text-left active:scale-[0.99] transition-all bg-sky-50 border border-sky-200 shadow-sm shadow-sky-100">
+                      <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black border ${getBrandBadge(task.brand)}`}>{task.brand}</span>
+                      <p className="flex-1 text-sm font-bold text-slate-700 truncate">{task.title}</p>
+                      <span className="shrink-0 text-[10px] font-bold text-sky-500 bg-sky-100 px-2 py-0.5 rounded-full">
+                        {task.visitDate === today ? '체험일' : '마감일'}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
+
             {/* Quick Copy(왼) + 신청 문구(오) 2컬럼 */}
             <div className="grid grid-cols-1 sm:grid-cols-[300px_1fr] gap-4">
               {/* 왼쪽: Quick Copy */}
@@ -632,12 +889,12 @@ ${text}`
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-3 gap-1 sm:gap-2">
                   {[
-                    { label: '블로그', value: profile.blogUrl, icon: <PenTool size={14}/>, bg: 'bg-sky-50 text-sky-500' },
-                    { label: '인스타', value: profile.instaId, icon: <Instagram size={14}/>, bg: 'bg-pink-50 text-pink-500' },
-                    { label: '릴스', value: profile.reelsUrl, icon: <Eye size={14}/>, bg: 'bg-violet-50 text-violet-500' },
-                    { label: '페이스북', value: profile.facebookUrl, icon: <Globe size={14}/>, bg: 'bg-blue-50 text-blue-500' },
-                    { label: '유튜브', value: profile.youtubeUrl, icon: <Youtube size={14}/>, bg: 'bg-rose-50 text-rose-500' },
-                    { label: '이메일', value: profile.email, icon: <Mail size={14}/>, bg: 'bg-emerald-50 text-emerald-500' },
+                    { label: '블로그', value: profile.blogUrl, icon: <PenTool size={14} />, bg: 'bg-sky-50 text-sky-500' },
+                    { label: '인스타', value: profile.instaId, icon: <Instagram size={14} />, bg: 'bg-pink-50 text-pink-500' },
+                    { label: '릴스', value: profile.reelsUrl, icon: <Eye size={14} />, bg: 'bg-violet-50 text-violet-500' },
+                    { label: '페이스북', value: profile.facebookUrl, icon: <Globe size={14} />, bg: 'bg-blue-50 text-blue-500' },
+                    { label: '유튜브', value: profile.youtubeUrl, icon: <Youtube size={14} />, bg: 'bg-rose-50 text-rose-500' },
+                    { label: '이메일', value: profile.email, icon: <Mail size={14} />, bg: 'bg-emerald-50 text-emerald-500' },
                   ].map(({ label, value, icon, bg }) => (
                     <button key={label} onClick={() => copyToClipboard(value || `프로필에서 ${label}을 설정하세요`)} className="flex flex-col items-center gap-1 sm:gap-1.5 py-2 sm:py-3 rounded-xl sm:rounded-2xl active:bg-sky-50 transition-all">
                       <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${bg}`}>{icon}</div>
@@ -652,7 +909,7 @@ ${text}`
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-[10px] font-black text-slate-400 uppercase">신청 문구</h3>
                   <button onClick={addTemplate} className="flex items-center gap-1 text-[10px] font-bold text-sky-500 active:scale-95 transition-all">
-                    <Plus size={14}/> 추가
+                    <Plus size={14} /> 추가
                   </button>
                 </div>
                 {/* 문구 목록 - 모바일 2개까지, 데스크탑 4개까지 2열 */}
@@ -695,7 +952,7 @@ ${text}`
               <div className="flex items-center gap-3 mb-4 px-1">
                 <h3 className="text-sm font-black text-slate-400 uppercase tracking-tighter">Schedules</h3>
                 <button onClick={() => setActiveTab('scheduleManage')} className="flex items-center gap-1 text-[10px] font-bold text-sky-500 active:scale-95 transition-all">
-                  전체 관리 <ChevronRight size={12}/>
+                  전체 관리 <ChevronRight size={12} />
                 </button>
               </div>
               {(() => {
@@ -778,15 +1035,15 @@ ${text}`
           return (
             <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
               <div className="flex items-center gap-3 mb-2">
-                <button onClick={() => setActiveTab('home')} className="p-2 bg-sky-50 rounded-xl"><ChevronLeft size={20}/></button>
+                <button onClick={() => setActiveTab('home')} className="p-2 bg-sky-50 rounded-xl"><ChevronLeft size={20} /></button>
                 <h3 className="text-lg font-black text-slate-900">스케줄 관리</h3>
               </div>
 
               {/* 연도 네비게이션 */}
               <div className="flex justify-center items-center gap-4">
-                <button onClick={() => setCalendarMonth(prev => ({ ...prev, year: prev.year - 1 }))} className="p-1.5 bg-white rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600"><ChevronLeft size={16}/></button>
+                <button onClick={() => setCalendarMonth(prev => ({ ...prev, year: prev.year - 1 }))} className="p-1.5 bg-white rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600"><ChevronLeft size={16} /></button>
                 <h3 className="font-black text-lg text-slate-800">{year}년</h3>
-                <button onClick={() => setCalendarMonth(prev => ({ ...prev, year: prev.year + 1 }))} className="p-1.5 bg-white rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600"><ChevronRight size={16}/></button>
+                <button onClick={() => setCalendarMonth(prev => ({ ...prev, year: prev.year + 1 }))} className="p-1.5 bg-white rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600"><ChevronRight size={16} /></button>
               </div>
 
               {/* 월 선택 탭 */}
@@ -829,7 +1086,7 @@ ${text}`
               <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 {/* 진행중 */}
                 <section>
-                  <h4 className="text-xs font-black text-sky-500 mb-3 px-1 flex items-center gap-1"><Clock size={14}/> 진행중 ({mOngoing.length})</h4>
+                  <h4 className="text-xs font-black text-sky-500 mb-3 px-1 flex items-center gap-1"><Clock size={14} /> 진행중 ({mOngoing.length})</h4>
                   <div className="jelly-card overflow-hidden divide-y divide-slate-100">
                     {mOngoing.length > 0 ? (
                       mOngoing.map(item => {
@@ -854,7 +1111,7 @@ ${text}`
 
                 {/* 완료 */}
                 <section>
-                  <h4 className="text-xs font-black text-emerald-500 mb-3 px-1 flex items-center gap-1"><CheckCircle2 size={14}/> 완료 ({mDone.length})</h4>
+                  <h4 className="text-xs font-black text-emerald-500 mb-3 px-1 flex items-center gap-1"><CheckCircle2 size={14} /> 완료 ({mDone.length})</h4>
                   <div className="jelly-card overflow-hidden divide-y divide-slate-100">
                     {mDone.length > 0 ? (
                       mDone.map(item => (
@@ -877,7 +1134,7 @@ ${text}`
 
               {/* 협찬 분석 */}
               <section>
-                <h4 className="text-xs font-black text-slate-400 mb-3 px-1 flex items-center gap-1 uppercase tracking-tighter"><BarChart3 size={14}/> {year}년 {month + 1}월 협찬 분석</h4>
+                <h4 className="text-xs font-black text-slate-400 mb-3 px-1 flex items-center gap-1 uppercase tracking-tighter"><BarChart3 size={14} /> {year}년 {month + 1}월 협찬 분석</h4>
                 {(() => {
                   const brandStats = {};
                   const typeStats = {};
@@ -904,7 +1161,7 @@ ${text}`
                       <div className="jelly-card p-3 sm:p-4">
                         <p className="text-[10px] font-black text-slate-500 mb-3">브랜드별</p>
                         <div className="space-y-2.5">
-                          {Object.entries(brandStats).sort((a,b) => b[1]-a[1]).map(([brand, count]) => (
+                          {Object.entries(brandStats).sort((a, b) => b[1] - a[1]).map(([brand, count]) => (
                             <div key={brand}>
                               <div className="flex justify-between items-center mb-1">
                                 <span className="text-[10px] sm:text-[11px] font-bold text-slate-600">{brand}</span>
@@ -921,7 +1178,7 @@ ${text}`
                       <div className="jelly-card p-3 sm:p-4">
                         <p className="text-[9px] sm:text-[10px] font-black text-slate-500 mb-3">카테고리별</p>
                         <div className="space-y-2.5">
-                          {Object.entries(typeStats).sort((a,b) => b[1]-a[1]).map(([type, count]) => (
+                          {Object.entries(typeStats).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
                             <div key={type}>
                               <div className="flex justify-between items-center mb-1">
                                 <span className="text-[10px] sm:text-[11px] font-bold text-slate-600">{type}</span>
@@ -943,7 +1200,7 @@ ${text}`
 
               {/* 연간 분석 */}
               <section>
-                <h4 className="text-xs font-black text-slate-400 mb-3 px-1 flex items-center gap-1 uppercase tracking-tighter"><BarChart3 size={14}/> {year}년 연간 분석</h4>
+                <h4 className="text-xs font-black text-slate-400 mb-3 px-1 flex items-center gap-1 uppercase tracking-tighter"><BarChart3 size={14} /> {year}년 연간 분석</h4>
                 {(() => {
                   if (yearFiltered.length === 0) return <div className="jelly-card p-6 text-center text-slate-300 text-sm font-bold">{year}년 데이터가 없습니다</div>;
                   const yBrandStats = {};
@@ -1006,12 +1263,12 @@ ${text}`
                       <div className="jelly-card p-3 sm:p-4">
                         <p className="text-[9px] sm:text-[10px] font-black text-slate-500 mb-3">브랜드 비율</p>
                         <div className="h-4 rounded-full overflow-hidden flex bg-slate-100">
-                          {Object.entries(yBrandStats).sort((a,b) => b[1]-a[1]).map(([brand, count]) => (
+                          {Object.entries(yBrandStats).sort((a, b) => b[1] - a[1]).map(([brand, count]) => (
                             <div key={brand} className={`${brandColors[brand] || 'bg-blue-400'} transition-all`} style={{ width: `${(count / yearFiltered.length) * 100}%` }} title={`${brand}: ${count}건`}></div>
                           ))}
                         </div>
                         <div className="flex flex-wrap gap-2 sm:gap-3 mt-2">
-                          {Object.entries(yBrandStats).sort((a,b) => b[1]-a[1]).map(([brand, count]) => (
+                          {Object.entries(yBrandStats).sort((a, b) => b[1] - a[1]).map(([brand, count]) => (
                             <span key={brand} className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-slate-500">
                               <span className={`w-2 h-2 rounded-full ${brandColors[brand] || 'bg-blue-400'}`}></span>
                               {brand} {Math.round((count / yearFiltered.length) * 100)}%
@@ -1033,10 +1290,37 @@ ${text}`
             <section className="jelly-card p-8 text-center">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="font-black text-xl text-slate-800 flex items-center gap-2"><Calculator size={24} className="text-sky-500" /> 글자 수 측정</h3>
-                <span className="text-[10px] bg-slate-900 text-white px-3 py-1 rounded-full font-bold">1,500자 권장</span>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setShowSavedTexts(!showSavedTexts)} className="text-[10px] font-bold text-sky-500 bg-sky-50 px-3 py-1.5 rounded-lg border border-sky-100 active:scale-95 transition-all whitespace-nowrap">
+                    저장된 글 {savedTexts.length > 0 ? `(${savedTexts.length})` : ''}
+                  </button>
+                  <span className="text-[10px] bg-sky-500 text-white shadow-md shadow-sky-200 px-3 py-1 rounded-full font-bold">1,500자 권장</span>
+                </div>
               </div>
-              <textarea className="w-full h-64 p-6 bg-sky-50 rounded-[32px] border-none focus:ring-2 focus:ring-sky-500 outline-none text-slate-600 leading-relaxed text-sm mb-6" placeholder="파워블로거는 원고 내용으로 승부합니다. 여기에 내용을 적으세요!" value={textToCount} onChange={(e) => setTextToCount(e.target.value)} />
-              <div className="grid grid-cols-2 gap-4">
+              {showSavedTexts && savedTexts.length > 0 && (
+                <div className="mb-6 text-left space-y-2">
+                  {savedTexts.map(item => (
+                    <div key={item.id} className="flex items-start gap-2 p-3 bg-white rounded-2xl border border-sky-100 shadow-sm">
+                      <button onClick={() => { setTextToCount(item.content); setShowSavedTexts(false); }} className="flex-1 text-left min-w-0">
+                        <p className="text-xs font-bold text-slate-700 truncate">{item.title || '(제목 없음)'}</p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">{new Date(item.savedAt).toLocaleDateString('ko-KR')} · {item.content.length}자</p>
+                      </button>
+                      <button onClick={() => {
+                        const updated = savedTexts.filter(t => t.id !== item.id);
+                        setSavedTexts(updated);
+                        localStorage.setItem('blogger_saved_texts', JSON.stringify(updated));
+                      }} className="shrink-0 p-1 rounded-lg text-slate-400 active:bg-slate-100 transition-all">
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {showSavedTexts && savedTexts.length === 0 && (
+                <p className="mb-6 text-xs text-slate-400 text-left">저장된 글이 없습니다.</p>
+              )}
+              <textarea className="w-full h-64 p-6 bg-white/60 backdrop-blur-md shadow-inner rounded-[32px] border border-white focus:bg-white focus:ring-2 focus:ring-sky-300 outline-none text-slate-600 leading-relaxed text-sm mb-6 placeholder:font-bold placeholder:text-slate-300" placeholder="파워블로거는 원고 내용으로 승부합니다. 여기에 내용을 적으세요!" value={textToCount} onChange={(e) => setTextToCount(e.target.value)} />
+              <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="bg-sky-50 p-5 rounded-3xl">
                   <p className="text-[10px] font-black text-sky-400 mb-1">공백 포함</p>
                   <p className="text-2xl font-black text-sky-700 underline decoration-sky-200">{textToCount.length}</p>
@@ -1046,6 +1330,24 @@ ${text}`
                   <p className="text-2xl font-black text-slate-800">{textToCount.replace(/\s+/g, '').length}</p>
                 </div>
               </div>
+              <button
+                onClick={() => {
+                  if (!textToCount.trim()) return;
+                  const newItem = {
+                    id: Date.now(),
+                    title: textToCount.trim().slice(0, 20),
+                    content: textToCount,
+                    savedAt: new Date().toISOString(),
+                  };
+                  const updated = [newItem, ...savedTexts];
+                  setSavedTexts(updated);
+                  localStorage.setItem('blogger_saved_texts', JSON.stringify(updated));
+                  setShowSavedTexts(true);
+                }}
+                className="w-full flex items-center justify-center gap-2 py-3 jelly-button text-white rounded-2xl font-black text-sm active:scale-95 transition-all shadow-md shadow-sky-200"
+              >
+                <Save size={16} /> 글 저장하기
+              </button>
             </section>
 
             {/* 해시태그 모음 */}
@@ -1076,7 +1378,7 @@ ${text}`
                     saveHashtags({ ...hashtags, [newCatName.trim()]: [] });
                     setNewCatName('');
                     setShowAddCat(false);
-                  }} className="px-4 py-2.5 bg-sky-500 text-white rounded-xl text-xs font-bold active:scale-95 transition-all whitespace-nowrap">추가</button>
+                  }} className="px-4 py-2.5 jelly-button text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all whitespace-nowrap">추가</button>
                 </div>
               )}
               <div className="space-y-4">
@@ -1169,7 +1471,7 @@ ${text}`
                             const tag = newHashtag.trim().startsWith('#') ? newHashtag.trim() : `#${newHashtag.trim()}`;
                             saveHashtags({ ...hashtags, [cat]: [...tags, tag] });
                             setNewHashtag('');
-                          }} className="px-3 py-2 bg-sky-500 text-white rounded-xl text-xs font-bold active:scale-95 transition-all">추가</button>
+                          }} className="px-3 py-2 jelly-button text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all">추가</button>
                         </div>
                       )}
                     </div>
@@ -1183,116 +1485,116 @@ ${text}`
         {activeTab === 'calendar' && (
           <div className="space-y-6 animate-in fade-in duration-500">
             <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4">
-            <section className="jelly-card p-6 sm:w-[380px]">
-              {/* 월 네비게이션 + 스케줄 관리 */}
-              <div className="flex justify-between items-center mb-2">
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setCalendarMonth(prev => {
-                    const d = new Date(prev.year, prev.month - 1);
-                    return { year: d.getFullYear(), month: d.getMonth() };
-                  })} className="p-2 bg-sky-50 rounded-xl"><ChevronLeft size={18} /></button>
-                  <h3 className="font-black text-lg text-slate-800">
-                    {calendarMonth.year}년 {calendarMonth.month + 1}월
-                  </h3>
-                  <button onClick={() => setCalendarMonth(prev => {
-                    const d = new Date(prev.year, prev.month + 1);
-                    return { year: d.getFullYear(), month: d.getMonth() };
-                  })} className="p-2 bg-sky-50 rounded-xl"><ChevronRight size={18} /></button>
+              <section className="jelly-card p-6 sm:w-[380px]">
+                {/* 월 네비게이션 + 스케줄 관리 */}
+                <div className="flex justify-between items-center mb-2">
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setCalendarMonth(prev => {
+                      const d = new Date(prev.year, prev.month - 1);
+                      return { year: d.getFullYear(), month: d.getMonth() };
+                    })} className="p-2 bg-sky-50 rounded-xl"><ChevronLeft size={18} /></button>
+                    <h3 className="font-black text-lg text-slate-800">
+                      {calendarMonth.year}년 {calendarMonth.month + 1}월
+                    </h3>
+                    <button onClick={() => setCalendarMonth(prev => {
+                      const d = new Date(prev.year, prev.month + 1);
+                      return { year: d.getFullYear(), month: d.getMonth() };
+                    })} className="p-2 bg-sky-50 rounded-xl"><ChevronRight size={18} /></button>
+                  </div>
+                  <button onClick={() => setActiveTab('scheduleManage')} className="flex items-center gap-1 text-[10px] font-bold text-sky-500 px-3 py-1.5 bg-sky-50 rounded-xl active:scale-95 transition-all">
+                    <ClipboardList size={12} /> 전체 관리
+                  </button>
                 </div>
-                <button onClick={() => setActiveTab('scheduleManage')} className="flex items-center gap-1 text-[10px] font-bold text-sky-500 px-3 py-1.5 bg-sky-50 rounded-xl active:scale-95 transition-all">
-                  <ClipboardList size={12}/> 전체 관리
-                </button>
-              </div>
 
-              {/* 요일 헤더 */}
-              <div className="grid grid-cols-7 gap-1 mb-2">
-                {['일', '월', '화', '수', '목', '금', '토'].map(d => (
-                  <div key={d} className={`text-center text-[10px] font-black py-1 ${d === '일' ? 'text-rose-400' : d === '토' ? 'text-blue-400' : 'text-slate-400'}`}>{d}</div>
-                ))}
-              </div>
+                {/* 요일 헤더 */}
+                <div className="grid grid-cols-7 gap-1 mb-2">
+                  {['일', '월', '화', '수', '목', '금', '토'].map(d => (
+                    <div key={d} className={`text-center text-[10px] font-black py-1 ${d === '일' ? 'text-rose-400' : d === '토' ? 'text-blue-400' : 'text-slate-400'}`}>{d}</div>
+                  ))}
+                </div>
 
-              {/* 날짜 그리드 */}
-              <div className="grid grid-cols-7 gap-1">
-                {calendarDays.map((day, i) => {
-                  if (!day) return <div key={`empty-${i}`} />;
-                  const daySchedules = getSchedulesForDate(calendarMonth.year, calendarMonth.month, day);
-                  const isToday = new Date().getFullYear() === calendarMonth.year && new Date().getMonth() === calendarMonth.month && new Date().getDate() === day;
-                  const isSelected = selectedDate === day;
-                  return (
-                    <button
-                      key={day}
-                      onClick={() => setSelectedDate(isSelected ? null : day)}
-                      className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center text-sm font-bold transition-all
+                {/* 날짜 그리드 */}
+                <div className="grid grid-cols-7 gap-1">
+                  {calendarDays.map((day, i) => {
+                    if (!day) return <div key={`empty-${i}`} />;
+                    const daySchedules = getSchedulesForDate(calendarMonth.year, calendarMonth.month, day);
+                    const isToday = new Date().getFullYear() === calendarMonth.year && new Date().getMonth() === calendarMonth.month && new Date().getDate() === day;
+                    const isSelected = selectedDate === day;
+                    return (
+                      <button
+                        key={day}
+                        onClick={() => setSelectedDate(isSelected ? null : day)}
+                        className={`relative aspect-square rounded-2xl flex flex-col items-center justify-center text-sm font-bold transition-all
                         ${isSelected ? 'jelly-button shadow-lg scale-105' : isToday ? 'bg-sky-50 text-sky-600 ring-2 ring-sky-200' : 'text-slate-700 hover:bg-sky-50'}
                         ${i % 7 === 0 ? 'text-rose-500' : ''} ${i % 7 === 6 ? 'text-blue-500' : ''}
                         ${isSelected && 'text-white'}
                       `}
-                    >
-                      {day}
-                      {daySchedules.length > 0 && (
-                        <div className="flex gap-0.5 mt-0.5">
-                          {daySchedules.slice(0, 3).map((s, idx) => (
-                            <div key={idx} className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : s.isDone ? 'bg-slate-300' : s._dotType === 'deadline' ? 'bg-rose-400' : 'bg-sky-400'}`} />
-                          ))}
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* 범례 */}
-              <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-sky-50">
-                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-rose-400"/><span className="text-[10px] font-bold text-slate-400">리뷰 마감일</span></div>
-                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-sky-400"/><span className="text-[10px] font-bold text-slate-400">협찬 일정</span></div>
-                <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-slate-300"/><span className="text-[10px] font-bold text-slate-400">리뷰 완료</span></div>
-              </div>
-            </section>
-
-            {/* 이번 달 일정 리스트 */}
-            <section className="jelly-card p-4">
-              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
-                {calendarMonth.month + 1}월 일정
-              </h3>
-              {(() => {
-                const monthEvents = [];
-                schedules.forEach(s => {
-                  // 마감일
-                  const d = parseDeadlineToDate(s.deadline);
-                  if (d && d.getFullYear() === calendarMonth.year && d.getMonth() === calendarMonth.month) {
-                    monthEvents.push({ ...s, _date: d, _label: '마감', _color: 'rose' });
-                  }
-                  // 체험일
-                  if (s.visitDate) {
-                    const [y, m, dd] = s.visitDate.split('-').map(Number);
-                    if (y === calendarMonth.year && m - 1 === calendarMonth.month) {
-                      monthEvents.push({ ...s, _date: new Date(y, m - 1, dd), _label: '체험', _color: 'sky' });
-                    }
-                  }
-                });
-                monthEvents.sort((a, b) => a._date - b._date);
-                // 중복 제거 (같은 스케줄 id + 같은 날짜)
-                const seen = new Set();
-                const unique = monthEvents.filter(e => {
-                  const key = `${e.id}-${e._date.getTime()}-${e._label}`;
-                  if (seen.has(key)) return false;
-                  seen.add(key);
-                  return true;
-                });
-                if (unique.length === 0) return <p className="text-xs text-slate-300 font-bold text-center py-4">이번 달 일정이 없습니다</p>;
-                return (
-                  <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
-                    {unique.map((e, i) => (
-                      <button key={i} onClick={() => setSelectedScheduleId(e.id)} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-sky-50/50 active:bg-sky-100 transition-all text-left">
-                        <span className="text-[11px] font-black text-slate-400 w-10 shrink-0">{e._date.getMonth() + 1}/{e._date.getDate()}</span>
-                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-black text-white shrink-0 ${e._color === 'rose' ? 'bg-rose-400' : 'bg-sky-400'}`}>{e._label}</span>
-                        <span className={`text-xs font-bold truncate ${e.isDone ? 'text-slate-300 line-through' : 'text-slate-700'}`}>{e.title}</span>
+                      >
+                        {day}
+                        {daySchedules.length > 0 && (
+                          <div className="flex gap-0.5 mt-0.5">
+                            {daySchedules.slice(0, 3).map((s, idx) => (
+                              <div key={idx} className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : s.isDone ? 'bg-slate-300' : s._dotType === 'deadline' ? 'bg-rose-400' : 'bg-sky-400'}`} />
+                            ))}
+                          </div>
+                        )}
                       </button>
-                    ))}
-                  </div>
-                );
-              })()}
-            </section>
+                    );
+                  })}
+                </div>
+
+                {/* 범례 */}
+                <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-sky-50">
+                  <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-rose-400" /><span className="text-[10px] font-bold text-slate-400">리뷰 마감일</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-sky-400" /><span className="text-[10px] font-bold text-slate-400">협찬 일정</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-slate-300" /><span className="text-[10px] font-bold text-slate-400">리뷰 완료</span></div>
+                </div>
+              </section>
+
+              {/* 이번 달 일정 리스트 */}
+              <section className="jelly-card p-4">
+                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">
+                  {calendarMonth.month + 1}월 일정
+                </h3>
+                {(() => {
+                  const monthEvents = [];
+                  schedules.forEach(s => {
+                    // 마감일
+                    const d = parseDeadlineToDate(s.deadline);
+                    if (d && d.getFullYear() === calendarMonth.year && d.getMonth() === calendarMonth.month) {
+                      monthEvents.push({ ...s, _date: d, _label: '마감', _color: 'rose' });
+                    }
+                    // 체험일
+                    if (s.visitDate) {
+                      const [y, m, dd] = s.visitDate.split('-').map(Number);
+                      if (y === calendarMonth.year && m - 1 === calendarMonth.month) {
+                        monthEvents.push({ ...s, _date: new Date(y, m - 1, dd), _label: '체험', _color: 'sky' });
+                      }
+                    }
+                  });
+                  monthEvents.sort((a, b) => a._date - b._date);
+                  // 중복 제거 (같은 스케줄 id + 같은 날짜)
+                  const seen = new Set();
+                  const unique = monthEvents.filter(e => {
+                    const key = `${e.id}-${e._date.getTime()}-${e._label}`;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                  });
+                  if (unique.length === 0) return <p className="text-xs text-slate-300 font-bold text-center py-4">이번 달 일정이 없습니다</p>;
+                  return (
+                    <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
+                      {unique.map((e, i) => (
+                        <button key={i} onClick={() => setSelectedScheduleId(e.id)} className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl bg-sky-50/50 active:bg-sky-100 transition-all text-left">
+                          <span className="text-[11px] font-black text-slate-400 w-10 shrink-0">{e._date.getMonth() + 1}/{e._date.getDate()}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-black text-white shrink-0 ${e._color === 'rose' ? 'bg-rose-400' : 'bg-sky-400'}`}>{e._label}</span>
+                          <span className={`text-xs font-bold truncate ${e.isDone ? 'text-slate-300 line-through' : 'text-slate-700'}`}>{e.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </section>
             </div>
 
             {/* 선택한 날짜의 스케줄 */}
@@ -1329,11 +1631,11 @@ ${text}`
 
       {/* --- 신청 문구 전체 목록 팝업 --- */}
       {editingTemplateId === 'list' && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300" onClick={() => setEditingTemplateId(null)}>
+        <div className="fixed inset-0 bg-slate-400/30 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300" onClick={() => setEditingTemplateId(null)}>
           <div className="bg-white w-full max-w-md rounded-t-[40px] sm:rounded-[40px] p-8 space-y-4 animate-in slide-in-from-bottom duration-500" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-black text-slate-800">신청 문구 전체</h3>
-              <button onClick={() => setEditingTemplateId(null)} className="p-2 bg-sky-50 rounded-full"><X size={16}/></button>
+              <button onClick={() => setEditingTemplateId(null)} className="p-2 bg-sky-50 rounded-full"><X size={16} /></button>
             </div>
             <div className="space-y-2 max-h-[50vh] overflow-y-auto">
               {templates.map(t => (
@@ -1343,7 +1645,7 @@ ${text}`
               ))}
             </div>
             <button onClick={() => { addTemplate(); }} className="w-full py-3 rounded-2xl text-sm font-bold text-sky-500 bg-sky-50 active:scale-95 transition-all flex items-center justify-center gap-1">
-              <Plus size={14}/> 새 문구 추가
+              <Plus size={14} /> 새 문구 추가
             </button>
           </div>
         </div>
@@ -1354,11 +1656,11 @@ ${text}`
         const t = templates.find(x => x.id === editingTemplateId);
         if (!t) return null;
         return (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300" onClick={() => setEditingTemplateId(null)}>
+          <div className="fixed inset-0 bg-slate-400/30 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300" onClick={() => setEditingTemplateId(null)}>
             <div className="bg-white w-full max-w-md rounded-t-[40px] sm:rounded-[40px] p-8 space-y-5 animate-in slide-in-from-bottom duration-500" onClick={e => e.stopPropagation()}>
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-black text-slate-800">신청 문구</h3>
-                <button onClick={() => setEditingTemplateId(null)} className="p-2 bg-sky-50 rounded-full"><X size={16}/></button>
+                <button onClick={() => setEditingTemplateId(null)} className="p-2 bg-sky-50 rounded-full"><X size={16} /></button>
               </div>
               <input
                 className="w-full px-4 py-3 rounded-xl bg-sky-50/50 ring-1 ring-slate-100 focus:ring-2 focus:ring-sky-400 outline-none text-sm font-bold"
@@ -1373,11 +1675,11 @@ ${text}`
                 placeholder="신청 문구를 작성하세요..."
               />
               <div className="flex gap-2">
-                <button onClick={() => { localStorage.setItem('blogTemplates', JSON.stringify(templates)); alert('저장되었습니다!'); }} className="flex-1 bg-sky-500 text-white py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all flex items-center justify-center gap-2">
-                  <Save size={16}/> 저장
+                <button onClick={() => { localStorage.setItem('blogTemplates', JSON.stringify(templates)); alert('저장되었습니다!'); }} className="flex-1 jelly-button text-white py-4 rounded-2xl font-black text-sm active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md shadow-sky-200">
+                  <Save size={16} /> 저장
                 </button>
-                <button onClick={() => { copyToClipboard(t.content); setEditingTemplateId(null); }} className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all flex items-center justify-center gap-2">
-                  <Copy size={16}/> 복사
+                <button onClick={() => { copyToClipboard(t.content); setEditingTemplateId(null); }} className="flex-1 jelly-button py-4 rounded-2xl font-black text-sm shadow-md shadow-sky-200 active:scale-95 transition-all flex items-center justify-center gap-2">
+                  <Copy size={16} /> 복사
                 </button>
                 <button onClick={() => deleteTemplate(t.id)} className="flex-1 bg-rose-50 text-rose-500 py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all">
                   삭제
@@ -1396,11 +1698,11 @@ ${text}`
         const isEditing = editingScheduleId === item.id;
         const updateField = (key, val) => setSchedules(schedules.map(s => s.id === item.id ? { ...s, [key]: val } : s));
         return (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300" onClick={() => setSelectedScheduleId(null)}>
-            <div className="bg-white w-full max-w-lg rounded-t-[40px] sm:rounded-[40px] p-8 space-y-5 animate-in slide-in-from-bottom duration-500 overflow-y-auto max-h-[90vh]" onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 bg-slate-400/30 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300" onClick={() => setSelectedScheduleId(null)}>
+            <div className="bg-white w-full max-w-lg rounded-t-[40px] sm:rounded-[40px] p-8 space-y-5 animate-in slide-in-from-bottom duration-500 overflow-y-auto max-h-[90vh]" ref={el => imageCardRefs.current[item.id] = el} onClick={e => e.stopPropagation()}>
               {/* 헤더 */}
               <div className="flex justify-between items-start" ref={el => cardRefs.current[item.id] = el} data-card-id={item.id}>
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black border ${getBrandBadge(item.brand)}`}>{item.brand}</span>
                     <span className="text-[10px] font-bold text-sky-500">{item.type}</span>
@@ -1410,29 +1712,29 @@ ${text}`
                   <div className="flex items-center gap-2 mt-1.5">
                     {item.visitDate ? (
                       <p className="text-[11px] font-bold text-sky-500 flex items-center gap-1">
-                        <CalendarDays size={11}/> {item.visitDate} {item.visitSetTime && `· ${item.visitSetTime}`}
-                        <button onClick={() => setConfirmVisitDate({ id: item.id, date: item.visitDate, time: item.visitSetTime || '' })} className="ml-1 text-sky-400 underline">변경</button>
+                        <CalendarDays size={11} /> {item.visitDate} {item.visitSetTime && `· ${item.visitSetTime}`}
+                        <button data-no-image="true" onClick={() => setConfirmVisitDate({ id: item.id, date: item.visitDate, time: item.visitSetTime || '' })} className="ml-1 text-sky-400 underline">변경</button>
                       </p>
                     ) : (
-                      <button onClick={() => setConfirmVisitDate({ id: item.id, date: '', time: '' })} className="text-[11px] font-black text-white flex items-center gap-1 bg-sky-500 px-4 py-2 rounded-full shadow-md shadow-sky-200 active:scale-95 transition-all">
-                        <CalendarDays size={12}/> 체험일 설정
+                      <button data-no-image="true" onClick={() => setConfirmVisitDate({ id: item.id, date: '', time: '' })} className="text-[11px] font-black text-white flex items-center gap-1 jelly-button px-4 py-2 rounded-full shadow-md shadow-sky-200 active:scale-95 transition-all">
+                        <CalendarDays size={12} /> 체험일 설정
                       </button>
                     )}
-                    <button onClick={() => setNotePopupId(item.id)} className={`text-[11px] font-black flex items-center gap-1 px-4 py-2 rounded-full shadow-md active:scale-95 transition-all ${item.experienceNote ? 'bg-violet-500 text-white shadow-violet-200' : 'bg-violet-100 text-violet-500 shadow-violet-100'}`}>
-                      <PenTool size={12}/> {item.experienceNote ? '메모 보기' : '체험 메모'}
+                    <button data-no-image="true" onClick={() => setNotePopupId(item.id)} className={`text-[11px] font-black flex items-center gap-1 px-4 py-2 rounded-full shadow-md active:scale-95 transition-all ${item.experienceNote ? 'bg-violet-500 text-white shadow-violet-200' : 'bg-violet-100 text-violet-500 shadow-violet-100'}`}>
+                      <PenTool size={12} /> {item.experienceNote ? '메모 보기' : '체험 메모'}
                     </button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => setEditingScheduleId(editingScheduleId === item.id ? null : item.id)} className={`p-2 rounded-xl active:scale-90 transition-all ${editingScheduleId === item.id ? 'bg-sky-500 text-white' : 'bg-sky-50 text-sky-400'}`}><Pencil size={16}/></button>
-                  <button onClick={() => saveCardAsImage(item.id)} className="p-2 bg-sky-50 rounded-xl text-sky-400 active:scale-90 transition-all"><Download size={16}/></button>
-                  <button onClick={() => { setEditingScheduleId(null); setSelectedScheduleId(null); }} className="p-2 bg-sky-50 rounded-full"><X size={16}/></button>
+                <div className="flex gap-2 shrink-0 ml-2" data-no-image="true">
+                  <button onClick={() => setEditingScheduleId(editingScheduleId === item.id ? null : item.id)} className={`p-2 rounded-xl active:scale-90 transition-all ${editingScheduleId === item.id ? 'bg-sky-500 text-white' : 'bg-sky-50 text-sky-400'}`}><Pencil size={16} /></button>
+                  <button onClick={() => saveCardAsImage(item.id)} className="p-2 bg-sky-50 rounded-xl text-sky-400 active:scale-90 transition-all"><Download size={16} /></button>
+                  <button onClick={() => { setEditingScheduleId(null); setSelectedScheduleId(null); }} className="p-2 bg-sky-50 rounded-full"><X size={16} /></button>
                 </div>
               </div>
 
               {/* 수정 모드 */}
               {isEditing && (
-                <div className="bg-sky-50 p-5 rounded-2xl space-y-3 border-2 border-sky-200">
+                <div data-no-image="true" className="bg-sky-50 p-5 rounded-2xl space-y-3 border-2 border-sky-200">
                   <p className="text-[10px] font-black text-sky-500 uppercase tracking-widest mb-1">스케줄 수정</p>
                   <div className="flex items-center gap-3">
                     <div className="w-14 shrink-0 text-[10px] font-bold text-sky-400">카테고리</div>
@@ -1465,8 +1767,8 @@ ${text}`
                       <textarea className={`flex-1 bg-white px-3 py-2 rounded-xl ring-1 ring-${color}-100 focus:ring-2 focus:ring-${color}-300 outline-none text-xs font-medium text-slate-700 h-24 resize-none`} value={item[key] || ''} onChange={(e) => updateField(key, e.target.value)} />
                     </div>
                   ))}
-                  <button onClick={() => { localStorage.setItem('blogSchedules', JSON.stringify(schedules)); setEditingScheduleId(null); }} className="w-full bg-sky-500 text-white py-3 rounded-2xl font-bold text-sm active:scale-95 transition-all flex items-center justify-center gap-2">
-                    <Save size={14}/> 수정 완료
+                  <button onClick={() => { localStorage.setItem('blogSchedules', JSON.stringify(schedules)); setEditingScheduleId(null); }} className="w-full jelly-button text-white py-3 rounded-2xl font-black text-sm active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md shadow-sky-200">
+                    <Save size={14} /> 수정 완료
                   </button>
                 </div>
               )}
@@ -1476,161 +1778,161 @@ ${text}`
                 {item.address && (
                   <div className="flex items-center gap-2">
                     <a href={`https://map.naver.com/v5/search/${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-center gap-3 text-sm text-slate-500 bg-sky-50 p-3 rounded-2xl active:bg-sky-100 transition-all">
-                      <MapPin size={16} className="text-sky-400 shrink-0"/> <span className="truncate">{item.address}</span>
-                      <ExternalLink size={12} className="text-sky-300 shrink-0 ml-auto"/>
+                      <MapPin size={16} className="text-sky-400 shrink-0" /> <span className="truncate">{item.address}</span>
+                      <ExternalLink size={12} className="text-sky-300 shrink-0 ml-auto" />
                     </a>
                     <button onClick={() => copyToClipboard(item.address)} className="p-3 bg-sky-50 rounded-2xl text-sky-400 active:scale-90 transition-all shrink-0">
-                      <Copy size={14}/>
+                      <Copy size={14} />
                     </button>
                   </div>
                 )}
                 {item.contact && (
                   <div className="flex items-center gap-2">
                     <a href={`tel:${item.contact}`} className="flex-1 flex items-center gap-3 text-sm text-slate-500 bg-sky-50 p-3 rounded-2xl active:bg-sky-100 transition-all">
-                      <Phone size={16} className="text-sky-400 shrink-0"/> <span>{item.contact}</span>
+                      <Phone size={16} className="text-sky-400 shrink-0" /> <span>{item.contact}</span>
                     </a>
                     <button onClick={() => copyToClipboard(item.contact)} className="p-3 bg-sky-50 rounded-2xl text-sky-400 active:scale-90 transition-all shrink-0">
-                      <Copy size={14}/>
+                      <Copy size={14} />
                     </button>
                   </div>
                 )}
                 {item.provided && (
                   <div className="flex items-center gap-3 text-sm text-slate-500 bg-sky-50 p-3 rounded-2xl">
-                    <Gift size={16} className="text-emerald-400 shrink-0"/> <span>{item.provided}</span>
+                    <Gift size={16} className="text-emerald-400 shrink-0" /> <span>{item.provided}</span>
                   </div>
                 )}
               </div>
 
-              {/* 일정 정보 */}
-              <div className="grid grid-cols-2 gap-2">
-                {item.experiencePeriod && (
-                  <div className="bg-blue-50 p-3 rounded-xl">
-                    <p className="text-[9px] font-black text-blue-400 mb-1">체험기간</p>
-                    <p className="text-xs font-bold text-blue-700">{item.experiencePeriod}</p>
-                  </div>
-                )}
-                {item.deadline && (
-                  <div className="bg-rose-50 p-3 rounded-xl">
-                    <p className="text-[9px] font-black text-rose-400 mb-1">리뷰마감</p>
-                    <p className="text-xs font-bold text-rose-700">{item.deadline}</p>
-                  </div>
-                )}
-                {item.visitDays && (
-                  <div className="bg-violet-50 p-3 rounded-xl">
-                    <p className="text-[9px] font-black text-violet-400 mb-1">가능요일</p>
-                    <p className="text-xs font-bold text-violet-700">{item.visitDays}</p>
-                  </div>
-                )}
-                {item.visitTime && (
-                  <div className="bg-amber-50 p-3 rounded-xl">
-                    <p className="text-[9px] font-black text-amber-400 mb-1">가능시간</p>
-                    <p className="text-xs font-bold text-amber-700">{item.visitTime}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* 주의사항 */}
-              {item.caution && (
-                <div className="bg-orange-50/50 p-5 rounded-2xl border border-dashed border-orange-200">
-                  <p className="text-[10px] font-black text-orange-400 mb-2 uppercase tracking-widest flex items-center gap-1"><AlertTriangle size={10}/> 주의사항</p>
-                  <p className="text-xs text-slate-600 leading-loose font-medium whitespace-pre-line">{item.caution}</p>
+                {/* 일정 정보 */}
+                <div className="grid grid-cols-2 gap-2">
+                  {item.experiencePeriod && (
+                    <div className="bg-blue-50 p-3 rounded-xl">
+                      <p className="text-[9px] font-black text-blue-400 mb-1">체험기간</p>
+                      <p className="text-xs font-bold text-blue-700">{item.experiencePeriod}</p>
+                    </div>
+                  )}
+                  {item.deadline && (
+                    <div className="bg-rose-50 p-3 rounded-xl">
+                      <p className="text-[9px] font-black text-rose-400 mb-1">리뷰마감</p>
+                      <p className="text-xs font-bold text-rose-700">{item.deadline}</p>
+                    </div>
+                  )}
+                  {item.visitDays && (
+                    <div className="bg-violet-50 p-3 rounded-xl">
+                      <p className="text-[9px] font-black text-violet-400 mb-1">가능요일</p>
+                      <p className="text-xs font-bold text-violet-700">{item.visitDays}</p>
+                    </div>
+                  )}
+                  {item.visitTime && (
+                    <div className="bg-amber-50 p-3 rounded-xl">
+                      <p className="text-[9px] font-black text-amber-400 mb-1">가능시간</p>
+                      <p className="text-xs font-bold text-amber-700">{item.visitTime}</p>
+                    </div>
+                  )}
                 </div>
-              )}
 
-              {/* 기본 미션 */}
-              {item.mission && (
-                <div className="bg-sky-50/50 p-5 rounded-2xl border border-dashed border-slate-200">
-                  <p className="text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">기본 미션</p>
-                  <p className="text-xs text-slate-600 leading-loose font-medium whitespace-pre-line">{item.mission}</p>
-                </div>
-              )}
+                {/* 주의사항 */}
+                {item.caution && (
+                  <div className="bg-orange-50/50 p-5 rounded-2xl border border-dashed border-orange-200">
+                    <p className="text-[10px] font-black text-orange-400 mb-2 uppercase tracking-widest flex items-center gap-1"><AlertTriangle size={10} /> 주의사항</p>
+                    <p className="text-xs text-slate-600 leading-loose font-medium whitespace-pre-line">{item.caution}</p>
+                  </div>
+                )}
 
-              {/* 개인 미션 */}
-              {item.personalMission && (
-                <div className="bg-pink-50/50 p-5 rounded-2xl border border-dashed border-pink-200">
-                  <p className="text-[10px] font-black text-pink-400 mb-2 uppercase tracking-widest">개인 미션</p>
-                  <p className="text-xs text-slate-600 leading-loose font-medium whitespace-pre-line">{item.personalMission}</p>
-                </div>
-              )}
+                {/* 기본 미션 */}
+                {item.mission && (
+                  <div className="bg-sky-50/50 p-5 rounded-2xl border border-dashed border-slate-200">
+                    <p className="text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">기본 미션</p>
+                    <p className="text-xs text-slate-600 leading-loose font-medium whitespace-pre-line">{item.mission}</p>
+                  </div>
+                )}
 
-              {/* 공정위 문구 */}
-              <div className="bg-orange-50/50 p-4 rounded-2xl border border-dashed border-orange-200">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest">공정위 문구 URL</p>
+                {/* 개인 미션 */}
+                {item.personalMission && (
+                  <div data-no-image="true" className="bg-pink-50/50 p-5 rounded-2xl border border-dashed border-pink-200">
+                    <p className="text-[10px] font-black text-pink-400 mb-2 uppercase tracking-widest">개인 미션</p>
+                    <p className="text-xs text-slate-600 leading-loose font-medium whitespace-pre-line">{item.personalMission}</p>
+                  </div>
+                )}
+
+                {/* 공정위 문구 */}
+                <div data-no-image="true" className="bg-orange-50/50 p-4 rounded-2xl border border-dashed border-orange-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest">공정위 문구 URL</p>
+                    {item.ftcImageUrl && (
+                      <button onClick={() => copyToClipboard(item.ftcImageUrl)} className="flex items-center gap-1 text-[10px] font-bold text-orange-500 active:scale-95 transition-all">
+                        <Copy size={10} /> URL 복사
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      className="flex-1 px-3 py-2.5 rounded-xl bg-white/80 ring-1 ring-orange-100 focus:ring-2 focus:ring-orange-300 outline-none text-xs transition-all"
+                      placeholder="공정위 이미지 URL을 붙여넣으세요"
+                      value={item.ftcImageUrl || ''}
+                      onChange={(e) => setSchedules(schedules.map(s => s.id === item.id ? { ...s, ftcImageUrl: e.target.value } : s))}
+                    />
+                    <button onClick={() => { localStorage.setItem('blogSchedules', JSON.stringify(schedules)); alert('저장되었습니다!'); }} className="px-3 py-2.5 bg-orange-400 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shrink-0">
+                      <Save size={14} />
+                    </button>
+                    {item.ftcImageUrl && (
+                      <button onClick={() => copyToClipboard(item.ftcImageUrl)} className="px-3 py-2.5 bg-orange-50 text-orange-500 rounded-xl text-xs font-bold active:scale-95 transition-all shrink-0">
+                        <Copy size={14} />
+                      </button>
+                    )}
+                  </div>
                   {item.ftcImageUrl && (
-                    <button onClick={() => copyToClipboard(item.ftcImageUrl)} className="flex items-center gap-1 text-[10px] font-bold text-orange-500 active:scale-95 transition-all">
-                      <Copy size={10}/> URL 복사
-                    </button>
+                    <img src={item.ftcImageUrl} alt="공정위 문구" className="max-h-16 rounded-lg object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
                   )}
                 </div>
-                <div className="flex items-center gap-2 mb-2">
-                  <input
-                    className="flex-1 px-3 py-2.5 rounded-xl bg-white/80 ring-1 ring-orange-100 focus:ring-2 focus:ring-orange-300 outline-none text-xs transition-all"
-                    placeholder="공정위 이미지 URL을 붙여넣으세요"
-                    value={item.ftcImageUrl || ''}
-                    onChange={(e) => setSchedules(schedules.map(s => s.id === item.id ? { ...s, ftcImageUrl: e.target.value } : s))}
-                  />
-                  <button onClick={() => { localStorage.setItem('blogSchedules', JSON.stringify(schedules)); alert('저장되었습니다!'); }} className="px-3 py-2.5 bg-orange-400 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shrink-0">
-                    <Save size={14}/>
-                  </button>
-                  {item.ftcImageUrl && (
-                    <button onClick={() => copyToClipboard(item.ftcImageUrl)} className="px-3 py-2.5 bg-orange-50 text-orange-500 rounded-xl text-xs font-bold active:scale-95 transition-all shrink-0">
-                      <Copy size={14}/>
-                    </button>
-                  )}
-                </div>
-                {item.ftcImageUrl && (
-                  <img src={item.ftcImageUrl} alt="공정위 문구" className="max-h-16 rounded-lg object-contain" onError={(e) => { e.target.style.display = 'none'; }} />
-                )}
-              </div>
 
-              {/* 블로그 리뷰 글 링크 */}
-              <div className="bg-emerald-50/50 p-4 rounded-2xl border border-dashed border-emerald-200">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">블로그 리뷰 글 링크</p>
-                  {item.reviewUrl && (
-                    <a href={item.reviewUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 active:scale-95 transition-all">
-                      <ExternalLink size={10}/> 글 보기
-                    </a>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    className="flex-1 px-3 py-2.5 rounded-xl bg-white/80 ring-1 ring-emerald-100 focus:ring-2 focus:ring-emerald-300 outline-none text-xs transition-all"
-                    placeholder="블로그에 올린 리뷰 글 URL을 붙여넣으세요"
-                    value={item.reviewUrl || ''}
-                    onChange={(e) => setSchedules(schedules.map(s => s.id === item.id ? { ...s, reviewUrl: e.target.value } : s))}
-                  />
-                  <button onClick={() => { localStorage.setItem('blogSchedules', JSON.stringify(schedules)); alert('저장되었습니다!'); }} className="px-3 py-2.5 bg-emerald-400 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shrink-0">
-                    <Save size={14}/>
-                  </button>
-                  {item.reviewUrl && (
-                    <button onClick={() => copyToClipboard(item.reviewUrl)} className="px-3 py-2.5 bg-emerald-50 text-emerald-500 rounded-xl text-xs font-bold active:scale-95 transition-all shrink-0">
-                      <Copy size={14}/>
+                {/* 블로그 리뷰 글 링크 */}
+                <div className="bg-emerald-50/50 p-4 rounded-2xl border border-dashed border-emerald-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">블로그 리뷰 글 링크</p>
+                    {item.reviewUrl && (
+                      <a href={item.reviewUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 active:scale-95 transition-all">
+                        <ExternalLink size={10} /> 글 보기
+                      </a>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      className="flex-1 px-3 py-2.5 rounded-xl bg-white/80 ring-1 ring-emerald-100 focus:ring-2 focus:ring-emerald-300 outline-none text-xs transition-all"
+                      placeholder="블로그에 올린 리뷰 글 URL을 붙여넣으세요"
+                      value={item.reviewUrl || ''}
+                      onChange={(e) => setSchedules(schedules.map(s => s.id === item.id ? { ...s, reviewUrl: e.target.value } : s))}
+                    />
+                    <button onClick={() => { localStorage.setItem('blogSchedules', JSON.stringify(schedules)); alert('저장되었습니다!'); }} className="px-3 py-2.5 bg-emerald-400 text-white rounded-xl text-xs font-bold active:scale-95 transition-all shrink-0">
+                      <Save size={14} />
                     </button>
-                  )}
+                    {item.reviewUrl && (
+                      <button onClick={() => copyToClipboard(item.reviewUrl)} className="px-3 py-2.5 bg-emerald-50 text-emerald-500 rounded-xl text-xs font-bold active:scale-95 transition-all shrink-0">
+                        <Copy size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
               </>}
 
               {/* 하단 버튼 3개: 글자수계산기 | 닫기 | 리뷰등록 */}
-              <div className="flex items-center gap-2">
-                <button onClick={() => { setSelectedScheduleId(null); setActiveTab('tool'); }} className="flex-1 bg-violet-50 text-violet-600 py-3.5 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5">
-                  <Calculator size={14}/> 글자수계산기
+              <div data-no-image="true" className="flex items-center gap-2">
+                <button onClick={() => { setSelectedScheduleId(null); setActiveTab('tool'); setTextToCount(''); }} className="flex-1 bg-violet-50 text-violet-600 py-3.5 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5">
+                  <Calculator size={14} /> 글자수계산기
                 </button>
                 <button onClick={() => setSelectedScheduleId(null)} className="flex-1 bg-slate-100 text-slate-500 py-3.5 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5">
-                  <X size={14}/> 닫기
+                  <X size={14} /> 닫기
                 </button>
                 {!item.isDone ? (
                   <button
                     onClick={() => { setSelectedScheduleId(null); setConfirmDoneId(item.id); }}
                     className="flex-1 jelly-button py-3.5 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5"
                   >
-                    <CheckCircle2 size={14}/> 리뷰 등록
+                    <CheckCircle2 size={14} /> 리뷰 등록
                   </button>
                 ) : (
                   <div className="flex-1 bg-slate-100 text-slate-400 py-3.5 rounded-2xl font-bold text-xs text-center flex items-center justify-center gap-1.5">
-                    <CheckCircle2 size={14}/> 등록 완료
+                    <CheckCircle2 size={14} /> 등록 완료
                   </div>
                 )}
               </div>
@@ -1644,17 +1946,17 @@ ${text}`
         const noteItem = schedules.find(s => s.id === notePopupId);
         if (!noteItem) return null;
         return (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-6" onClick={() => setNotePopupId(null)}>
+          <div className="fixed inset-0 bg-slate-400/30 backdrop-blur-md z-50 flex items-center justify-center p-6" onClick={() => setNotePopupId(null)}>
             <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl" onClick={e => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 bg-violet-100 rounded-xl"><PenTool size={18} className="text-violet-500"/></div>
+                  <div className="p-2 bg-violet-100 rounded-xl"><PenTool size={18} className="text-violet-500" /></div>
                   <div>
                     <h3 className="font-black text-slate-900 text-sm">체험 느낌 메모</h3>
                     <p className="text-[10px] text-slate-400 font-bold">{noteItem.title}</p>
                   </div>
                 </div>
-                <button onClick={() => setNotePopupId(null)} className="p-2 bg-slate-100 rounded-full"><X size={16}/></button>
+                <button onClick={() => setNotePopupId(null)} className="p-2 bg-slate-100 rounded-full"><X size={16} /></button>
               </div>
               <textarea
                 className="w-full px-4 py-3 rounded-2xl bg-violet-50/50 ring-1 ring-violet-100 focus:ring-2 focus:ring-violet-300 outline-none text-sm leading-relaxed resize-none h-40 transition-all"
@@ -1664,10 +1966,10 @@ ${text}`
               />
               <div className="flex gap-2 mt-4">
                 <button onClick={() => { localStorage.setItem('blogSchedules', JSON.stringify(schedules)); setNotePopupId(null); }} className="flex-1 bg-violet-500 text-white py-3 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5">
-                  <Save size={14}/> 저장
+                  <Save size={14} /> 저장
                 </button>
                 <button onClick={() => copyToClipboard(noteItem.experienceNote || '')} className="flex-1 bg-violet-50 text-violet-600 py-3 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 border border-violet-100">
-                  <Copy size={14}/> 복사
+                  <Copy size={14} /> 복사
                 </button>
                 <button onClick={() => {
                   if (navigator.share) {
@@ -1676,7 +1978,7 @@ ${text}`
                     copyToClipboard(noteItem.experienceNote || '');
                   }
                 }} className="flex-1 bg-violet-50 text-violet-600 py-3 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 border border-violet-100">
-                  <ExternalLink size={14}/> 공유
+                  <ExternalLink size={14} /> 공유
                 </button>
               </div>
             </div>
@@ -1686,7 +1988,7 @@ ${text}`
 
       {/* --- 리뷰 등록 확인 팝업 --- */}
       {confirmDoneId && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+        <div className="fixed inset-0 bg-slate-400/30 backdrop-blur-md z-50 flex items-center justify-center p-6">
           <div className="bg-white w-full max-w-sm rounded-[32px] p-8 text-center shadow-2xl">
             <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 size={32} className="text-sky-600" />
@@ -1713,7 +2015,7 @@ ${text}`
 
       {/* --- 체험일 등록 확인 팝업 --- */}
       {confirmVisitDate && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+        <div className="fixed inset-0 bg-slate-400/30 backdrop-blur-md z-50 flex items-center justify-center p-6">
           <div className="bg-white w-full max-w-sm rounded-[32px] p-8 text-center shadow-2xl">
             <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <CalendarDays size={32} className="text-sky-600" />
@@ -1722,20 +2024,20 @@ ${text}`
             <p className="text-xs text-slate-300 mb-6">날짜와 시간을 설정하면 달력에 자동 표시돼요.</p>
             <div className="space-y-3 mb-8">
               <div className="flex items-center gap-3 bg-sky-50 p-3 rounded-2xl">
-                <CalendarDays size={16} className="text-sky-400 shrink-0"/>
+                <CalendarDays size={16} className="text-sky-400 shrink-0" />
                 <input type="date" className="flex-1 bg-transparent outline-none font-bold text-sm text-slate-700" value={confirmVisitDate.date} onChange={(e) => setConfirmVisitDate({ ...confirmVisitDate, date: e.target.value })} />
               </div>
               <div className="bg-sky-50 p-4 rounded-2xl">
                 <div className="flex items-center gap-2 mb-3">
-                  <Clock size={16} className="text-sky-400 shrink-0"/>
+                  <Clock size={16} className="text-sky-400 shrink-0" />
                   <span className="text-xs font-bold text-slate-400">시간 선택</span>
                 </div>
                 <div className="flex items-center justify-center gap-2">
                   {/* 시 다이얼 */}
                   <div className="relative h-[120px] w-20 overflow-hidden rounded-2xl bg-white">
-                    <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none"/>
-                    <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none"/>
-                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-sky-100 rounded-xl z-0"/>
+                    <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none" />
+                    <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none" />
+                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-sky-100 rounded-xl z-0" />
                     <div className="h-full overflow-y-auto snap-y snap-mandatory scrollbar-hide py-10"
                       ref={el => { if (el && !el.dataset.scrolled) { const h = parseInt((confirmVisitDate.time || '12:00').split(':')[0]); el.scrollTop = (h - 1) * 40; el.dataset.scrolled = '1'; } }}
                       onScroll={(e) => { const idx = Math.round(e.target.scrollTop / 40); const h = idx + 1; if (h >= 1 && h <= 24) { const m = (confirmVisitDate.time || '').split(':')[1] || '00'; setConfirmVisitDate({ ...confirmVisitDate, time: `${h}:${m}` }); } }}
@@ -1748,9 +2050,9 @@ ${text}`
                   <span className="text-2xl font-black text-sky-400">:</span>
                   {/* 분 다이얼 */}
                   <div className="relative h-[120px] w-20 overflow-hidden rounded-2xl bg-white">
-                    <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none"/>
-                    <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none"/>
-                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-sky-100 rounded-xl z-0"/>
+                    <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none" />
+                    <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none" />
+                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-sky-100 rounded-xl z-0" />
                     <div className="h-full overflow-y-auto snap-y snap-mandatory scrollbar-hide py-10"
                       ref={el => { if (el && !el.dataset.scrolled) { const m = (confirmVisitDate.time || '12:00').split(':')[1]; el.scrollTop = m === '30' ? 40 : 0; el.dataset.scrolled = '1'; } }}
                       onScroll={(e) => { const idx = Math.round(e.target.scrollTop / 40); const m = idx === 1 ? '30' : '00'; const h = (confirmVisitDate.time || '12').split(':')[0]; setConfirmVisitDate({ ...confirmVisitDate, time: `${h}:${m}` }); }}
@@ -1787,8 +2089,8 @@ ${text}`
 
       {/* --- 스마트 파서 모달 --- */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300">
-          <div className="bg-white w-full max-w-lg rounded-t-[40px] sm:rounded-[40px] p-8 space-y-6 animate-in slide-in-from-bottom duration-500 overflow-y-auto max-h-[90vh]">
+        <div className="fixed inset-0 bg-slate-400/30 backdrop-blur-md z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-300">
+          <div className="bg-white/95 backdrop-blur-2xl w-full max-w-lg rounded-t-[40px] sm:rounded-[40px] p-8 space-y-6 animate-in slide-in-from-bottom duration-500 overflow-y-auto max-h-[90vh] shadow-[0_0_40px_rgba(186,230,253,0.3)] border border-white/50">
             <div className="flex justify-between items-center">
               <h3 className="text-2xl font-black text-slate-800 italic">Smart Parser</h3>
               <button onClick={() => setIsModalOpen(false)} className="p-2 bg-sky-50 rounded-full"><X /></button>
@@ -1835,20 +2137,20 @@ ${text}`
                     {parsedData.brand === '기타(수기)' ? (
                       <input className="w-full bg-sky-50 border border-sky-100 rounded-xl font-bold text-slate-700 outline-none text-sm py-2 px-3" placeholder="브랜드명 직접 입력" value={parsedData.brandCustom || ''} onChange={(e) => setParsedData({ ...parsedData, brandCustom: e.target.value })} />
                     ) : (
-                      <select className="w-full bg-sky-50 border border-sky-100 rounded-xl font-bold text-slate-700 outline-none appearance-none text-sm py-2 px-3 pr-8" value={parsedData.brand || '리뷰노트'} onChange={(e) => setParsedData({ ...parsedData, brand: e.target.value, brandCustom: '' })}>{['리뷰노트', '강남맛집', '레뷰', '슈퍼멤버스', '디너의여왕', '기타(수기)'].map(t => <option key={t}>{t}</option>)}</select>
+                      <select className="w-full bg-white/60 backdrop-blur-md shadow-inner border border-white ring-1 ring-sky-100 rounded-xl font-black text-slate-700 outline-none appearance-none text-sm py-2 px-3 pr-8" value={parsedData.brand || '리뷰노트'} onChange={(e) => setParsedData({ ...parsedData, brand: e.target.value, brandCustom: '' })}>{['리뷰노트', '강남맛집', '레뷰', '슈퍼멤버스', '디너의여왕', '기타(수기)'].map(t => <option key={t}>{t}</option>)}</select>
                     )}
                     {parsedData.brand === '기타(수기)' ? (
                       <button onClick={() => setParsedData({ ...parsedData, brand: '리뷰노트', brandCustom: '' })} className="shrink-0 text-[9px] font-bold text-sky-500 bg-sky-50 border border-sky-100 rounded-xl px-2.5">목록</button>
                     ) : (
-                      <ChevronRight size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-sky-400 pointer-events-none"/>
+                      <ChevronRight size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-sky-400 pointer-events-none" />
                     )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="w-14 shrink-0 text-[10px] font-bold text-sky-300">카테고리</div>
                   <div className="flex-1 relative">
-                    <select className="w-full bg-sky-50 border border-sky-100 rounded-xl font-bold text-slate-700 outline-none appearance-none text-sm py-2 px-3 pr-8" value={parsedData.type} onChange={(e) => setParsedData({ ...parsedData, type: e.target.value })}>{['맛집', '카페', '숙박', '체험', '기자단', '제품', '헤어', '뷰티', '운동', '기타'].map(t => <option key={t}>{t}</option>)}</select>
-                    <ChevronRight size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-sky-400 pointer-events-none"/>
+                    <select className="w-full bg-white/60 backdrop-blur-md shadow-inner border border-white ring-1 ring-sky-100 rounded-xl font-black text-slate-700 outline-none appearance-none text-sm py-2 px-3 pr-8" value={parsedData.type} onChange={(e) => setParsedData({ ...parsedData, type: e.target.value })}>{['맛집', '카페', '숙박', '체험', '기자단', '제품', '헤어', '뷰티', '운동', '기타'].map(t => <option key={t}>{t}</option>)}</select>
+                    <ChevronRight size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-sky-400 pointer-events-none" />
                   </div>
                 </div>
                 {[
@@ -1885,7 +2187,7 @@ ${text}`
               </div>
             </div>
 
-            <button onClick={saveNewSchedule} className="w-full bg-slate-900 text-white py-6 rounded-3xl font-black text-lg shadow-2xl active:scale-95 transition-all">스케줄 저장</button>
+            <button onClick={saveNewSchedule} className="w-full jelly-button py-5 rounded-3xl font-black text-lg shadow-xl shadow-sky-300/50 active:scale-95 transition-all w-full">스케줄 저장</button>
           </div>
         </div>
       )}
@@ -1928,6 +2230,7 @@ ${text}`
 
           <div className="space-y-4">
             {[
+              { key: 'nickname', label: '닉네임 / 이름', placeholder: '블로거 닉네임이나 이름', icon: <User size={18} /> },
               { key: 'blogUrl', label: '블로그 주소', placeholder: 'https://blog.naver.com/myid', icon: <Globe size={18} /> },
               { key: 'instaId', label: '인스타그램 ID', placeholder: '@my_instagram', icon: <Instagram size={18} /> },
               { key: 'reelsUrl', label: '릴스 주소', placeholder: 'https://www.instagram.com/reels/...', icon: <Eye size={18} /> },
@@ -1952,11 +2255,92 @@ ${text}`
 
           <button
             onClick={saveProfile}
-            className="w-full bg-slate-900 text-white py-3 rounded-2xl font-bold text-sm hover:shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+            className="w-full jelly-button py-3 rounded-2xl font-black text-sm shadow-lg shadow-sky-200 active:scale-95 transition-all flex items-center justify-center gap-2"
           >
             <Save size={20} />
             {profileSaved ? '저장 완료!' : '프로필 저장'}
           </button>
+
+          {/* 생체 인증 설정 */}
+          {biometricSupported && user && (
+            <div className="jelly-card p-5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-sky-500">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                      <path d="M6.3 6.3a8 8 0 0 0 0 11.4M17.7 6.3a8 8 0 0 1 0 11.4"/>
+                    </svg>
+                  </span>
+                  <div>
+                    <h4 className="text-xs font-black text-slate-500">얼굴 / 지문 인식 로그인</h4>
+                    <p className="text-[10px] text-slate-400">Face ID · 지문으로 빠르게 로그인</p>
+                  </div>
+                </div>
+                <button
+                  onClick={biometricEnabled ? handleBiometricDisable : handleBiometricRegister}
+                  className={`relative w-12 h-6 rounded-full transition-all ${biometricEnabled ? 'bg-sky-500' : 'bg-slate-200'}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${biometricEnabled ? 'left-7' : 'left-1'}`} />
+                </button>
+              </div>
+              {biometricEnabled && (
+                <p className="text-[11px] text-emerald-600 font-bold bg-emerald-50 py-2 px-3 rounded-xl">생체 인증이 등록되어 있습니다. 다음 방문 시 자동으로 잠금 화면이 표시됩니다.</p>
+              )}
+            </div>
+          )}
+
+          {/* 비밀번호 변경 (이메일 로그인 사용자만) */}
+          {user && user.app_metadata?.provider === 'email' && (
+            <div className="jelly-card p-5 space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-sky-500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+                <h4 className="text-xs font-black text-slate-500">비밀번호 변경</h4>
+              </div>
+              <p className="text-[11px] text-slate-400">안전한 비밀번호로 계정을 보호하세요. 8자 이상, 숫자·특수문자 포함을 권장합니다.</p>
+              <input
+                type="password"
+                className="w-full px-4 py-3 rounded-xl bg-sky-50/50 ring-1 ring-slate-100 focus:ring-2 focus:ring-sky-400 outline-none text-sm transition-all"
+                placeholder="새 비밀번호 (6자 이상)"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+              <input
+                type="password"
+                className="w-full px-4 py-3 rounded-xl bg-sky-50/50 ring-1 ring-slate-100 focus:ring-2 focus:ring-sky-400 outline-none text-sm transition-all"
+                placeholder="비밀번호 확인"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+              {passwordMsg.text && (
+                <p className={`text-xs font-bold text-center py-2 rounded-xl ${passwordMsg.type === 'error' ? 'text-rose-500 bg-rose-50' : 'text-emerald-600 bg-emerald-50'}`}>
+                  {passwordMsg.text}
+                </p>
+              )}
+              <button
+                onClick={async () => {
+                  setPasswordMsg({ text: '', type: '' });
+                  if (newPassword.length < 6) return setPasswordMsg({ text: '비밀번호는 6자 이상이어야 합니다.', type: 'error' });
+                  if (newPassword !== confirmPassword) return setPasswordMsg({ text: '비밀번호가 일치하지 않아요.', type: 'error' });
+                  const { error } = await updatePassword(newPassword);
+                  if (error) {
+                    setPasswordMsg({ text: error.message, type: 'error' });
+                  } else {
+                    setPasswordMsg({ text: '비밀번호가 변경되었습니다!', type: 'success' });
+                    setNewPassword('');
+                    setConfirmPassword('');
+                    setTimeout(() => setPasswordMsg({ text: '', type: '' }), 3000);
+                  }
+                }}
+                className="w-full py-3 rounded-xl bg-slate-800 text-white font-black text-sm active:scale-95 transition-all hover:bg-slate-700"
+              >
+                비밀번호 변경
+              </button>
+            </div>
+          )}
 
         </main>
       )}
@@ -1964,7 +2348,7 @@ ${text}`
       {/* 탭 바 */}
       {/* 하단 제작자 & 경고문 */}
       <footer className="text-center py-6 pb-28 sm:pb-32 space-y-2">
-        <p className="text-[10px] text-slate-300 leading-relaxed">본 앱은 협찬 일정 관리를 위한 개인 보조 도구이며, 각 플랫폼의 공식 서비스가 아닙니다.<br/>협찬 콘텐츠 작성 시 공정위 광고 표시 가이드라인을 준수해주세요.</p>
+        <p className="text-[10px] text-slate-300 leading-relaxed">본 앱은 협찬 일정 관리를 위한 개인 보조 도구이며, 각 플랫폼의 공식 서비스가 아닙니다.<br />협찬 콘텐츠 작성 시 공정위 광고 표시 가이드라인을 준수해주세요.</p>
         <div className="flex items-center justify-center gap-3">
           <a href="/guide.html" className="text-[10px] text-slate-400 hover:text-sky-500 transition-colors">사용 가이드</a>
           <span className="text-slate-300 text-[10px]">·</span>
@@ -1975,12 +2359,12 @@ ${text}`
         <p className="text-[10px] text-slate-300">© 2026 Blue Review · 제작자 <span className="font-bold text-slate-400">hare_table</span></p>
       </footer>
 
-      <nav className="fixed bottom-4 sm:bottom-10 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-xl px-5 sm:px-6 py-4 sm:py-5 rounded-full flex items-center gap-5 sm:gap-6 shadow-[0_25px_50px_rgba(0,0,0,0.3)] z-40 border border-white/10">
-        <button onClick={() => setActiveTab('home')} className={`transition-all ${activeTab === 'home' ? 'text-white scale-110' : 'text-slate-500'}`}><ClipboardList size={20} /></button>
-        <button onClick={() => setActiveTab('calendar')} className={`transition-all ${activeTab === 'calendar' ? 'text-white scale-110' : 'text-slate-500'}`}><Calendar size={20} /></button>
-        <button onClick={() => { setRawText(''); setParsedData({ ...emptyParsed }); setIsModalOpen(true); }} className="bg-white text-slate-900 p-3 sm:p-4 rounded-full -mt-16 sm:-mt-20 shadow-xl shadow-slate-900/20 active:rotate-12 transition-all border-4 border-slate-900"><Plus size={24} /></button>
-        <button onClick={() => setActiveTab('tool')} className={`transition-all ${activeTab === 'tool' ? 'text-white scale-110' : 'text-slate-500'}`}><Calculator size={20} /></button>
-        <button onClick={() => setActiveTab('profile')} className={`transition-all ${activeTab === 'profile' ? 'text-white scale-110' : 'text-slate-500'}`}><User size={20} /></button>
+      <nav className="fixed bottom-4 sm:bottom-10 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-xl px-5 sm:px-6 py-4 sm:py-5 rounded-full flex items-center gap-5 sm:gap-6 shadow-[0_15px_40px_rgba(186,230,253,0.5)] z-40 border border-white">
+        <button onClick={() => setActiveTab('home')} className={`transition-all ${activeTab === 'home' ? 'text-sky-500 scale-110 drop-shadow-md' : 'text-slate-400 hover:text-sky-400'}`}><ClipboardList size={20} /></button>
+        <button onClick={() => setActiveTab('calendar')} className={`transition-all ${activeTab === 'calendar' ? 'text-sky-500 scale-110 drop-shadow-md' : 'text-slate-400 hover:text-sky-400'}`}><Calendar size={20} /></button>
+        <button onClick={() => { setRawText(''); setParsedData({ ...emptyParsed }); setIsModalOpen(true); }} className="jelly-button text-white p-3 sm:p-4 rounded-full -mt-16 sm:-mt-20 shadow-xl shadow-sky-300/50 active:rotate-12 transition-all border-4 border-white"><Plus size={24} /></button>
+        <button onClick={() => setActiveTab('tool')} className={`transition-all ${activeTab === 'tool' ? 'text-sky-500 scale-110 drop-shadow-md' : 'text-slate-400 hover:text-sky-400'}`}><Calculator size={20} /></button>
+        <button onClick={() => setActiveTab('profile')} className={`transition-all ${activeTab === 'profile' ? 'text-sky-500 scale-110 drop-shadow-md' : 'text-slate-400 hover:text-sky-400'}`}><User size={20} /></button>
       </nav>
 
       {/* 스타일 애니메이션 (CSS) */}
