@@ -11,7 +11,7 @@ import { domToPng } from 'modern-screenshot';
 import { useAuth } from './hooks/useAuth';
 import LoginPage from './components/LoginPage';
 
-const PasswordResetScreen = ({ onUpdate }) => {
+const PasswordResetScreen = ({ onUpdate, email }) => {
   const [pw, setPw] = useState('');
   const [pw2, setPw2] = useState('');
   const [msg, setMsg] = useState({ text: '', type: '' });
@@ -41,6 +41,7 @@ const PasswordResetScreen = ({ onUpdate }) => {
             </svg>
           </div>
           <h2 className="text-xl font-black text-slate-800">새 비밀번호 설정</h2>
+          {email && <p className="text-xs font-bold text-sky-500 mt-1 bg-sky-50 px-3 py-1.5 rounded-xl">{email}</p>}
           <p className="text-xs text-slate-400 mt-1">안전한 비밀번호로 변경해주세요</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -828,7 +829,7 @@ ${text}`
   }
 
   if (isRecovery) {
-    return <PasswordResetScreen onUpdate={async (pw) => {
+    return <PasswordResetScreen email={user?.email} onUpdate={async (pw) => {
       const { error } = await updatePassword(pw);
       if (!error) { setIsRecovery(false); window.location.hash = ''; }
       return { error };
