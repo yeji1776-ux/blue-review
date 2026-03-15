@@ -5,7 +5,7 @@ import {
   CheckCircle2, Globe, Map as MapIcon, DollarSign, Sun, Star, X, Check,
   ChevronRight, Hash, Eye, Heart, Type, Gift, AlertTriangle, CalendarDays,
   Download, ChevronLeft, User, Save, Instagram, Pencil, Cloud, CloudRain, CloudSun, Snowflake,
-  Wallet, PenTool, Youtube, Mail, Settings
+  Wallet, PenTool, Youtube, Mail, Settings, Trash2
 } from 'lucide-react';
 import { domToPng } from 'modern-screenshot';
 import { useAuth } from './hooks/useAuth';
@@ -374,6 +374,15 @@ const BloggerMasterApp = () => {
   const [confirmDoneId, setConfirmDoneId] = useState(null); // 리뷰 등록 확인 팝업용
   const [confirmVisitDate, setConfirmVisitDate] = useState(null); // { id, date } 체험일 등록 확인 팝업용
   const [notePopupId, setNotePopupId] = useState(null); // 체험 느낌 메모 팝업
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null); // 삭제 확인 팝업용
+
+  const deleteSchedule = (id) => {
+    const updated = schedules.filter(s => s.id !== id);
+    setSchedules(updated);
+    localStorage.setItem('blogSchedules', JSON.stringify(updated));
+    if (selectedScheduleId === id) setSelectedScheduleId(null);
+    setConfirmDeleteId(null);
+  };
   const [editingScheduleId, setEditingScheduleId] = useState(null); // 스케줄 수정 모드
 
   // 체험단 일정 데이터
@@ -1164,15 +1173,17 @@ ${text}`
                       mOngoing.map(item => {
                         const dday = getDdayLabel(item.deadline);
                         return (
-                          <button
-                            key={item.id}
-                            onClick={() => setSelectedScheduleId(item.id)}
-                            className="w-full flex items-center gap-2 px-3 py-3 text-left active:bg-sky-50 transition-all"
-                          >
-                            <span className={`shrink-0 px-1.5 py-0.5 rounded-full text-[8px] font-black border ${getBrandBadge(item.brand)}`}>{item.brand}</span>
-                            <span className="text-xs font-bold truncate flex-1 text-slate-700">{item.title}</span>
-                            {dday && <span className={`shrink-0 px-1.5 py-0.5 rounded-full text-[8px] font-black text-white ${dday.color}`}>{dday.text}</span>}
-                          </button>
+                          <div key={item.id} className="flex items-center gap-1 pr-2 active:bg-sky-50 transition-all">
+                            <button
+                              onClick={() => setSelectedScheduleId(item.id)}
+                              className="flex-1 flex items-center gap-2 px-3 py-3 text-left min-w-0"
+                            >
+                              <span className={`shrink-0 px-1.5 py-0.5 rounded-full text-[8px] font-black border ${getBrandBadge(item.brand)}`}>{item.brand}</span>
+                              <span className="text-xs font-bold truncate flex-1 text-slate-700">{item.title}</span>
+                              {dday && <span className={`shrink-0 px-1.5 py-0.5 rounded-full text-[8px] font-black text-white ${dday.color}`}>{dday.text}</span>}
+                            </button>
+                            <button onClick={() => setConfirmDeleteId(item.id)} className="shrink-0 p-1.5 rounded-lg text-rose-300 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-90"><Trash2 size={13} /></button>
+                          </div>
                         );
                       })
                     ) : (
@@ -1187,15 +1198,17 @@ ${text}`
                   <div className="jelly-card overflow-hidden divide-y divide-slate-100">
                     {mDone.length > 0 ? (
                       mDone.map(item => (
-                        <button
-                          key={item.id}
-                          onClick={() => setSelectedScheduleId(item.id)}
-                          className="w-full flex items-center gap-2 px-3 py-3 text-left active:bg-sky-50 transition-all opacity-60"
-                        >
-                          <span className={`shrink-0 px-1.5 py-0.5 rounded-full text-[8px] font-black border ${getBrandBadge(item.brand)}`}>{item.brand}</span>
-                          <span className="text-xs font-bold truncate flex-1 text-slate-300 line-through">{item.title}</span>
-                          <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
-                        </button>
+                        <div key={item.id} className="flex items-center gap-1 pr-2 opacity-60 active:bg-sky-50 transition-all">
+                          <button
+                            onClick={() => setSelectedScheduleId(item.id)}
+                            className="flex-1 flex items-center gap-2 px-3 py-3 text-left min-w-0"
+                          >
+                            <span className={`shrink-0 px-1.5 py-0.5 rounded-full text-[8px] font-black border ${getBrandBadge(item.brand)}`}>{item.brand}</span>
+                            <span className="text-xs font-bold truncate flex-1 text-slate-300 line-through">{item.title}</span>
+                            <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
+                          </button>
+                          <button onClick={() => setConfirmDeleteId(item.id)} className="shrink-0 p-1.5 rounded-lg text-rose-300 hover:text-rose-500 hover:bg-rose-50 transition-all active:scale-90"><Trash2 size={13} /></button>
+                        </div>
                       ))
                     ) : (
                       <div className="p-6 text-center text-slate-300 text-sm font-bold">완료된 일정이 없습니다</div>
@@ -1800,6 +1813,7 @@ ${text}`
                 <div className="flex gap-2 shrink-0 ml-2" data-no-image="true">
                   <button onClick={() => setEditingScheduleId(editingScheduleId === item.id ? null : item.id)} className={`p-2 rounded-xl active:scale-90 transition-all ${editingScheduleId === item.id ? 'bg-sky-500 text-white' : 'bg-sky-50 text-sky-400'}`}><Pencil size={16} /></button>
                   <button onClick={() => saveCardAsImage(item.id)} className="p-2 bg-sky-50 rounded-xl text-sky-400 active:scale-90 transition-all"><Download size={16} /></button>
+                  <button onClick={() => setConfirmDeleteId(item.id)} className="p-2 bg-rose-50 rounded-xl text-rose-400 active:scale-90 transition-all"><Trash2 size={16} /></button>
                   <button onClick={() => { setEditingScheduleId(null); setSelectedScheduleId(null); }} className="p-2 bg-sky-50 rounded-full"><X size={16} /></button>
                 </div>
               </div>
@@ -2084,6 +2098,40 @@ ${text}`
           </div>
         </div>
       )}
+
+      {/* --- 삭제 확인 팝업 --- */}
+      {confirmDeleteId && (() => {
+        const target = schedules.find(s => s.id === confirmDeleteId);
+        if (!target) return null;
+        return (
+          <div className="fixed inset-0 bg-slate-400/30 backdrop-blur-md z-50 flex items-center justify-center p-6" onClick={() => setConfirmDeleteId(null)}>
+            <div className="bg-white w-full max-w-sm rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+              <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-5">
+                <Trash2 size={32} className="text-rose-500" />
+              </div>
+              <h3 className="text-xl font-black text-slate-800 mb-2">정말 삭제할까요?</h3>
+              <p className="text-sm font-bold text-slate-500 mb-1 px-2 leading-snug">
+                <span className="text-rose-500">"{target.title}"</span>
+              </p>
+              <p className="text-xs text-slate-300 mb-8">삭제하면 되돌릴 수 없어요.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={() => deleteSchedule(confirmDeleteId)}
+                  className="flex-1 bg-rose-500 text-white py-4 rounded-2xl font-black text-sm active:scale-95 transition-all shadow-lg shadow-rose-200"
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* --- 체험일 등록 확인 팝업 --- */}
       {confirmVisitDate && (
