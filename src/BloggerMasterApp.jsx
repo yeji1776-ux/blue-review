@@ -80,7 +80,7 @@ const BiometricLockScreen = ({ onUnlock, onSkip }) => {
 
 const BloggerMasterApp = () => {
   // --- 인증 ---
-  const { user, loading, signInWithProvider, signUpWithEmail, signInWithEmail, signOut, updatePassword, resetPasswordForEmail, refreshSession } = useAuth();
+  const { user, loading, signInWithProvider, signUpWithEmail, verifyOtp, signInWithEmail, signOut, updatePassword, resetPasswordForEmail, refreshSession, deleteAccount } = useAuth();
   const [authError, setAuthError] = useState('');
   const [isGuest, setIsGuest] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
@@ -598,6 +598,19 @@ const BloggerMasterApp = () => {
     return { error };
   };
 
+  const handleVerifyOtp = async (email, token) => {
+    setAuthError('');
+    const { error } = await verifyOtp(email, token);
+    if (error) return { error };
+    return {};
+  };
+
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
+  const handleDeleteAccount = async () => {
+    await deleteAccount();
+    setConfirmDeleteAccount(false);
+  };
+
   const handleBiometricLoginFromPage = async () => {
     try {
       const credIdStr = localStorage.getItem('biometric_cred_id');
@@ -779,6 +792,7 @@ ${text}`
       <LoginPage
         onEmailSignIn={handleEmailSignIn}
         onEmailSignUp={handleEmailSignUp}
+        onVerifyOtp={handleVerifyOtp}
         onSocialLogin={handleSocialLogin}
         onGuestLogin={handleGuestLogin}
         onForgotPassword={handleForgotPassword}
@@ -2547,7 +2561,44 @@ ${text}`
             </div>
           )}
 
+          {/* 회원 탈퇴 */}
+          {user && !isGuest && (
+            <div className="pt-2">
+              <button
+                onClick={() => setConfirmDeleteAccount(true)}
+                className="w-full py-3 rounded-2xl text-xs font-bold text-slate-400 border border-dashed border-slate-200 hover:border-rose-200 hover:text-rose-400 transition-all"
+              >
+                회원 탈퇴
+              </button>
+            </div>
+          )}
+
         </main>
+      )}
+
+      {/* --- 회원 탈퇴 확인 팝업 --- */}
+      {confirmDeleteAccount && (
+        <div className="fixed inset-0 bg-slate-400/30 backdrop-blur-md z-50 flex items-center justify-center p-6" onClick={() => setConfirmDeleteAccount(false)}>
+          <div className="bg-white w-full max-w-sm rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-5">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f43f5e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                <line x1="18" y1="11" x2="23" y2="16"/><line x1="23" y1="11" x2="18" y2="16"/>
+              </svg>
+            </div>
+            <h3 className="text-xl font-black text-slate-800 mb-2">정말 탈퇴할까요?</h3>
+            <p className="text-sm text-slate-400 mb-1">모든 데이터가 삭제되며</p>
+            <p className="text-sm font-bold text-rose-500 mb-8">되돌릴 수 없습니다.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmDeleteAccount(false)} className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all">
+                취소
+              </button>
+              <button onClick={handleDeleteAccount} className="flex-1 bg-rose-500 text-white py-4 rounded-2xl font-black text-sm active:scale-95 transition-all shadow-lg shadow-rose-200">
+                탈퇴하기
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* 탭 바 */}

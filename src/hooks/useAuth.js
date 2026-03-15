@@ -34,6 +34,15 @@ export function useAuth() {
     return { data, error };
   };
 
+  const verifyOtp = async (email, token) => {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'signup',
+    });
+    return { data, error };
+  };
+
   const signInWithEmail = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     return { data, error };
@@ -61,15 +70,30 @@ export function useAuth() {
     return { data, error };
   };
 
+  const deleteAccount = async () => {
+    // Supabase에 delete_user RPC 함수가 있으면 사용, 없으면 로그아웃만
+    try {
+      await supabase.rpc('delete_user');
+    } catch (_) { /* RPC 미설정 시 무시 */ }
+    // 로컬 데이터 초기화
+    ['blogger_profile', 'blogger_templates', 'blogSchedules', 'blogger_saved_texts',
+      'blogger_hashtags', 'blogger_font_size', 'theme_color', 'rememberMe',
+      'biometric_enabled', 'biometric_cred_id'].forEach(k => localStorage.removeItem(k));
+    await supabase.auth.signOut();
+    return {};
+  };
+
   return {
     user,
     loading,
     signInWithProvider,
     signUpWithEmail,
+    verifyOtp,
     signInWithEmail,
     signOut,
     updatePassword,
     resetPasswordForEmail,
     refreshSession,
+    deleteAccount,
   };
 }
