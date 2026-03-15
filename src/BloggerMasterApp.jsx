@@ -5,7 +5,7 @@ import {
   CheckCircle2, Globe, Map as MapIcon, DollarSign, Sun, Star, X, Check,
   ChevronRight, Hash, Eye, Heart, Type, Gift, AlertTriangle, CalendarDays,
   Download, ChevronLeft, User, Save, Instagram, Pencil, Cloud, CloudRain, CloudSun, Snowflake,
-  Wallet, PenTool, Youtube, Mail
+  Wallet, PenTool, Youtube, Mail, Settings
 } from 'lucide-react';
 import { domToPng } from 'modern-screenshot';
 import { useAuth } from './hooks/useAuth';
@@ -314,8 +314,29 @@ const BloggerMasterApp = () => {
   const [fontSize, setFontSize] = useState(() => {
     const saved = localStorage.getItem('blogger_font_size');
     if (saved) return parseInt(saved);
-    return window.innerWidth >= 640 ? 22 : 16;
+    return window.innerWidth >= 640 ? 22 : 18; // 모바일 기본 +2
   });
+
+  // --- 테마 색상 ---
+  const COLOR_THEMES = {
+    sky:     { label: '스카이', hex: '#38bdf8', palette: null },
+    violet:  { label: '바이올렛', hex: '#8b5cf6', palette: { 50:'oklch(0.969 0.016 293.76)',100:'oklch(0.943 0.029 294.59)',200:'oklch(0.895 0.057 293.28)',300:'oklch(0.811 0.111 293.53)',400:'oklch(0.702 0.183 293.54)',500:'oklch(0.606 0.25 292.72)',600:'oklch(0.541 0.281 293.41)',700:'oklch(0.491 0.27 277.02)' } },
+    pink:    { label: '핑크', hex: '#ec4899', palette: { 50:'oklch(0.971 0.014 343.19)',100:'oklch(0.948 0.028 342.26)',200:'oklch(0.899 0.061 343.23)',300:'oklch(0.823 0.12 346.01)',400:'oklch(0.718 0.202 349.76)',500:'oklch(0.656 0.241 354.31)',600:'oklch(0.592 0.249 0.58)',700:'oklch(0.525 0.223 3.96)' } },
+    emerald: { label: '그린', hex: '#10b981', palette: { 50:'oklch(0.979 0.021 166.11)',100:'oklch(0.95 0.052 163.05)',200:'oklch(0.905 0.093 164.15)',300:'oklch(0.845 0.143 164.96)',400:'oklch(0.765 0.177 163.22)',500:'oklch(0.696 0.17 162.48)',600:'oklch(0.596 0.145 163.23)',700:'oklch(0.508 0.118 165.61)' } },
+    rose:    { label: '로즈', hex: '#f43f5e', palette: { 50:'oklch(0.969 0.015 12.42)',100:'oklch(0.941 0.03 12.58)',200:'oklch(0.892 0.058 10.49)',300:'oklch(0.81 0.117 11.64)',400:'oklch(0.712 0.194 13.43)',500:'oklch(0.645 0.246 16.44)',600:'oklch(0.586 0.253 17.59)',700:'oklch(0.514 0.222 16.94)' } },
+  };
+  const [themeColor, setThemeColor] = useState(() => localStorage.getItem('theme_color') || 'sky');
+  useEffect(() => {
+    const theme = COLOR_THEMES[themeColor];
+    let styleEl = document.getElementById('theme-color-override');
+    if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'theme-color-override'; document.head.appendChild(styleEl); }
+    if (!theme?.palette) { styleEl.textContent = ''; }
+    else { styleEl.textContent = `:root { ${Object.entries(theme.palette).map(([k,v]) => `--color-sky-${k}: ${v};`).join(' ')} }`; }
+    localStorage.setItem('theme_color', themeColor);
+  }, [themeColor]);
+
+  // --- 설정 패널 ---
+  const [showSettings, setShowSettings] = useState(false);
   useEffect(() => {
     const s = fontSize / 16;
     // Tailwind v4 named text sizes (CSS variable 방식)
@@ -738,14 +759,7 @@ ${text}`
               <p className="text-[10px] sm:text-[12px] font-bold text-slate-400 mt-0.5 hidden sm:block">블로거를 위한 협찬 관리</p>
             </div>
           </div>
-          <div className="flex gap-1.5 sm:gap-2">
-            <div className="flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 bg-slate-50 rounded-xl sm:rounded-2xl border border-slate-100 shadow-sm">
-              <div className="flex items-center gap-1">
-                <button onClick={() => setFontSize(f => Math.max(13, f - 1))} className="w-5 h-5 flex items-center justify-center bg-white rounded-lg border border-slate-200 text-slate-500 font-black text-xs active:scale-90 transition-all leading-none">−</button>
-                <button onClick={() => setFontSize(f => Math.min(22, f + 1))} className="w-5 h-5 flex items-center justify-center bg-white rounded-lg border border-slate-200 text-slate-500 font-black text-xs active:scale-90 transition-all leading-none">+</button>
-              </div>
-              <span className="text-[7px] sm:text-[9px] font-bold leading-tight text-slate-400">글씨크기</span>
-            </div>
+          <div className="flex gap-1.5 sm:gap-2 items-center">
             <a href="https://adpost.naver.com/" target="_blank" className="flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 bg-emerald-50 text-emerald-600 rounded-xl sm:rounded-2xl border border-emerald-100 shadow-sm">
               <Wallet size={16} className="sm:w-[18px] sm:h-[18px]" />
               <span className="text-[7px] sm:text-[9px] font-bold leading-tight">애드포스트</span>
@@ -754,9 +768,12 @@ ${text}`
               <PenTool size={16} className="sm:w-[18px] sm:h-[18px]" />
               <span className="text-[7px] sm:text-[9px] font-bold leading-tight">블로그</span>
             </a>
-            <button onClick={handleLogout} className="flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 bg-slate-100 text-slate-400 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm hover:text-rose-500 transition-colors">
-              <LogOut size={16} className="sm:w-[18px] sm:h-[18px]" />
-              <span className="text-[7px] sm:text-[9px] font-bold leading-tight">로그아웃</span>
+            <button
+              onClick={() => setShowSettings(v => !v)}
+              className="flex flex-col items-center gap-0.5 sm:gap-1 p-2 sm:p-3 bg-slate-100 text-slate-500 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm hover:bg-sky-50 hover:text-sky-600 transition-colors"
+            >
+              <Settings size={16} className="sm:w-[18px] sm:h-[18px]" />
+              <span className="text-[7px] sm:text-[9px] font-bold leading-tight">설정</span>
             </button>
           </div>
         </div>
@@ -783,6 +800,61 @@ ${text}`
           </div>
         </button>}
       </header>
+
+      {/* 설정 패널 */}
+      {showSettings && (
+        <div className="fixed inset-0 z-50" onClick={() => setShowSettings(false)}>
+          <div
+            className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl p-6 pb-10 animate-in slide-in-from-bottom-4 duration-300"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-6" />
+            <h3 className="text-base font-black text-slate-800 mb-5">설정</h3>
+
+            {/* 글씨 크기 */}
+            <div className="mb-5">
+              <p className="text-xs font-black text-slate-400 mb-3">글씨 크기</p>
+              <div className="flex items-center gap-4">
+                <button onClick={() => setFontSize(f => Math.max(13, f - 1))} className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-2xl text-slate-600 font-black text-lg active:scale-90 transition-all">−</button>
+                <div className="flex-1 bg-slate-50 rounded-2xl py-2 text-center">
+                  <span className="font-black text-slate-700">{fontSize}</span>
+                  <span className="text-xs text-slate-400 ml-1">px</span>
+                </div>
+                <button onClick={() => setFontSize(f => Math.min(24, f + 1))} className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-2xl text-slate-600 font-black text-lg active:scale-90 transition-all">+</button>
+                <button onClick={() => setFontSize(window.innerWidth >= 640 ? 22 : 18)} className="text-xs font-bold text-sky-500 underline underline-offset-2">초기화</button>
+              </div>
+            </div>
+
+            {/* 테마 색상 */}
+            <div className="mb-6">
+              <p className="text-xs font-black text-slate-400 mb-3">Blue Review 색상</p>
+              <div className="flex gap-3">
+                {Object.entries(COLOR_THEMES).map(([key, { label, hex }]) => (
+                  <button
+                    key={key}
+                    onClick={() => setThemeColor(key)}
+                    className="flex flex-col items-center gap-1.5 flex-1"
+                  >
+                    <div
+                      className={`w-10 h-10 rounded-2xl shadow-md transition-all ${themeColor === key ? 'scale-110 ring-2 ring-offset-2' : 'active:scale-95'}`}
+                      style={{ backgroundColor: hex, ringColor: hex }}
+                    />
+                    <span className={`text-[10px] font-bold ${themeColor === key ? 'text-slate-700' : 'text-slate-400'}`}>{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 로그아웃 */}
+            <button
+              onClick={() => { setShowSettings(false); handleLogout(); }}
+              className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-rose-50 text-rose-500 font-black text-sm active:scale-95 transition-all border border-rose-100"
+            >
+              <LogOut size={16} /> 로그아웃
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 위치 동의 팝업 */}
       {locationPopup && (
