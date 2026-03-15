@@ -304,6 +304,7 @@ const BloggerMasterApp = () => {
   const [showAddCat, setShowAddCat] = useState(false);
   const [renamingCat, setRenamingCat] = useState(null);
   const [renameCatValue, setRenameCatValue] = useState('');
+  const [toolSubTab, setToolSubTab] = useState(null); // null | 'count' | 'savedTexts' | 'hashtags'
 
   const saveHashtags = (updated) => {
     setHashtags(updated);
@@ -1371,199 +1372,248 @@ ${text}`
 
 
         {activeTab === 'tool' && (
-          <div className="space-y-8 animate-in fade-in duration-500">
-            <section className="jelly-card p-8 text-center">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="font-black text-xl text-slate-800 flex items-center gap-2"><Calculator size={24} className="text-sky-500" /> 글자 수 측정</h3>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setShowSavedTexts(!showSavedTexts)} className="text-[10px] font-bold text-sky-500 bg-sky-50 px-3 py-1.5 rounded-lg border border-sky-100 active:scale-95 transition-all whitespace-nowrap">
-                    저장된 글 {savedTexts.length > 0 ? `(${savedTexts.length})` : ''}
-                  </button>
-                  <span className="text-[10px] bg-sky-500 text-white shadow-md shadow-sky-200 px-3 py-1 rounded-full font-bold">1,500자 권장</span>
-                </div>
-              </div>
-              {showSavedTexts && savedTexts.length > 0 && (
-                <div className="mb-6 text-left space-y-2">
-                  {savedTexts.map(item => (
-                    <div key={item.id} className="flex items-start gap-2 p-3 bg-white rounded-2xl border border-sky-100 shadow-sm">
-                      <button onClick={() => { setTextToCount(item.content); setShowSavedTexts(false); }} className="flex-1 text-left min-w-0">
-                        <p className="text-xs font-bold text-slate-700 truncate">{item.title || '(제목 없음)'}</p>
-                        <p className="text-[10px] text-slate-400 mt-0.5">{new Date(item.savedAt).toLocaleDateString('ko-KR')} · {item.content.length}자</p>
-                      </button>
-                      <button onClick={() => {
-                        const updated = savedTexts.filter(t => t.id !== item.id);
-                        setSavedTexts(updated);
-                        localStorage.setItem('blogger_saved_texts', JSON.stringify(updated));
-                      }} className="shrink-0 p-1 rounded-lg text-slate-400 active:bg-slate-100 transition-all">
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {showSavedTexts && savedTexts.length === 0 && (
-                <p className="mb-6 text-xs text-slate-400 text-left">저장된 글이 없습니다.</p>
-              )}
-              <textarea className="w-full h-64 p-6 bg-white/60 backdrop-blur-md shadow-inner rounded-[32px] border border-white focus:bg-white focus:ring-2 focus:ring-sky-300 outline-none text-slate-600 leading-relaxed text-sm mb-6 placeholder:font-bold placeholder:text-slate-300" placeholder="파워블로거는 원고 내용으로 승부합니다. 여기에 내용을 적으세요!" value={textToCount} onChange={(e) => setTextToCount(e.target.value)} />
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="bg-sky-50 p-5 rounded-3xl">
-                  <p className="text-[10px] font-black text-sky-400 mb-1">공백 포함</p>
-                  <p className="text-2xl font-black text-sky-700 underline decoration-sky-200">{textToCount.length}</p>
-                </div>
-                <div className="bg-sky-50 p-5 rounded-3xl">
-                  <p className="text-[10px] font-black text-slate-400 mb-1">공백 제외</p>
-                  <p className="text-2xl font-black text-slate-800">{textToCount.replace(/\s+/g, '').length}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  if (!textToCount.trim()) return;
-                  const newItem = {
-                    id: Date.now(),
-                    title: textToCount.trim().slice(0, 20),
-                    content: textToCount,
-                    savedAt: new Date().toISOString(),
-                  };
-                  const updated = [newItem, ...savedTexts];
-                  setSavedTexts(updated);
-                  localStorage.setItem('blogger_saved_texts', JSON.stringify(updated));
-                  setShowSavedTexts(true);
-                }}
-                className="w-full flex items-center justify-center gap-2 py-3 jelly-button text-white rounded-2xl font-black text-sm active:scale-95 transition-all shadow-md shadow-sky-200"
-              >
-                <Save size={16} /> 글 저장하기
-              </button>
-            </section>
+          <div className="animate-in fade-in duration-300">
 
-            {/* 해시태그 모음 */}
-            <section className="jelly-card p-5 sm:p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-black text-xl text-slate-800 flex items-center gap-2"><Hash size={24} className="text-sky-500" /> 해시태그 모음</h3>
-                <button onClick={() => setShowAddCat(!showAddCat)} className="text-[10px] font-bold text-sky-500 bg-sky-50 px-3 py-1.5 rounded-lg border border-sky-100 active:scale-95 transition-all">
-                  {showAddCat ? '닫기' : '+ 분류 추가'}
+            {/* ── 허브 (카테고리 선택) ── */}
+            {!toolSubTab && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-black text-slate-800 mb-2">도구</h3>
+                <button onClick={() => setToolSubTab('count')} className="w-full jelly-card p-5 flex items-center gap-4 active:scale-[0.98] transition-all text-left">
+                  <div className="w-12 h-12 bg-sky-100 rounded-2xl flex items-center justify-center shrink-0">
+                    <Calculator size={24} className="text-sky-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black text-slate-800">글자수 측정</p>
+                    <p className="text-xs text-slate-400 mt-0.5">공백 포함/제외 글자 수 확인</p>
+                  </div>
+                  <ChevronRight size={18} className="text-slate-300 shrink-0" />
+                </button>
+                <button onClick={() => setToolSubTab('savedTexts')} className="w-full jelly-card p-5 flex items-center gap-4 active:scale-[0.98] transition-all text-left">
+                  <div className="w-12 h-12 bg-violet-100 rounded-2xl flex items-center justify-center shrink-0">
+                    <Save size={24} className="text-violet-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black text-slate-800">작성 글</p>
+                    <p className="text-xs text-slate-400 mt-0.5">저장한 글 {savedTexts.length > 0 ? `${savedTexts.length}개` : '없음'}</p>
+                  </div>
+                  <ChevronRight size={18} className="text-slate-300 shrink-0" />
+                </button>
+                <button onClick={() => setToolSubTab('hashtags')} className="w-full jelly-card p-5 flex items-center gap-4 active:scale-[0.98] transition-all text-left">
+                  <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center shrink-0">
+                    <Hash size={24} className="text-emerald-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black text-slate-800">해시태그</p>
+                    <p className="text-xs text-slate-400 mt-0.5">분류별 해시태그 모음</p>
+                  </div>
+                  <ChevronRight size={18} className="text-slate-300 shrink-0" />
                 </button>
               </div>
-              {showAddCat && (
-                <div className="flex gap-2 mb-4">
-                  <input
-                    className="flex-1 px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-sky-300"
-                    placeholder="새 분류명 입력 (예: 운동, 여행...)"
-                    value={newCatName}
-                    onChange={e => setNewCatName(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && newCatName.trim() && !hashtags[newCatName.trim()]) {
-                        saveHashtags({ ...hashtags, [newCatName.trim()]: [] });
-                        setNewCatName('');
-                        setShowAddCat(false);
-                      }
-                    }}
-                  />
-                  <button onClick={() => {
-                    if (!newCatName.trim() || hashtags[newCatName.trim()]) return;
-                    saveHashtags({ ...hashtags, [newCatName.trim()]: [] });
-                    setNewCatName('');
-                    setShowAddCat(false);
-                  }} className="px-4 py-2.5 jelly-button text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all whitespace-nowrap">추가</button>
+            )}
+
+            {/* ── 글자수 측정 ── */}
+            {toolSubTab === 'count' && (
+              <div className="space-y-5 animate-in slide-in-from-right-4 duration-300">
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setToolSubTab(null)} className="p-2 bg-sky-50 rounded-xl"><ChevronLeft size={20} /></button>
+                  <h3 className="text-lg font-black text-slate-900">글자수 측정</h3>
+                  <span className="ml-auto text-[10px] bg-sky-500 text-white px-3 py-1 rounded-full font-bold">1,500자 권장</span>
                 </div>
-              )}
-              <div className="space-y-4">
-                {Object.entries(hashtags).map(([cat, tags]) => {
-                  const catColors = { '맛집': 'border-orange-200 bg-orange-50', '뷰티': 'border-rose-200 bg-rose-50', '카페': 'border-amber-200 bg-amber-50', '숙박': 'border-indigo-200 bg-indigo-50', '체험': 'border-teal-200 bg-teal-50' };
-                  const dotColors = { '맛집': 'bg-orange-400', '뷰티': 'bg-rose-400', '카페': 'bg-amber-400', '숙박': 'bg-indigo-400', '체험': 'bg-teal-400' };
-                  return (
-                    <div key={cat} className={`rounded-2xl border p-3 sm:p-4 ${catColors[cat] || 'border-slate-200 bg-slate-50'}`}>
-                      <div className="flex items-center justify-between mb-2.5">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-2 h-2 rounded-full ${dotColors[cat] || 'bg-slate-400'}`}></span>
-                          {renamingCat === cat ? (
-                            <input
-                              className="px-2 py-0.5 rounded-lg bg-white border border-sky-300 text-xs font-bold outline-none w-20"
-                              value={renameCatValue}
-                              onChange={e => setRenameCatValue(e.target.value)}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter' && renameCatValue.trim() && renameCatValue.trim() !== cat && !hashtags[renameCatValue.trim()]) {
-                                  const entries = Object.entries(hashtags).map(([k, v]) => k === cat ? [renameCatValue.trim(), v] : [k, v]);
-                                  saveHashtags(Object.fromEntries(entries));
-                                  setRenamingCat(null);
-                                }
-                                if (e.key === 'Escape') setRenamingCat(null);
-                              }}
-                              onBlur={() => {
-                                if (renameCatValue.trim() && renameCatValue.trim() !== cat && !hashtags[renameCatValue.trim()]) {
-                                  const entries = Object.entries(hashtags).map(([k, v]) => k === cat ? [renameCatValue.trim(), v] : [k, v]);
-                                  saveHashtags(Object.fromEntries(entries));
-                                }
-                                setRenamingCat(null);
-                              }}
-                              autoFocus
-                            />
-                          ) : (
-                            <h4 className="text-xs font-black text-slate-700">{cat}</h4>
-                          )}
-                          <span className="text-[9px] font-bold text-slate-400">{tags.length}개</span>
-                        </div>
-                        <div className="flex gap-1.5">
-                          <button onClick={() => { copyToClipboard(tags.join(' ')); }} className="text-[9px] font-bold text-sky-500 bg-white px-2 py-1 rounded-lg border border-sky-100 active:scale-95 transition-all">전체 복사</button>
-                          {editingHashtagCat === cat && (
-                            <>
-                              <button onClick={() => { setRenamingCat(cat); setRenameCatValue(cat); }} className="text-[9px] font-bold text-amber-500 bg-white px-2 py-1 rounded-lg border border-amber-100 active:scale-95 transition-all">이름 변경</button>
-                              <button onClick={() => {
-                                if (window.confirm(`'${cat}' 분류를 삭제할까요?`)) {
-                                  const updated = { ...hashtags };
-                                  delete updated[cat];
-                                  saveHashtags(updated);
-                                  setEditingHashtagCat(null);
-                                }
-                              }} className="text-[9px] font-bold text-rose-500 bg-white px-2 py-1 rounded-lg border border-rose-100 active:scale-95 transition-all">분류 삭제</button>
-                            </>
-                          )}
-                          <button onClick={() => setEditingHashtagCat(editingHashtagCat === cat ? null : cat)} className="text-[9px] font-bold text-slate-400 bg-white px-2 py-1 rounded-lg border border-slate-100 active:scale-95 transition-all">
-                            {editingHashtagCat === cat ? '완료' : '편집'}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {tags.map((tag, i) => (
-                          <button
-                            key={i}
-                            onClick={() => editingHashtagCat === cat
-                              ? saveHashtags({ ...hashtags, [cat]: tags.filter((_, idx) => idx !== i) })
-                              : copyToClipboard(tag)
-                            }
-                            className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all active:scale-95 ${editingHashtagCat === cat ? 'bg-rose-100 text-rose-500 border border-rose-200' : 'bg-white text-slate-600 border border-slate-100'}`}
-                          >
-                            {editingHashtagCat === cat ? `${tag} ✕` : tag}
-                          </button>
-                        ))}
-                      </div>
-                      {editingHashtagCat === cat && (
-                        <div className="flex gap-2 mt-2.5">
-                          <input
-                            className="flex-1 px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-sky-300"
-                            placeholder="#해시태그 입력"
-                            value={newHashtag}
-                            onChange={e => setNewHashtag(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter' && newHashtag.trim()) {
-                                const tag = newHashtag.trim().startsWith('#') ? newHashtag.trim() : `#${newHashtag.trim()}`;
-                                saveHashtags({ ...hashtags, [cat]: [...tags, tag] });
-                                setNewHashtag('');
-                              }
-                            }}
-                          />
-                          <button onClick={() => {
-                            if (!newHashtag.trim()) return;
-                            const tag = newHashtag.trim().startsWith('#') ? newHashtag.trim() : `#${newHashtag.trim()}`;
-                            saveHashtags({ ...hashtags, [cat]: [...tags, tag] });
-                            setNewHashtag('');
-                          }} className="px-3 py-2 jelly-button text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all">추가</button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                <textarea
+                  className="w-full h-64 p-6 bg-white/60 backdrop-blur-md shadow-inner rounded-[32px] border border-white focus:bg-white focus:ring-2 focus:ring-sky-300 outline-none text-slate-600 leading-relaxed text-sm placeholder:font-bold placeholder:text-slate-300"
+                  placeholder="파워블로거는 원고 내용으로 승부합니다. 여기에 내용을 적으세요!"
+                  value={textToCount}
+                  onChange={(e) => setTextToCount(e.target.value)}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-sky-50 p-5 rounded-3xl text-center">
+                    <p className="text-[10px] font-black text-sky-400 mb-1">공백 포함</p>
+                    <p className="text-2xl font-black text-sky-700">{textToCount.length}</p>
+                  </div>
+                  <div className="bg-slate-50 p-5 rounded-3xl text-center">
+                    <p className="text-[10px] font-black text-slate-400 mb-1">공백 제외</p>
+                    <p className="text-2xl font-black text-slate-800">{textToCount.replace(/\s+/g, '').length}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    if (!textToCount.trim()) return;
+                    const newItem = { id: Date.now(), title: textToCount.trim().slice(0, 20), content: textToCount, savedAt: new Date().toISOString() };
+                    const updated = [newItem, ...savedTexts];
+                    setSavedTexts(updated);
+                    localStorage.setItem('blogger_saved_texts', JSON.stringify(updated));
+                    setToolSubTab('savedTexts');
+                  }}
+                  className="w-full flex items-center justify-center gap-2 py-4 jelly-button text-white rounded-2xl font-black text-sm active:scale-95 transition-all shadow-md shadow-sky-200"
+                >
+                  <Save size={16} /> 글 저장하기
+                </button>
               </div>
-            </section>
+            )}
+
+            {/* ── 작성 글 ── */}
+            {toolSubTab === 'savedTexts' && (
+              <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setToolSubTab(null)} className="p-2 bg-sky-50 rounded-xl"><ChevronLeft size={20} /></button>
+                  <h3 className="text-lg font-black text-slate-900">작성 글</h3>
+                  <span className="ml-auto text-xs text-slate-400 font-bold">{savedTexts.length}개 저장됨</span>
+                </div>
+                {savedTexts.length === 0 ? (
+                  <div className="jelly-card p-12 text-center">
+                    <p className="text-slate-300 font-bold text-sm">저장된 글이 없어요</p>
+                    <button onClick={() => setToolSubTab('count')} className="mt-4 text-xs text-sky-500 font-bold underline underline-offset-2">글자수 측정에서 저장하기</button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {savedTexts.map(item => (
+                      <div key={item.id} className="jelly-card p-4 flex items-start gap-3">
+                        <button
+                          onClick={() => { setTextToCount(item.content); setToolSubTab('count'); }}
+                          className="flex-1 text-left min-w-0"
+                        >
+                          <p className="font-bold text-slate-700 truncate">{item.title || '(제목 없음)'}</p>
+                          <p className="text-[10px] text-slate-400 mt-1">{new Date(item.savedAt).toLocaleDateString('ko-KR')} · {item.content.length}자</p>
+                        </button>
+                        <button onClick={() => {
+                          const updated = savedTexts.filter(t => t.id !== item.id);
+                          setSavedTexts(updated);
+                          localStorage.setItem('blogger_saved_texts', JSON.stringify(updated));
+                        }} className="shrink-0 p-1.5 rounded-lg text-slate-300 hover:text-rose-400 transition-all active:scale-90">
+                          <X size={15} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── 해시태그 ── */}
+            {toolSubTab === 'hashtags' && (
+              <div className="space-y-5 animate-in slide-in-from-right-4 duration-300">
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setToolSubTab(null)} className="p-2 bg-sky-50 rounded-xl"><ChevronLeft size={20} /></button>
+                  <h3 className="text-lg font-black text-slate-900">해시태그</h3>
+                  <button onClick={() => setShowAddCat(!showAddCat)} className="ml-auto text-[10px] font-bold text-sky-500 bg-sky-50 px-3 py-1.5 rounded-lg border border-sky-100 active:scale-95 transition-all">
+                    {showAddCat ? '닫기' : '+ 분류 추가'}
+                  </button>
+                </div>
+                {showAddCat && (
+                  <div className="flex gap-2">
+                    <input
+                      className="flex-1 px-3 py-2.5 rounded-xl bg-white border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-sky-300"
+                      placeholder="새 분류명 입력 (예: 운동, 여행...)"
+                      value={newCatName}
+                      onChange={e => setNewCatName(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && newCatName.trim() && !hashtags[newCatName.trim()]) {
+                          saveHashtags({ ...hashtags, [newCatName.trim()]: [] });
+                          setNewCatName(''); setShowAddCat(false);
+                        }
+                      }}
+                    />
+                    <button onClick={() => {
+                      if (!newCatName.trim() || hashtags[newCatName.trim()]) return;
+                      saveHashtags({ ...hashtags, [newCatName.trim()]: [] });
+                      setNewCatName(''); setShowAddCat(false);
+                    }} className="px-4 py-2.5 jelly-button text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all whitespace-nowrap">추가</button>
+                  </div>
+                )}
+                <div className="space-y-4">
+                  {Object.entries(hashtags).map(([cat, tags]) => {
+                    const catColors = { '맛집': 'border-orange-200 bg-orange-50', '뷰티': 'border-rose-200 bg-rose-50', '카페': 'border-amber-200 bg-amber-50', '숙박': 'border-indigo-200 bg-indigo-50', '체험': 'border-teal-200 bg-teal-50' };
+                    const dotColors = { '맛집': 'bg-orange-400', '뷰티': 'bg-rose-400', '카페': 'bg-amber-400', '숙박': 'bg-indigo-400', '체험': 'bg-teal-400' };
+                    return (
+                      <div key={cat} className={`rounded-2xl border p-3 sm:p-4 ${catColors[cat] || 'border-slate-200 bg-slate-50'}`}>
+                        <div className="flex items-center justify-between mb-2.5">
+                          <div className="flex items-center gap-2">
+                            <span className={`w-2 h-2 rounded-full ${dotColors[cat] || 'bg-slate-400'}`}></span>
+                            {renamingCat === cat ? (
+                              <input
+                                className="px-2 py-0.5 rounded-lg bg-white border border-sky-300 text-xs font-bold outline-none w-20"
+                                value={renameCatValue}
+                                onChange={e => setRenameCatValue(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter' && renameCatValue.trim() && renameCatValue.trim() !== cat && !hashtags[renameCatValue.trim()]) {
+                                    const entries = Object.entries(hashtags).map(([k, v]) => k === cat ? [renameCatValue.trim(), v] : [k, v]);
+                                    saveHashtags(Object.fromEntries(entries)); setRenamingCat(null);
+                                  }
+                                  if (e.key === 'Escape') setRenamingCat(null);
+                                }}
+                                onBlur={() => {
+                                  if (renameCatValue.trim() && renameCatValue.trim() !== cat && !hashtags[renameCatValue.trim()]) {
+                                    const entries = Object.entries(hashtags).map(([k, v]) => k === cat ? [renameCatValue.trim(), v] : [k, v]);
+                                    saveHashtags(Object.fromEntries(entries));
+                                  }
+                                  setRenamingCat(null);
+                                }}
+                                autoFocus
+                              />
+                            ) : (
+                              <h4 className="text-xs font-black text-slate-700">{cat}</h4>
+                            )}
+                            <span className="text-[9px] font-bold text-slate-400">{tags.length}개</span>
+                          </div>
+                          <div className="flex gap-1.5">
+                            <button onClick={() => copyToClipboard(tags.join(' '))} className="text-[9px] font-bold text-sky-500 bg-white px-2 py-1 rounded-lg border border-sky-100 active:scale-95 transition-all">전체 복사</button>
+                            {editingHashtagCat === cat && (
+                              <>
+                                <button onClick={() => { setRenamingCat(cat); setRenameCatValue(cat); }} className="text-[9px] font-bold text-amber-500 bg-white px-2 py-1 rounded-lg border border-amber-100 active:scale-95 transition-all">이름 변경</button>
+                                <button onClick={() => {
+                                  if (window.confirm(`'${cat}' 분류를 삭제할까요?`)) {
+                                    const updated = { ...hashtags }; delete updated[cat];
+                                    saveHashtags(updated); setEditingHashtagCat(null);
+                                  }
+                                }} className="text-[9px] font-bold text-rose-500 bg-white px-2 py-1 rounded-lg border border-rose-100 active:scale-95 transition-all">분류 삭제</button>
+                              </>
+                            )}
+                            <button onClick={() => setEditingHashtagCat(editingHashtagCat === cat ? null : cat)} className="text-[9px] font-bold text-slate-400 bg-white px-2 py-1 rounded-lg border border-slate-100 active:scale-95 transition-all">
+                              {editingHashtagCat === cat ? '완료' : '편집'}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {tags.map((tag, i) => (
+                            <button key={i}
+                              onClick={() => editingHashtagCat === cat
+                                ? saveHashtags({ ...hashtags, [cat]: tags.filter((_, idx) => idx !== i) })
+                                : copyToClipboard(tag)
+                              }
+                              className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition-all active:scale-95 ${editingHashtagCat === cat ? 'bg-rose-100 text-rose-500 border border-rose-200' : 'bg-white text-slate-600 border border-slate-100'}`}
+                            >
+                              {editingHashtagCat === cat ? `${tag} ✕` : tag}
+                            </button>
+                          ))}
+                        </div>
+                        {editingHashtagCat === cat && (
+                          <div className="flex gap-2 mt-2.5">
+                            <input
+                              className="flex-1 px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs outline-none focus:ring-2 focus:ring-sky-300"
+                              placeholder="#해시태그 입력"
+                              value={newHashtag}
+                              onChange={e => setNewHashtag(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' && newHashtag.trim()) {
+                                  const tag = newHashtag.trim().startsWith('#') ? newHashtag.trim() : `#${newHashtag.trim()}`;
+                                  saveHashtags({ ...hashtags, [cat]: [...tags, tag] }); setNewHashtag('');
+                                }
+                              }}
+                            />
+                            <button onClick={() => {
+                              if (!newHashtag.trim()) return;
+                              const tag = newHashtag.trim().startsWith('#') ? newHashtag.trim() : `#${newHashtag.trim()}`;
+                              saveHashtags({ ...hashtags, [cat]: [...tags, tag] }); setNewHashtag('');
+                            }} className="px-3 py-2 jelly-button text-white rounded-xl text-xs font-black shadow-sm active:scale-95 transition-all">추가</button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
           </div>
         )}
 
@@ -2483,7 +2533,7 @@ ${text}`
         <button onClick={() => setActiveTab('home')} className={`transition-all ${activeTab === 'home' ? 'text-sky-500 scale-110 drop-shadow-md' : 'text-slate-400 hover:text-sky-400'}`}><ClipboardList size={20} /></button>
         <button onClick={() => setActiveTab('calendar')} className={`transition-all ${activeTab === 'calendar' ? 'text-sky-500 scale-110 drop-shadow-md' : 'text-slate-400 hover:text-sky-400'}`}><Calendar size={20} /></button>
         <button onClick={() => { setRawText(''); setParsedData({ ...emptyParsed }); setIsModalOpen(true); }} className="jelly-button text-white p-3 sm:p-4 rounded-full -mt-16 sm:-mt-20 shadow-xl shadow-sky-300/50 active:rotate-12 transition-all border-4 border-white"><Plus size={24} /></button>
-        <button onClick={() => setActiveTab('tool')} className={`transition-all ${activeTab === 'tool' ? 'text-sky-500 scale-110 drop-shadow-md' : 'text-slate-400 hover:text-sky-400'}`}><Calculator size={20} /></button>
+        <button onClick={() => { setActiveTab('tool'); setToolSubTab(null); }} className={`transition-all ${activeTab === 'tool' ? 'text-sky-500 scale-110 drop-shadow-md' : 'text-slate-400 hover:text-sky-400'}`}><Calculator size={20} /></button>
         <button onClick={() => setActiveTab('profile')} className={`transition-all ${activeTab === 'profile' ? 'text-sky-500 scale-110 drop-shadow-md' : 'text-slate-400 hover:text-sky-400'}`}><User size={20} /></button>
       </nav>
 
