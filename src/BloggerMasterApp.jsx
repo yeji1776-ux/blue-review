@@ -2468,15 +2468,15 @@ ${text}`
       {/* 탭 바 */}
       {/* 하단 제작자 & 경고문 */}
       <footer className="text-center py-6 pb-28 sm:pb-32 space-y-2">
-        <p className="text-[10px] text-slate-300 leading-relaxed">본 앱은 협찬 일정 관리를 위한 개인 보조 도구이며, 각 플랫폼의 공식 서비스가 아닙니다.<br />협찬 콘텐츠 작성 시 공정위 광고 표시 가이드라인을 준수해주세요.</p>
+        <p className="text-[10px] text-slate-500 leading-relaxed">본 앱은 협찬 일정 관리를 위한 개인 보조 도구이며, 각 플랫폼의 공식 서비스가 아닙니다.<br />협찬 콘텐츠 작성 시 공정위 광고 표시 가이드라인을 준수해주세요.</p>
         <div className="flex items-center justify-center gap-3">
-          <a href="/guide.html" className="text-[10px] text-slate-400 hover:text-sky-500 transition-colors">사용 가이드</a>
-          <span className="text-slate-300 text-[10px]">·</span>
-          <a href="/terms.html" className="text-[10px] text-slate-400 hover:text-sky-500 transition-colors">이용약관</a>
-          <span className="text-slate-300 text-[10px]">·</span>
-          <a href="/privacy.html" className="text-[10px] text-slate-400 hover:text-sky-500 transition-colors">개인정보처리방침</a>
+          <a href="/guide.html" className="text-[10px] text-slate-500 hover:text-sky-500 transition-colors">사용 가이드</a>
+          <span className="text-slate-400 text-[10px]">·</span>
+          <a href="/terms.html" className="text-[10px] text-slate-500 hover:text-sky-500 transition-colors">이용약관</a>
+          <span className="text-slate-400 text-[10px]">·</span>
+          <a href="/privacy.html" className="text-[10px] text-slate-500 hover:text-sky-500 transition-colors">개인정보처리방침</a>
         </div>
-        <p className="text-[10px] text-slate-300">© 2026 Blue Review · 제작자 <span className="font-bold text-slate-400">hare_table</span></p>
+        <p className="text-[10px] text-slate-500">© 2026 Blue Review · 제작자 <span className="font-bold text-slate-600">hare_table</span></p>
       </footer>
 
       <nav className="fixed bottom-4 sm:bottom-10 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-xl px-5 sm:px-6 py-4 sm:py-5 rounded-full flex items-center gap-5 sm:gap-6 shadow-[0_15px_40px_rgba(186,230,253,0.5)] z-40 border border-white">
