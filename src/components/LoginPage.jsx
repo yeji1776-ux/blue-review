@@ -74,9 +74,8 @@ const LoginPage = ({ onEmailSignIn, onEmailSignUp, onVerifyOtp, onSocialLogin, o
     } else {
       const result = await onEmailSignUp(email, password, nickname.trim());
       if (!result?.error) {
-        setAuthMode('verify');
-        setOtpDigits(['', '', '', '', '', '']);
-        setTimeout(() => otpRefs[0].current?.focus(), 100);
+        // Confirm email OFF → 가입 즉시 자동 로그인
+        await onEmailSignIn(email, password, rememberMe);
       }
     }
   };
@@ -143,7 +142,7 @@ const LoginPage = ({ onEmailSignIn, onEmailSignUp, onVerifyOtp, onSocialLogin, o
         </h1>
         <p className="text-center text-slate-400 text-sm mb-8">귀하의 파워블로거 도약을 응원합니다.</p>
 
-        {/* ── OTP 인증 화면 ── */}
+        {/* ── OTP 인증 화면 (Confirm email ON일 때만 사용) ── */}
         {authMode === 'verify' && (
           <div className="space-y-6">
             <div className="text-center">
