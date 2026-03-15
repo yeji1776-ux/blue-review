@@ -80,7 +80,7 @@ const BiometricLockScreen = ({ onUnlock, onSkip }) => {
 
 const BloggerMasterApp = () => {
   // --- 인증 ---
-  const { user, loading, signInWithProvider, signUpWithEmail, signInWithEmail, signOut, updatePassword } = useAuth();
+  const { user, loading, signInWithProvider, signUpWithEmail, signInWithEmail, signOut, updatePassword, resetPasswordForEmail, refreshSession } = useAuth();
   const [authError, setAuthError] = useState('');
   const [isGuest, setIsGuest] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
@@ -584,11 +584,44 @@ const BloggerMasterApp = () => {
   const handleEmailSignUp = async (email, password, nickname) => {
     setAuthError('');
     const { error } = await signUpWithEmail(email, password);
-    if (error) { setAuthError(error.message); return; }
+    if (error) { setAuthError(error.message); return { error }; }
     if (nickname) {
       updateProfile('nickname', nickname);
       const updated = { ...profile, nickname };
       localStorage.setItem('blogger_profile', JSON.stringify(updated));
+    }
+    return {};
+  };
+
+  const handleForgotPassword = async (email) => {
+    const { error } = await resetPasswordForEmail(email);
+    return { error };
+  };
+
+  const handleBiometricLoginFromPage = async () => {
+    try {
+      const credIdStr = localStorage.getItem('biometric_cred_id');
+      if (!credIdStr) return { error: '등록된 생체 인증이 없습니다.' };
+      const credId = Uint8Array.from(atob(credIdStr), c => c.charCodeAt(0));
+      await navigator.credentials.get({
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rpId: window.location.hostname,
+          allowCredentials: [{ id: credId, type: 'public-key' }],
+          userVerification: 'required',
+          timeout: 60000,
+        },
+      });
+      // 생체 인증 성공 → 세션 복원 시도
+      const { data } = await refreshSession();
+      if (data?.session) {
+        sessionStorage.setItem('biometricUnlocked', '1');
+        return {};
+      }
+      return { error: '세션이 만료되었어요. 이메일/비밀번호로 로그인해주세요.' };
+    } catch (e) {
+      if (e.name === 'NotAllowedError') return {};
+      return { error: '생체 인증에 실패했습니다.' };
     }
   };
 
@@ -748,6 +781,8 @@ ${text}`
         onEmailSignUp={handleEmailSignUp}
         onSocialLogin={handleSocialLogin}
         onGuestLogin={handleGuestLogin}
+        onForgotPassword={handleForgotPassword}
+        onBiometricLogin={handleBiometricLoginFromPage}
         authError={authError}
       />
     );

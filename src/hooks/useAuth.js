@@ -6,13 +6,11 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user ?? null);
@@ -26,26 +24,18 @@ export function useAuth() {
   const signInWithProvider = async (provider) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: {
-        redirectTo: window.location.origin,
-      },
+      options: { redirectTo: window.location.origin },
     });
     return { error };
   };
 
   const signUpWithEmail = async (email, password) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    const { data, error } = await supabase.auth.signUp({ email, password });
     return { data, error };
   };
 
   const signInWithEmail = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     return { data, error };
   };
 
@@ -59,6 +49,18 @@ export function useAuth() {
     return { data, error };
   };
 
+  const resetPasswordForEmail = async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}?reset=1`,
+    });
+    return { error };
+  };
+
+  const refreshSession = async () => {
+    const { data, error } = await supabase.auth.refreshSession();
+    return { data, error };
+  };
+
   return {
     user,
     loading,
@@ -67,5 +69,7 @@ export function useAuth() {
     signInWithEmail,
     signOut,
     updatePassword,
+    resetPasswordForEmail,
+    refreshSession,
   };
 }
