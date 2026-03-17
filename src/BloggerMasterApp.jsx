@@ -730,6 +730,7 @@ const BloggerMasterApp = () => {
     brand: '리뷰노트', type: '맛집', title: '', address: '', contact: '',
     mission: '', personalMission: '', experiencePeriod: '', deadline: '', provided: '',
     visitDays: '', visitTime: '', visitDate: '', visitSetTime: '', caution: '', ftcImageUrl: '',
+    keywords: '',
     platforms: [],
   };
 
@@ -1078,6 +1079,7 @@ const BloggerMasterApp = () => {
   "visitDays": "체험 가능 요일",
   "visitTime": "체험 가능 시간",
   "caution": "예약 시 주의사항 (줄바꿈 대신 / 로 구분)",
+  "keywords": "업체가 요구하는 검색 키워드 (예: 연남동맛집, 파스타맛집, 데이트코스 등. 없으면 빈 문자열)",
   "mission": "기본 미션 (사진 수, 글자 수, 키워드, 동영상 등 작성 조건. 항목별로 줄바꿈(\\n)하여 정리)",
   "personalMission": "개인 미션 (업체 소개, 음식/서비스 설명 등 포스팅에 담아야 할 내용. 문장 단위로 줄바꿈(\\n)하여 가독성 좋게 추출)",
   "ftcImageUrl": "공정위 문구 이미지 URL (http/https로 시작하는 이미지 주소. 없으면 빈 문자열)",
@@ -1122,6 +1124,7 @@ ${text}`
         visitDays: result.visitDays || '',
         visitTime: result.visitTime || '',
         caution: result.caution || '',
+        keywords: result.keywords || '',
         mission: result.mission || '',
         personalMission: result.personalMission || '',
         ftcImageUrl: result.ftcImageUrl || '',
@@ -2742,6 +2745,14 @@ ${text}`
                   )}
                 </div>
 
+                {/* 키워드 */}
+                {item.keywords && (
+                  <div className="bg-violet-50/60 rounded-2xl border border-dashed border-violet-200 px-5 py-3">
+                    <p className="text-[10px] font-black text-violet-400 mb-2">키워드</p>
+                    <p className="text-xs text-slate-600 font-medium leading-relaxed">{item.keywords}</p>
+                  </div>
+                )}
+
                 {/* 기타정보 */}
                 {item.extraInfo && (
                   <div className="bg-slate-50/80 rounded-2xl border border-dashed border-slate-200 overflow-hidden">
@@ -3227,6 +3238,10 @@ ${text}`
                 <div className="flex gap-3">
                   <div className="w-14 shrink-0 text-[10px] font-bold text-slate-500 pt-2">기타정보</div>
                   <textarea className="flex-1 bg-slate-50/60 border border-slate-100 rounded-xl font-medium text-slate-700 outline-none text-xs p-3 h-20 resize-none" placeholder="위 항목에 담기 어려운 기타 정보" value={parsedData.extraInfo || ''} onChange={(e) => setParsedData({ ...parsedData, extraInfo: e.target.value })} />
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-14 shrink-0 text-[10px] font-bold text-violet-400 pt-2">키워드</div>
+                  <textarea className="flex-1 bg-violet-50/60 border border-violet-100 rounded-xl font-medium text-slate-700 outline-none text-xs p-3 h-16 resize-none" placeholder="연남동맛집, 파스타맛집, 데이트코스..." value={parsedData.keywords || ''} onChange={(e) => setParsedData({ ...parsedData, keywords: e.target.value })} />
                 </div>
                 <div className="flex gap-3">
                   <div className="w-14 shrink-0 text-[10px] font-bold text-orange-300 pt-2">주의사항</div>
