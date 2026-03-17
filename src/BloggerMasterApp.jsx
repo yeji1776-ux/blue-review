@@ -383,8 +383,7 @@ const BloggerMasterApp = () => {
       facebookUrl: '',
       youtubeUrl: '',
       phone: '',
-      email: '',
-      enabledPlatforms: { blogUrl: true, blogClipUrl: false, instaId: true, reelsUrl: false, facebookUrl: false, youtubeUrl: false, email: false },
+      enabledPlatforms: { blogUrl: true, blogClipUrl: false, instaId: true, reelsUrl: false, facebookUrl: false, youtubeUrl: false },
     };
     if (!saved) return defaults;
     const parsed = JSON.parse(saved);
@@ -1458,7 +1457,6 @@ ${text}`
                     { key: 'reelsUrl',    label: '릴스',       value: profile.reelsUrl,    icon: <Eye size={14} />,       bg: 'bg-violet-50 text-violet-500' },
                     { key: 'facebookUrl', label: '페이스북',   value: profile.facebookUrl, icon: <Globe size={14} />,     bg: 'bg-blue-50 text-blue-500' },
                     { key: 'youtubeUrl',  label: '유튜브',     value: profile.youtubeUrl,  icon: <Youtube size={14} />,   bg: 'bg-rose-50 text-rose-500' },
-                    { key: 'email',       label: '이메일',     value: profile.email,       icon: <Mail size={14} />,      bg: 'bg-emerald-50 text-emerald-500' },
                   ].filter(({ key }) => profile.enabledPlatforms?.[key]).map(({ label, value, icon, bg }) => (
                     <button key={label} onClick={() => copyWithCheck(value, label)} className="flex flex-col items-center gap-1 sm:gap-1.5 py-2 sm:py-3 rounded-xl sm:rounded-2xl active:bg-sky-50 transition-all">
                       <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${bg}`}>{icon}</div>
@@ -1667,7 +1665,7 @@ ${text}`
                 {[
                   { key: 'all',      label: '전체',       profileKey: null },
                   { key: 'blog',     label: '블로그',     profileKey: 'blogUrl' },
-                  { key: 'blogClip', label: '블로그+클립',profileKey: 'blogClipUrl' },
+                  { key: 'blogClip', label: '클립',profileKey: 'blogClipUrl' },
                   { key: 'insta',    label: '인스타',     profileKey: 'instaId' },
                   { key: 'reels',    label: '릴스',       profileKey: 'reelsUrl' },
                   { key: 'facebook', label: '페이스북',   profileKey: 'facebookUrl' },
@@ -2588,7 +2586,7 @@ ${text}`
                   <span className="text-[10px] font-bold text-sky-500 whitespace-nowrap">{item.type}</span>
                   {(item.platforms || []).map(p => (
                     <span key={p} className="px-2 py-0.5 rounded-full text-[10px] font-black bg-sky-50 text-sky-500 border border-sky-100 whitespace-nowrap">
-                      {{ blog:'블로그', blogClip:'블로그+클립', insta:'인스타', reels:'릴스', facebook:'페이스북', youtube:'유튜브' }[p]}
+                      {{ blog:'블로그', blogClip:'클립', insta:'인스타', reels:'릴스', facebook:'페이스북', youtube:'유튜브' }[p]}
                     </span>
                   ))}
                 </div>
@@ -3179,7 +3177,7 @@ ${text}`
                   <div className="flex flex-wrap gap-1.5">
                     {[
                       { key: 'blog',      label: '블로그' },
-                      { key: 'blogClip',  label: '블로그+클립' },
+                      { key: 'blogClip',  label: '클립' },
                       { key: 'insta',     label: '인스타' },
                       { key: 'reels',     label: '릴스' },
                       { key: 'facebook',  label: '페이스북' },
@@ -3356,7 +3354,6 @@ ${text}`
                     { key: 'reelsUrl',    label: '릴스',        value: profile.reelsUrl },
                     { key: 'facebookUrl', label: '페이스북',    value: profile.facebookUrl },
                     { key: 'youtubeUrl',  label: '유튜브',      value: profile.youtubeUrl },
-                    { key: 'email',       label: '이메일',      value: profile.email },
                   ].filter(({ key }) => profile.enabledPlatforms?.[key]).map(({ label, value }) => (
                     <button key={label} onClick={() => copyWithCheck(value, label)}
                       className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-sky-50 text-[10px] font-bold text-slate-600 active:bg-sky-100 transition-all">
@@ -3372,12 +3369,11 @@ ${text}`
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     { key: 'blogUrl',     label: '블로그',     icon: <Globe size={14} /> },
-                    { key: 'blogClipUrl', label: '블로그+클립', icon: <PenTool size={14} /> },
+                    { key: 'blogClipUrl', label: '클립',       icon: <PenTool size={14} /> },
                     { key: 'instaId',     label: '인스타',     icon: <Instagram size={14} /> },
                     { key: 'reelsUrl',    label: '릴스',       icon: <Eye size={14} /> },
                     { key: 'facebookUrl', label: '페이스북',   icon: <ExternalLink size={14} /> },
                     { key: 'youtubeUrl',  label: '유튜브',     icon: <Youtube size={14} /> },
-                    { key: 'email',       label: '이메일',     icon: <Mail size={14} /> },
                   ].map(({ key, label, icon }) => {
                     const enabled = profile.enabledPlatforms?.[key];
                     return (
@@ -3403,11 +3399,9 @@ ${text}`
                 </div>
                 {[
                   { key: 'blogUrl',     label: '블로그 주소',   placeholder: 'https://blog.naver.com/myid',         icon: <Globe size={18} /> },
-                  { key: 'instaId',     label: '인스타그램 ID', placeholder: '@my_instagram',                       icon: <Instagram size={18} /> },
                   { key: 'reelsUrl',    label: '릴스 주소',     placeholder: 'https://www.instagram.com/reels/...', icon: <Eye size={18} /> },
                   { key: 'facebookUrl', label: '페이스북 주소', placeholder: 'https://facebook.com/mypage',         icon: <ExternalLink size={18} /> },
                   { key: 'youtubeUrl',  label: '유튜브 채널',   placeholder: 'https://youtube.com/@mychannel',      icon: <Youtube size={18} /> },
-                  { key: 'email',       label: '이메일',        placeholder: 'my@email.com',                        icon: <Mail size={18} /> },
                 ].filter(({ key }) => profile.enabledPlatforms?.[key]).map(({ key, label, placeholder, icon }) => (
                   <div key={key} className="jelly-card p-4">
                     <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-2">
@@ -3418,6 +3412,23 @@ ${text}`
                       onChange={(e) => updateProfile(key, e.target.value)} />
                   </div>
                 ))}
+                {profile.enabledPlatforms?.instaId && (
+                  <div className="jelly-card p-4">
+                    <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-2">
+                      <span className="text-sky-500"><Instagram size={18} /></span>인스타그램 ID
+                    </label>
+                    <div className="flex gap-2">
+                      <input className="flex-1 px-4 py-3 rounded-xl bg-sky-50/50 ring-1 ring-slate-100 focus:ring-2 focus:ring-sky-400 outline-none text-sm transition-all"
+                        placeholder="@my_instagram" value={profile.instaId || ''}
+                        onChange={(e) => updateProfile('instaId', e.target.value)} />
+                      <button
+                        onClick={async () => { const t = await navigator.clipboard.readText(); updateProfile('instaId', t.trim()); }}
+                        className="px-3 py-3 rounded-xl bg-pink-50 text-pink-500 text-xs font-bold active:scale-95 transition-all shrink-0">
+                        붙여넣기
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <button onClick={saveProfile}
