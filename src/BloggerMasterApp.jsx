@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, startTransition } from 'react';
 import {
   Calendar, Clock, MapPin, Phone, Copy, Plus, LogOut,
   ClipboardList, ExternalLink, Calculator, BarChart3,
@@ -3137,7 +3137,7 @@ ${text}`
             <div className="flex items-center justify-between">
               <p className="text-xs font-bold text-slate-500">협찬 사이트의 내용을 통째로 복사해서 붙여넣으세요.</p>
               {rawText && (
-                <button onClick={() => { setRawText(''); setParsedData({ ...emptyParsed }); }} className="text-[10px] font-bold text-rose-400 active:scale-95 transition-all">
+                <button onClick={() => { setRawText(''); startTransition(() => setParsedData({ ...emptyParsed })); }} className="text-[10px] font-bold text-rose-400 active:scale-95 transition-all">
                   지우기
                 </button>
               )}
