@@ -34,7 +34,7 @@
       transition: max-height 0.35s ease;
     }
     .accordion-toggle.open .accordion-body {
-      max-height: 5000px;
+      max-height: 6000px;
     }
     .accordion-toggle.open .chevron {
       transform: rotate(180deg);
@@ -117,6 +117,12 @@
       flex-shrink: 0;
     }
 
+    /* Cursor blink animation */
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
     /* Tip box */
     .tip-box {
       background: #eff6ff;
@@ -124,6 +130,16 @@
       padding: 0.75rem 1rem;
       border-radius: 0 0.5rem 0.5rem 0;
       font-size: 0.875rem;
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
     }
   </style>
 </head>
@@ -164,9 +180,10 @@
       <a href="#section-3" class="toc-link" onclick="closeSidebar()">3. 스케줄 등록</a>
       <a href="#section-4" class="toc-link" onclick="closeSidebar()">4. 스케줄 상세 보기</a>
       <a href="#section-5" class="toc-link" onclick="closeSidebar()">5. 캘린더</a>
-      <a href="#section-6" class="toc-link" onclick="closeSidebar()">6. 전체 관리 & 분석</a>
+      <a href="#section-6" class="toc-link" onclick="closeSidebar()">6. 스케줄 관리 & 분석</a>
       <a href="#section-7" class="toc-link" onclick="closeSidebar()">7. 도구</a>
       <a href="#section-8" class="toc-link" onclick="closeSidebar()">8. 내 프로필</a>
+      <a href="#section-9" class="toc-link" onclick="closeSidebar()">9. 환경 설정</a>
       <div class="mt-6 px-3">
         <p class="text-xs text-gray-400">Made by <strong>hare_table</strong></p>
       </div>
@@ -198,30 +215,56 @@
           </span>
         </div>
         <div class="accordion-body">
-          <div class="bg-white rounded-b-xl shadow-sm px-5 pb-5 pt-3 space-y-5 -mt-2">
+          <div class="bg-white rounded-b-xl shadow-sm px-5 pb-5 pt-3 space-y-6 -mt-2">
 
-            <h3 class="font-bold text-gray-700 text-lg mt-2">회원가입 / 로그인</h3>
-            <p class="text-gray-600 text-sm leading-relaxed">Blue Review는 세 가지 방법으로 간편하게 시작할 수 있습니다.</p>
-            <div class="space-y-3">
-              <div class="step-card" data-step="1">
-                <p class="font-semibold text-gray-700">이메일 가입</p>
-                <p class="text-sm text-gray-500">이메일 주소와 비밀번호를 입력하여 회원가입 후 로그인합니다.</p>
-              </div>
-              <div class="step-card" data-step="2">
-                <p class="font-semibold text-gray-700">Google 로그인</p>
-                <p class="text-sm text-gray-500">Google 계정으로 원클릭 로그인이 가능합니다.</p>
-              </div>
-              <div class="step-card" data-step="3">
-                <p class="font-semibold text-gray-700">카카오톡 로그인</p>
-                <p class="text-sm text-gray-500">카카오톡 계정을 연동하여 빠르게 시작하세요.</p>
+            <!-- 회원가입 -->
+            <div>
+              <h3 class="font-bold text-gray-700 text-lg mt-2">회원가입</h3>
+              <p class="text-gray-600 text-sm leading-relaxed mt-1">이메일로 가입하면 닉네임을 함께 설정할 수 있습니다.</p>
+              <div class="space-y-3 mt-3">
+                <div class="step-card" data-step="1">
+                  <p class="font-semibold text-gray-700">이메일 · 비밀번호 · 닉네임 입력</p>
+                  <p class="text-sm text-gray-500 mt-0.5">가입 화면에서 이메일, 비밀번호, 닉네임을 입력하고 <strong>가입하기</strong>를 누릅니다.</p>
+                </div>
+                <div class="step-card" data-step="2">
+                  <p class="font-semibold text-gray-700">이메일 인증 (OTP)</p>
+                  <p class="text-sm text-gray-500 mt-0.5">입력한 이메일로 6자리 인증 코드가 발송됩니다. 코드를 입력해 인증을 완료하면 가입이 완료됩니다.</p>
+                </div>
               </div>
             </div>
 
-            <h3 class="font-bold text-gray-700 text-lg mt-4">게스트 모드</h3>
-            <p class="text-gray-600 text-sm leading-relaxed">회원가입 없이도 앱을 둘러볼 수 있습니다. 게스트 모드에서는 기본 기능을 체험할 수 있으며, 데이터 저장이나 동기화 기능은 제한됩니다. 본격적으로 사용하시려면 회원가입을 권장합니다.</p>
-            <div class="tip-box">
-              <strong>TIP:</strong> 게스트 모드에서 작성한 데이터는 회원가입 후에도 유지되지 않을 수 있으니, 중요한 정보는 로그인 후 입력해 주세요.
+            <!-- 로그인 방법 -->
+            <div>
+              <h3 class="font-bold text-gray-700 text-lg">로그인 방법</h3>
+              <div class="grid gap-3 sm:grid-cols-2 mt-3">
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="font-semibold text-gray-700 text-sm mb-1">이메일 로그인</p>
+                  <p class="text-xs text-gray-500">가입한 이메일과 비밀번호로 로그인합니다.</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="font-semibold text-gray-700 text-sm mb-1">Google 로그인</p>
+                  <p class="text-xs text-gray-500">Google 계정으로 원클릭 로그인이 가능합니다.</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="font-semibold text-gray-700 text-sm mb-1">생체인증 로그인 (Face ID / 지문)</p>
+                  <p class="text-xs text-gray-500">한 번 로그인 후 프로필 기본설정에서 생체인증을 활성화하면, 다음부터 Face ID 또는 지문으로 빠르게 로그인할 수 있습니다.</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="font-semibold text-gray-700 text-sm mb-1">자동 로그인</p>
+                  <p class="text-xs text-gray-500">로그인 화면의 <strong>자동 로그인</strong> 체크박스를 선택하면 앱을 닫아도 로그인 상태가 유지됩니다.</p>
+                </div>
+              </div>
             </div>
+
+            <!-- 게스트 모드 -->
+            <div>
+              <h3 class="font-bold text-gray-700 text-lg">게스트 모드</h3>
+              <p class="text-gray-600 text-sm leading-relaxed mt-1">회원가입 없이도 앱의 주요 기능을 체험할 수 있습니다. 게스트 모드에서는 예시 스케줄이 표시되어 화면 구성을 미리 확인할 수 있습니다. 로그인 후에는 예시 데이터가 표시되지 않으며, 직접 등록한 스케줄만 보입니다.</p>
+              <div class="tip-box mt-3">
+                <strong>TIP:</strong> 본격적으로 협찬을 관리하려면 회원가입을 권장합니다. 게스트 모드에서 작성한 데이터는 로그인 후 유지되지 않습니다.
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -244,48 +287,46 @@
         <div class="accordion-body">
           <div class="bg-white rounded-b-xl shadow-sm px-5 pb-5 pt-3 space-y-6 -mt-2">
 
+            <!-- 인사말 -->
+            <div>
+              <h3 class="font-bold text-gray-700 text-lg mt-2">인사말</h3>
+              <p class="text-sm text-gray-600 leading-relaxed mt-1">홈 화면 상단에 닉네임이 포함된 인사말이 표시됩니다. 예: <em>"안녕하세요! 하레님 :) 오늘 예정된 일정이 없어요"</em> 또는 오늘 체험일이 있는 스케줄 수가 함께 안내됩니다.</p>
+            </div>
+
             <!-- 촬영지수 -->
             <div>
               <h3 class="font-bold text-gray-700 text-lg">촬영지수</h3>
-              <p class="text-sm text-gray-600 leading-relaxed mt-1">현재 날씨와 위치를 기반으로 오늘의 촬영 적합도를 알려줍니다. 사용을 위해 <strong>날씨 정보</strong>와 <strong>위치 접근 권한</strong>에 동의해 주세요.</p>
+              <p class="text-sm text-gray-600 leading-relaxed mt-1">현재 날씨와 위치를 기반으로 오늘의 촬영 적합도를 알려줍니다. 위치 접근 권한을 허용하면 현재 날씨를 기반으로 점수가 자동 계산됩니다. 맑은 날일수록 높은 점수가 표시됩니다.</p>
               <div class="tip-box mt-2">
-                <strong>TIP:</strong> 위치 권한을 허용하면 현재 위치의 날씨를 기반으로 촬영지수가 자동 계산됩니다. 맑은 날일수록 높은 점수가 표시됩니다.
+                <strong>TIP:</strong> 촬영지수는 홈 화면에서만 확인할 수 있습니다.
               </div>
             </div>
 
             <!-- 마감 알림 배너 -->
             <div>
               <h3 class="font-bold text-gray-700 text-lg">마감 알림 배너</h3>
-              <p class="text-sm text-gray-600 leading-relaxed mt-1">신청 마감이 <strong>D-3 ~ D-day</strong>인 스케줄이 있으면 홈 화면 상단에 알림 배너가 표시됩니다. 배너를 탭하면 해당 스케줄로 바로 이동합니다.</p>
+              <p class="text-sm text-gray-600 leading-relaxed mt-1">신청 마감이 <strong>D-3 ~ D-day</strong>인 스케줄이 있으면 홈 화면 상단에 알림 배너가 표시됩니다. 배너를 탭하면 해당 스케줄 상세 화면으로 바로 이동합니다.</p>
             </div>
 
             <!-- Quick Copy -->
             <div>
-              <h3 class="font-bold text-gray-700 text-lg">Quick Copy 사용법</h3>
-              <p class="text-sm text-gray-600 leading-relaxed mt-1">협찬 신청 시 자주 사용하는 자기소개 문구를 한 번의 탭으로 복사할 수 있습니다.</p>
-              <div class="space-y-3 mt-3">
-                <div class="step-card" data-step="1">
-                  <p class="text-sm text-gray-600">홈 화면에서 <strong>Quick Copy</strong> 영역을 확인합니다.</p>
-                </div>
-                <div class="step-card" data-step="2">
-                  <p class="text-sm text-gray-600">복사하고 싶은 문구를 탭하면 자동으로 클립보드에 복사됩니다.</p>
-                </div>
-                <div class="step-card" data-step="3">
-                  <p class="text-sm text-gray-600">협찬 사이트의 신청 페이지에 붙여넣기 하세요.</p>
-                </div>
+              <h3 class="font-bold text-gray-700 text-lg">Quick Copy</h3>
+              <p class="text-sm text-gray-600 leading-relaxed mt-1">협찬 신청 시 자주 사용하는 자기소개 문구(블로그 URL, 인스타 URL 등)를 한 번의 탭으로 복사합니다. <strong>프로필 &gt; 플랫폼 설정</strong>에서 활성화한 채널만 표시됩니다.</p>
+              <div class="tip-box mt-2">
+                <strong>TIP:</strong> 채널 URL이 등록되지 않은 상태에서 복사 버튼을 누르면 "입력된 주소가 없습니다" 팝업이 나타납니다. 프로필에서 주소를 먼저 입력해 주세요.
               </div>
             </div>
 
             <!-- 신청문구 템플릿 -->
             <div>
-              <h3 class="font-bold text-gray-700 text-lg">신청문구 템플릿 관리</h3>
-              <p class="text-sm text-gray-600 leading-relaxed mt-1">여러 개의 신청문구 템플릿을 미리 등록해 두고, 상황에 맞게 골라 사용할 수 있습니다. 템플릿은 추가, 수정, 삭제가 자유롭습니다.</p>
+              <h3 class="font-bold text-gray-700 text-lg">신청문구 템플릿</h3>
+              <p class="text-sm text-gray-600 leading-relaxed mt-1">협찬 신청 시 사용할 자기소개 문구를 여러 개 미리 등록해 두고 상황에 맞게 골라 사용할 수 있습니다. 템플릿은 추가, 수정, 삭제가 자유롭습니다.</p>
             </div>
 
-            <!-- 스케줄 카드 -->
+            <!-- 오늘의 스케줄 -->
             <div>
-              <h3 class="font-bold text-gray-700 text-lg">브랜드별 스케줄 카드</h3>
-              <p class="text-sm text-gray-600 leading-relaxed mt-1">등록된 협찬 스케줄이 브랜드별로 카드 형태로 표시됩니다. 각 카드에는 브랜드명, 카테고리, 마감일 등 핵심 정보가 한눈에 보입니다.</p>
+              <h3 class="font-bold text-gray-700 text-lg">오늘의 스케줄</h3>
+              <p class="text-sm text-gray-600 leading-relaxed mt-1">오늘 체험 예정인 스케줄이 홈 화면 하단에 카드 형태로 표시됩니다. 카드를 탭하면 해당 스케줄 상세 화면으로 이동합니다.</p>
             </div>
 
           </div>
@@ -308,35 +349,182 @@
           </span>
         </div>
         <div class="accordion-body">
-          <div class="bg-white rounded-b-xl shadow-sm px-5 pb-5 pt-3 space-y-4 -mt-2">
+          <div class="bg-white rounded-b-xl shadow-sm px-5 pb-5 pt-3 space-y-6 -mt-2">
 
-            <p class="text-sm text-gray-600 leading-relaxed">협찬 사이트의 내용을 복사해서 붙여넣기만 하면 AI가 자동으로 분석하여 스케줄을 등록합니다.</p>
+            <p class="text-sm text-gray-600 leading-relaxed">협찬 사이트의 캠페인 내용을 복사해서 앱에 붙여넣고 <strong>분석하기</strong>를 누르면, AI가 브랜드명·마감일·지역·제공 내용 등을 자동으로 추출합니다. 아래 예시를 따라 해보세요!</p>
 
-            <div class="space-y-4 mt-2">
+            <!-- ===== VISUAL DEMO ===== -->
+            <div class="rounded-2xl overflow-hidden border-2 border-sky-100" style="background:#f8fafc;">
+
+              <!-- Demo header -->
+              <div class="px-4 py-3 flex items-center gap-2" style="background: linear-gradient(90deg, var(--sky-500), var(--sky-700));">
+                <svg class="w-4 h-4 text-white opacity-80" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                <span class="text-white text-sm font-bold">실전 예시 — 이렇게 하면 됩니다!</span>
+              </div>
+
+              <div class="p-4 space-y-5">
+
+                <!-- STEP A: 협찬 사이트 화면 -->
+                <div>
+                  <div class="flex items-center gap-2 mb-2">
+                    <span class="flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold flex-shrink-0" style="background:var(--sky-500);">1</span>
+                    <p class="text-sm font-bold text-gray-700">레뷰 / 미블 같은 협찬 사이트에서 캠페인 내용을 <span style="color:var(--sky-600);">전체 선택 후 복사</span>합니다</p>
+                  </div>
+                  <!-- Fake sponsorship site mockup -->
+                  <div class="rounded-xl border border-gray-200 overflow-hidden shadow-sm" style="background:#fff;">
+                    <!-- Fake browser bar -->
+                    <div class="flex items-center gap-1.5 px-3 py-2 border-b border-gray-100" style="background:#f1f5f9;">
+                      <span class="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+                      <span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+                      <span class="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+                      <span class="flex-1 ml-2 rounded-md px-2 py-0.5 text-xs text-gray-400" style="background:#e2e8f0;">revu.net / campaign / 38291</span>
+                    </div>
+                    <!-- Fake page content -->
+                    <div class="p-4 text-xs text-gray-700 leading-relaxed relative" id="fakeCampaignText" style="user-select:all; cursor:text;">
+                      <p class="font-bold text-base text-gray-900 mb-1">🍰 강남 디저트 카페 &lt;슈가블룸&gt; 블로그 체험단 모집</p>
+                      <div class="flex flex-wrap gap-1.5 mb-3">
+                        <span class="badge" style="background:#fef3c7;color:#92400e;">디저트·카페</span>
+                        <span class="badge" style="background:#dcfce7;color:#166534;">서울 강남구</span>
+                        <span class="badge" style="background:#fee2e2;color:#991b1b;">마감 D-4</span>
+                      </div>
+                      <p><strong>브랜드:</strong> 슈가블룸 (SUGAR BLOOM)</p>
+                      <p><strong>캠페인 유형:</strong> 방문 체험단</p>
+                      <p><strong>제공 내역:</strong> 시그니처 케이크 1조각 + 음료 1잔 (2인 방문 가능)</p>
+                      <p><strong>신청 마감:</strong> 2026년 3월 20일</p>
+                      <p><strong>방문 기간:</strong> 2026년 3월 25일 ~ 4월 5일</p>
+                      <p><strong>리뷰 등록 기한:</strong> 방문일로부터 7일 이내</p>
+                      <p><strong>위치:</strong> 서울특별시 강남구 청담동 123-4 (압구정로데오역 3번 출구 도보 3분)</p>
+                      <p class="mt-2"><strong>캠페인 소개:</strong> 프랑스 정통 파티시에가 운영하는 강남 프리미엄 디저트 카페입니다. 계절 과일을 활용한 시그니처 케이크와 스페셜티 커피가 유명합니다. SNS 감성 인테리어로 포토스팟이 많습니다.</p>
+                      <p class="mt-2"><strong>리뷰 조건:</strong> 네이버 블로그 포스팅, 사진 10장 이상, 글자 수 700자 이상, 공정위 문구 포함</p>
+                      <!-- Selection highlight overlay hint -->
+                      <div class="absolute inset-0 rounded pointer-events-none" style="background: rgba(14,165,233,0.07); border: 2px dashed var(--sky-400);"></div>
+                    </div>
+                    <div class="px-4 pb-3 flex items-center gap-2">
+                      <svg class="w-4 h-4 flex-shrink-0" style="color:var(--sky-500);" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                      <p class="text-xs text-gray-400">위 내용을 <strong>손가락으로 꾹 눌러 전체 선택</strong> → <strong>복사</strong> 하세요 (iOS: 모두 선택 → 복사 / Android: 전체 선택 → 복사)</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Arrow -->
+                <div class="flex justify-center">
+                  <div class="flex flex-col items-center gap-1">
+                    <div class="w-0.5 h-6" style="background: var(--sky-300);"></div>
+                    <svg class="w-6 h-6" style="color:var(--sky-400);" fill="currentColor" viewBox="0 0 24 24"><path d="M12 16l-6-6h12z"/></svg>
+                  </div>
+                </div>
+
+                <!-- STEP B: Blue Review 앱 입력창 -->
+                <div>
+                  <div class="flex items-center gap-2 mb-2">
+                    <span class="flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold flex-shrink-0" style="background:var(--sky-500);">2</span>
+                    <p class="text-sm font-bold text-gray-700">Blue Review 앱의 <span style="color:var(--sky-600);">+ 버튼</span>을 누른 뒤, 입력창에 <span style="color:var(--sky-600);">붙여넣기</span>합니다</p>
+                  </div>
+                  <!-- Fake app input mockup -->
+                  <div class="rounded-xl border-2 overflow-hidden shadow-sm mx-auto" style="max-width:320px; border-color:var(--sky-200); background:#fff;">
+                    <!-- Fake app topbar -->
+                    <div class="px-4 py-3 flex items-center gap-2 border-b" style="border-color:var(--sky-100); background: var(--sky-50);">
+                      <div class="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs font-bold" style="background: linear-gradient(135deg, var(--sky-400), var(--sky-600));">B</div>
+                      <span class="text-sm font-bold" style="color:var(--sky-800);">스케줄 등록</span>
+                    </div>
+                    <div class="p-3">
+                      <p class="text-xs text-gray-500 mb-1.5">협찬 내용을 여기에 붙여넣으세요</p>
+                      <div class="rounded-lg border p-2.5 text-xs text-gray-600 leading-relaxed relative" style="border-color:#bae6fd; background:#f0f9ff; min-height:90px;">
+                        <p class="font-bold text-gray-800">🍰 강남 디저트 카페 &lt;슈가블룸&gt; 블로그 체험단 모집</p>
+                        <p>브랜드: 슈가블룸 (SUGAR BLOOM)</p>
+                        <p>신청 마감: 2026년 3월 20일</p>
+                        <p>제공 내역: 시그니처 케이크 1조각 + 음료 1잔...</p>
+                        <!-- Cursor blink -->
+                        <span class="absolute bottom-2 right-2 w-0.5 h-3 inline-block" style="background:var(--sky-500); animation: blink 1s step-end infinite;"></span>
+                      </div>
+                      <!-- 분석하기 button -->
+                      <button class="mt-2.5 w-full py-2 rounded-lg text-sm font-bold text-white shadow-sm" style="background: linear-gradient(90deg, var(--sky-500), var(--sky-600));">
+                        ✨ 분석하기
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Arrow -->
+                <div class="flex justify-center">
+                  <div class="flex flex-col items-center gap-1">
+                    <div class="w-0.5 h-6" style="background: var(--sky-300);"></div>
+                    <svg class="w-6 h-6" style="color:var(--sky-400);" fill="currentColor" viewBox="0 0 24 24"><path d="M12 16l-6-6h12z"/></svg>
+                  </div>
+                </div>
+
+                <!-- STEP C: 분석 결과 -->
+                <div>
+                  <div class="flex items-center gap-2 mb-2">
+                    <span class="flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold flex-shrink-0" style="background:var(--sky-500);">3</span>
+                    <p class="text-sm font-bold text-gray-700">AI가 자동으로 정보를 추출합니다. <span style="color:var(--sky-600);">확인 후 저장!</span></p>
+                  </div>
+                  <!-- Fake parsed result mockup -->
+                  <div class="rounded-xl border-2 overflow-hidden shadow-sm mx-auto" style="max-width:320px; border-color:var(--sky-200); background:#fff;">
+                    <div class="px-4 py-2.5 flex items-center gap-2 border-b" style="border-color:var(--sky-100); background: var(--sky-50);">
+                      <span class="text-xs font-bold" style="color:var(--sky-700);">✅ 분석 완료! 내용을 확인하세요</span>
+                    </div>
+                    <div class="p-3 space-y-2">
+                      <!-- Platform badges -->
+                      <div class="flex flex-wrap gap-1 mb-1">
+                        <span class="badge text-xs" style="background:#dbeafe;color:#1d4ed8;">블로그</span>
+                      </div>
+                      <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="rounded-lg p-2" style="background:#f0f9ff;">
+                          <p class="text-gray-400 text-xs">브랜드</p>
+                          <p class="font-bold text-gray-800">슈가블룸</p>
+                        </div>
+                        <div class="rounded-lg p-2" style="background:#f0f9ff;">
+                          <p class="text-gray-400 text-xs">카테고리</p>
+                          <p class="font-bold text-gray-800">디저트·카페</p>
+                        </div>
+                        <div class="rounded-lg p-2" style="background:#f0f9ff;">
+                          <p class="text-gray-400 text-xs">신청 마감</p>
+                          <p class="font-bold text-gray-800">2026.03.20</p>
+                        </div>
+                        <div class="rounded-lg p-2" style="background:#f0f9ff;">
+                          <p class="text-gray-400 text-xs">지역</p>
+                          <p class="font-bold text-gray-800">서울 강남구</p>
+                        </div>
+                      </div>
+                      <div class="rounded-lg p-2 text-xs" style="background:#f0f9ff;">
+                        <p class="text-gray-400">제공 내역</p>
+                        <p class="font-bold text-gray-800">시그니처 케이크 1조각 + 음료 1잔</p>
+                      </div>
+                      <button class="w-full py-2 rounded-lg text-xs font-bold text-white mt-1" style="background: linear-gradient(90deg, var(--sky-500), var(--sky-600));">저장하기</button>
+                    </div>
+                  </div>
+                </div>
+
+              </div><!-- end demo inner -->
+            </div><!-- end demo wrapper -->
+
+            <!-- 기본 단계 설명 -->
+            <div class="space-y-3 mt-2">
               <div class="step-card" data-step="1">
-                <p class="font-semibold text-gray-700">하단 + 버튼 누르기</p>
-                <p class="text-sm text-gray-500 mt-0.5">화면 하단의 <strong>+</strong> 버튼을 눌러 스케줄 등록 화면으로 이동합니다.</p>
+                <p class="font-semibold text-gray-700">협찬 사이트에서 내용 전체 복사</p>
+                <p class="text-sm text-gray-500 mt-0.5">레뷰, 미블, 리뷰노트 등 협찬 플랫폼의 캠페인 상세 페이지에서 텍스트를 <strong>전체 선택 후 복사</strong>합니다. 긴 내용일수록 분석 정확도가 높아집니다.</p>
               </div>
               <div class="step-card" data-step="2">
-                <p class="font-semibold text-gray-700">협찬 내용 복사 &rarr; 붙여넣기</p>
-                <p class="text-sm text-gray-500 mt-0.5">협찬 사이트(레뷰, 미블, 리뷰노트 등)에서 캠페인 내용을 <strong>전체 복사</strong>한 뒤, 입력창에 <strong>붙여넣기</strong> 합니다.</p>
+                <p class="font-semibold text-gray-700">앱 하단 + 버튼 → 입력창에 붙여넣기</p>
+                <p class="text-sm text-gray-500 mt-0.5">Blue Review 앱 하단의 <strong>+</strong> 버튼을 눌러 스케줄 등록 화면으로 이동한 뒤, 입력창을 꾹 눌러 <strong>붙여넣기</strong>합니다.</p>
               </div>
               <div class="step-card" data-step="3">
-                <p class="font-semibold text-gray-700">AI 자동 분석</p>
-                <p class="text-sm text-gray-500 mt-0.5">붙여넣기 하면 AI(Smart Parser)가 텍스트를 분석하여 캠페인명, 마감일, 지역, 제공 내용 등을 자동으로 추출합니다.</p>
+                <p class="font-semibold text-gray-700">분석하기 버튼 누르기</p>
+                <p class="text-sm text-gray-500 mt-0.5">텍스트가 입력된 상태에서 <strong>✨ 분석하기</strong> 버튼을 누릅니다. AI가 자동으로 정보를 추출합니다.</p>
               </div>
               <div class="step-card" data-step="4">
-                <p class="font-semibold text-gray-700">브랜드 / 카테고리 선택</p>
-                <p class="text-sm text-gray-500 mt-0.5">자동 추출된 정보를 확인하고 해당 캠페인의 브랜드와 카테고리를 선택합니다.</p>
+                <p class="font-semibold text-gray-700">플랫폼 선택</p>
+                <p class="text-sm text-gray-500 mt-0.5">이 협찬을 어떤 채널로 진행할지 선택합니다. <span class="badge" style="background:#dbeafe;color:#1d4ed8;">블로그</span> <span class="badge" style="background:#ede9fe;color:#6d28d9;">블로그+클립</span> <span class="badge" style="background:#fce7f3;color:#be185d;">인스타</span> <span class="badge" style="background:#ffedd5;color:#c2410c;">릴스</span> <span class="badge" style="background:#dcfce7;color:#166534;">페이스북</span> <span class="badge" style="background:#fef9c3;color:#854d0e;">유튜브</span> 복수 선택 가능합니다.</p>
               </div>
               <div class="step-card" data-step="5">
-                <p class="font-semibold text-gray-700">필드 수정 후 저장</p>
-                <p class="text-sm text-gray-500 mt-0.5">AI가 추출한 정보가 정확한지 확인하고, 필요시 수정한 뒤 <strong>저장</strong> 버튼을 누르면 등록 완료입니다.</p>
+                <p class="font-semibold text-gray-700">내용 확인 후 저장</p>
+                <p class="text-sm text-gray-500 mt-0.5">자동 추출된 브랜드·카테고리·마감일 등을 확인하고, 필요한 경우 수정한 뒤 <strong>저장하기</strong>를 누릅니다.</p>
               </div>
             </div>
 
-            <div class="tip-box mt-3">
-              <strong>TIP:</strong> 복사할 내용이 많을수록 AI 분석 정확도가 높아집니다. 캠페인 페이지 전체를 복사하는 것을 추천합니다.
+            <div class="tip-box mt-2">
+              <strong>TIP:</strong> 분석 결과가 비어 있거나 부정확하면 직접 수정하면 됩니다. 복사한 내용에 브랜드명, 날짜, 지역 등이 명확하게 포함되어 있을수록 더 정확하게 분석됩니다.
             </div>
           </div>
         </div>
@@ -360,42 +548,44 @@
         <div class="accordion-body">
           <div class="bg-white rounded-b-xl shadow-sm px-5 pb-5 pt-3 space-y-4 -mt-2">
 
-            <p class="text-sm text-gray-600 leading-relaxed">홈 화면의 스케줄 카드를 클릭하면 상세 정보를 확인하고 관리할 수 있습니다.</p>
+            <p class="text-sm text-gray-600 leading-relaxed">홈 화면의 스케줄 카드를 탭하면 상세 정보를 확인하고 관리할 수 있습니다.</p>
 
             <div class="grid gap-3 sm:grid-cols-2 mt-2">
               <div class="border border-gray-100 rounded-lg p-4">
-                <p class="font-semibold text-gray-700 text-sm mb-1">카드 클릭하여 상세 보기</p>
-                <p class="text-xs text-gray-500">스케줄 카드를 탭하면 캠페인의 전체 정보가 표시됩니다.</p>
+                <p class="font-semibold text-gray-700 text-sm mb-1">플랫폼 배지</p>
+                <p class="text-xs text-gray-500">해당 스케줄에 지정된 채널이 색깔 배지로 표시됩니다.</p>
               </div>
               <div class="border border-gray-100 rounded-lg p-4">
                 <p class="font-semibold text-gray-700 text-sm mb-1">체험일 설정</p>
-                <p class="text-xs text-gray-500">실제 체험 예정일을 설정하여 일정을 관리합니다.</p>
+                <p class="text-xs text-gray-500">실제 방문/체험 예정일을 설정하여 일정을 관리합니다.</p>
               </div>
               <div class="border border-gray-100 rounded-lg p-4">
-                <p class="font-semibold text-gray-700 text-sm mb-1">체험 느낌 메모</p>
-                <p class="text-xs text-gray-500">체험 후 느낌이나 리뷰에 쓸 핵심 키워드를 메모합니다.</p>
+                <p class="font-semibold text-gray-700 text-sm mb-1">체험 메모</p>
+                <p class="text-xs text-gray-500">체험 후 느낌이나 리뷰에 활용할 핵심 키워드를 메모합니다. 리뷰 작성 시 큰 도움이 됩니다.</p>
               </div>
               <div class="border border-gray-100 rounded-lg p-4">
                 <p class="font-semibold text-gray-700 text-sm mb-1">공정위 문구 URL</p>
-                <p class="text-xs text-gray-500">공정거래위원회 문구가 포함된 URL을 저장합니다.</p>
+                <p class="text-xs text-gray-500">협찬 표시 공정위 문구가 포함된 URL을 저장합니다.</p>
               </div>
               <div class="border border-gray-100 rounded-lg p-4">
-                <p class="font-semibold text-gray-700 text-sm mb-1">블로그 리뷰 글 링크</p>
-                <p class="text-xs text-gray-500">작성 완료된 블로그 리뷰 글의 URL을 등록합니다.</p>
+                <p class="font-semibold text-gray-700 text-sm mb-1">리뷰 글 URL</p>
+                <p class="text-xs text-gray-500">작성 완료된 블로그 · SNS 리뷰 글의 URL을 등록합니다.</p>
               </div>
               <div class="border border-gray-100 rounded-lg p-4">
-                <p class="font-semibold text-gray-700 text-sm mb-1">리뷰 등록 완료 처리</p>
-                <p class="text-xs text-gray-500">리뷰 작성이 끝나면 완료 상태로 변경합니다.</p>
+                <p class="font-semibold text-gray-700 text-sm mb-1">완료 처리</p>
+                <p class="text-xs text-gray-500">리뷰 작성이 끝나면 완료 상태로 변경합니다. 완료된 스케줄은 스케줄 관리 탭의 완료 목록에서 확인할 수 있습니다.</p>
               </div>
-              <div class="border border-gray-100 rounded-lg p-4 sm:col-span-2">
-                <p class="font-semibold text-gray-700 text-sm mb-1">이미지 저장 (다운로드)</p>
-                <p class="text-xs text-gray-500">스케줄 관련 이미지를 기기에 저장할 수 있습니다.</p>
+              <div class="border border-emerald-100 rounded-lg p-4 bg-emerald-50 sm:col-span-2">
+                <p class="font-semibold text-emerald-700 text-sm mb-1">신청문구 복사</p>
+                <p class="text-xs text-emerald-700">상세 화면의 <strong>신청문구</strong> 버튼을 누르면 저장해 둔 신청문구 목록이 팝업으로 표시됩니다. 원하는 문구를 탭하면 즉시 클립보드에 복사됩니다.</p>
               </div>
             </div>
 
-            <div class="tip-box mt-3">
-              <strong>TIP:</strong> 체험 느낌 메모를 미리 작성해 두면 리뷰 글 작성 시 큰 도움이 됩니다.
+            <div class="border border-red-50 rounded-lg p-4 bg-red-50 mt-2">
+              <p class="font-semibold text-red-700 text-sm mb-1">스케줄 삭제</p>
+              <p class="text-xs text-red-600">상세 화면 하단의 <strong>삭제</strong> 버튼을 누르면 확인 팝업이 표시됩니다. 확인 후 삭제가 진행되며, 삭제된 스케줄은 복구할 수 없습니다.</p>
             </div>
+
           </div>
         </div>
       </div>
@@ -437,21 +627,21 @@
             </div>
 
             <h3 class="font-bold text-gray-700 text-base mt-4">날짜 클릭하여 상세 확인</h3>
-            <p class="text-sm text-gray-600 leading-relaxed mt-1">캘린더에서 날짜를 탭하면 해당 날짜의 스케줄 목록이 아래에 표시됩니다. 목록에서 항목을 탭하면 상세 페이지로 이동합니다.</p>
+            <p class="text-sm text-gray-600 leading-relaxed mt-1">캘린더에서 날짜를 탭하면 해당 날짜의 스케줄 목록이 아래에 표시됩니다. 목록에서 항목을 탭하면 상세 화면으로 이동합니다.</p>
           </div>
         </div>
       </div>
     </section>
 
     <!-- ============================================================ -->
-    <!-- SECTION 6: 전체 관리 & 분석 -->
+    <!-- SECTION 6: 스케줄 관리 & 분석 -->
     <!-- ============================================================ -->
     <section id="section-6" class="guide-section mb-10">
       <div class="accordion-toggle open" onclick="toggleAccordion(this)">
         <div class="flex items-center justify-between bg-white rounded-xl shadow-sm px-5 py-4 cursor-pointer" style="border-left: 5px solid var(--sky-500);">
           <h2 class="text-xl font-bold flex items-center gap-2" style="color: var(--sky-800);">
             <span class="flex items-center justify-center w-8 h-8 rounded-full text-white text-sm font-bold" style="background: var(--sky-500);">6</span>
-            전체 관리 & 분석
+            스케줄 관리 &amp; 분석
           </h2>
           <span class="chevron text-gray-400">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
@@ -462,14 +652,17 @@
 
             <!-- 필터링 -->
             <div>
-              <h3 class="font-bold text-gray-700 text-lg">연도/월별 필터링</h3>
-              <p class="text-sm text-gray-600 leading-relaxed mt-1">상단의 연도 및 월 선택기를 사용하여 원하는 기간의 스케줄만 필터링하여 볼 수 있습니다.</p>
+              <h3 class="font-bold text-gray-700 text-lg">연도 / 월 / 플랫폼 필터</h3>
+              <p class="text-sm text-gray-600 leading-relaxed mt-1">연도와 월을 선택해 원하는 기간의 스케줄만 조회할 수 있습니다. 플랫폼 필터를 사용하면 <strong>블로그, 인스타, 릴스</strong> 등 특정 채널의 협찬만 골라볼 수 있습니다.</p>
+              <div class="tip-box mt-2">
+                <strong>TIP:</strong> 플랫폼 필터에는 프로필에서 활성화한 채널만 표시됩니다. 원하는 채널이 보이지 않으면 프로필 &gt; 플랫폼 설정에서 해당 채널을 켜주세요.
+              </div>
             </div>
 
             <!-- 목록 -->
             <div>
               <h3 class="font-bold text-gray-700 text-lg">진행중 / 완료 목록</h3>
-              <p class="text-sm text-gray-600 leading-relaxed mt-1">탭을 전환하여 현재 <strong>진행중</strong>인 스케줄과 <strong>완료</strong>된 스케줄을 분리하여 확인할 수 있습니다.</p>
+              <p class="text-sm text-gray-600 leading-relaxed mt-1">탭을 전환하여 현재 <strong>진행중</strong>인 스케줄과 <strong>완료</strong>된 스케줄을 분리해서 확인할 수 있습니다.</p>
             </div>
 
             <!-- 월간 분석 -->
@@ -477,6 +670,10 @@
               <h3 class="font-bold text-gray-700 text-lg">월간 분석</h3>
               <p class="text-sm text-gray-600 leading-relaxed mt-1">선택한 월의 협찬 현황을 분석합니다.</p>
               <ul class="mt-2 space-y-1.5 text-sm text-gray-600 ml-4">
+                <li class="flex items-start gap-2">
+                  <span class="text-sky-500 mt-0.5">&bull;</span>
+                  <span><strong>플랫폼별 분석</strong> &mdash; 블로그, 인스타, 릴스 등 채널별 협찬 건수 확인</span>
+                </li>
                 <li class="flex items-start gap-2">
                   <span class="text-sky-500 mt-0.5">&bull;</span>
                   <span><strong>브랜드별 분석</strong> &mdash; 어떤 브랜드와 가장 많이 협업했는지 확인</span>
@@ -503,7 +700,7 @@
                 </li>
                 <li class="flex items-start gap-2">
                   <span class="text-sky-500 mt-0.5">&bull;</span>
-                  <span><strong>브랜드 비율</strong> &mdash; 연간 브랜드별 협업 비중 확인</span>
+                  <span><strong>플랫폼 & 브랜드 비율</strong> &mdash; 연간 채널·브랜드별 협업 비중 확인</span>
                 </li>
               </ul>
             </div>
@@ -527,12 +724,45 @@
           </span>
         </div>
         <div class="accordion-body">
-          <div class="bg-white rounded-b-xl shadow-sm px-5 pb-5 pt-3 space-y-5 -mt-2">
+          <div class="bg-white rounded-b-xl shadow-sm px-5 pb-5 pt-3 space-y-6 -mt-2">
 
-            <!-- 글자 수 측정기 -->
+            <!-- 글자 수 측정 -->
             <div>
-              <h3 class="font-bold text-gray-700 text-lg">글자 수 측정기</h3>
-              <p class="text-sm text-gray-600 leading-relaxed mt-1">블로그 리뷰 작성 시 글자 수 조건을 충족하는지 빠르게 확인할 수 있습니다. 텍스트를 입력하거나 붙여넣기 하면 공백 포함/제외 글자 수가 실시간으로 표시됩니다.</p>
+              <h3 class="font-bold text-gray-700 text-lg mt-2">글자 수 측정</h3>
+              <p class="text-sm text-gray-600 leading-relaxed mt-1">블로그 리뷰 작성 시 글자 수 조건을 충족하는지 빠르게 확인합니다. 텍스트를 입력하거나 붙여넣으면 공백 포함 / 제외 글자 수가 실시간으로 표시됩니다.</p>
+              <div class="grid gap-3 sm:grid-cols-3 mt-3">
+                <div class="border border-gray-100 rounded-lg p-3 text-center">
+                  <p class="font-semibold text-gray-700 text-sm">글 저장하기</p>
+                  <p class="text-xs text-gray-500 mt-1">작성한 글을 <strong>작성글</strong> 탭에 저장합니다. 저장 시 "작성글에 저장되었습니다" 팝업이 표시됩니다.</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-3 text-center">
+                  <p class="font-semibold text-gray-700 text-sm">복사</p>
+                  <p class="text-xs text-gray-500 mt-1">입력한 전체 텍스트를 클립보드에 복사합니다.</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-3 text-center">
+                  <p class="font-semibold text-gray-700 text-sm">닫기</p>
+                  <p class="text-xs text-gray-500 mt-1">글자 수 측정 화면을 닫습니다. 다시 열면 내용이 초기화됩니다.</p>
+                </div>
+              </div>
+              <div class="tip-box mt-3">
+                <strong>TIP:</strong> 글자 수 측정 화면은 열 때마다 새로 시작됩니다. 작성한 글을 나중에 다시 보려면 <strong>글 저장하기</strong>를 눌러 작성글에 보관하세요.
+              </div>
+            </div>
+
+            <!-- 작성글 -->
+            <div>
+              <h3 class="font-bold text-gray-700 text-lg">작성글</h3>
+              <p class="text-sm text-gray-600 leading-relaxed mt-1">저장된 리뷰 글을 모아두는 공간입니다. 글의 <strong>첫 번째 줄</strong>이 제목으로 표시됩니다.</p>
+              <div class="space-y-3 mt-3">
+                <div class="step-card" data-step="1">
+                  <p class="font-semibold text-gray-700">글 목록 확인</p>
+                  <p class="text-sm text-gray-500 mt-0.5">글자 수 측정에서 저장한 글이 작성글 탭에 목록으로 표시됩니다. 첫 줄이 제목으로 보입니다.</p>
+                </div>
+                <div class="step-card" data-step="2">
+                  <p class="font-semibold text-gray-700">수정</p>
+                  <p class="text-sm text-gray-500 mt-0.5">목록에서 글을 탭하면 수정 화면이 열립니다. 수정 후 저장하면 새 글로 추가되는 것이 아니라 <strong>해당 글이 그대로 업데이트</strong>됩니다.</p>
+                </div>
+              </div>
             </div>
 
             <!-- 해시태그 모음 -->
@@ -542,15 +772,15 @@
               <div class="space-y-3 mt-3">
                 <div class="step-card" data-step="1">
                   <p class="font-semibold text-gray-700">카테고리 추가 / 삭제</p>
-                  <p class="text-sm text-gray-500 mt-0.5">맛집, 뷰티, 여행 등 원하는 카테고리를 자유롭게 추가하거나 삭제할 수 있습니다.</p>
+                  <p class="text-sm text-gray-500 mt-0.5">맛집, 뷰티, 여행 등 원하는 카테고리를 자유롭게 추가하거나 삭제합니다.</p>
                 </div>
                 <div class="step-card" data-step="2">
-                  <p class="font-semibold text-gray-700">태그 편집</p>
-                  <p class="text-sm text-gray-500 mt-0.5">각 카테고리 안에서 해시태그를 추가, 수정, 삭제합니다. 태그를 탭하면 클립보드에 복사됩니다.</p>
+                  <p class="font-semibold text-gray-700">태그 편집 및 복사</p>
+                  <p class="text-sm text-gray-500 mt-0.5">각 카테고리에서 해시태그를 추가, 수정, 삭제합니다. 태그를 탭하면 클립보드에 복사됩니다.</p>
                 </div>
               </div>
               <div class="tip-box mt-3">
-                <strong>TIP:</strong> 카테고리별로 해시태그를 정리해 두면 리뷰 작성 시 필요한 태그를 빠르게 찾아 복사할 수 있습니다.
+                <strong>TIP:</strong> 카테고리별로 태그를 정리해 두면 리뷰 작성 시 필요한 태그를 빠르게 찾아 복사할 수 있습니다.
               </div>
             </div>
           </div>
@@ -573,33 +803,106 @@
           </span>
         </div>
         <div class="accordion-body">
-          <div class="bg-white rounded-b-xl shadow-sm px-5 pb-5 pt-3 space-y-5 -mt-2">
+          <div class="bg-white rounded-b-xl shadow-sm px-5 pb-5 pt-3 space-y-6 -mt-2">
 
-            <!-- SNS 주소 등록 -->
+            <p class="text-sm text-gray-600 leading-relaxed mt-2">프로필 탭은 <strong>플랫폼 설정</strong>과 <strong>기본 설정</strong> 두 개의 탭으로 구성되어 있습니다.</p>
+
+            <!-- 플랫폼 설정 -->
             <div>
-              <h3 class="font-bold text-gray-700 text-lg">SNS 주소 등록</h3>
-              <p class="text-sm text-gray-600 leading-relaxed mt-1">네이버 블로그, 인스타그램 등 자신의 SNS 주소를 등록해 두세요. 등록된 주소는 Quick Copy에서 자동으로 연동되어 신청문구에 포함할 수 있습니다.</p>
+              <h3 class="font-bold text-gray-700 text-lg" style="color: var(--sky-700);">플랫폼 설정 탭</h3>
+              <p class="text-sm text-gray-600 leading-relaxed mt-1">사용 중인 SNS 채널을 켜고 끄며, 각 채널의 URL을 등록합니다.</p>
               <div class="space-y-3 mt-3">
                 <div class="step-card" data-step="1">
-                  <p class="text-sm text-gray-600">프로필 탭으로 이동합니다.</p>
+                  <p class="font-semibold text-gray-700">채널 활성화 토글</p>
+                  <p class="text-sm text-gray-500 mt-0.5">블로그, 블로그+클립, 인스타, 릴스, 페이스북, 유튜브 중 사용하는 채널만 켭니다. 비활성화된 채널은 Quick Copy와 스케줄 관리 플랫폼 필터에 표시되지 않습니다.</p>
                 </div>
                 <div class="step-card" data-step="2">
-                  <p class="text-sm text-gray-600">SNS 주소 항목에 블로그 URL, 인스타그램 ID 등을 입력합니다.</p>
+                  <p class="font-semibold text-gray-700">URL 입력</p>
+                  <p class="text-sm text-gray-500 mt-0.5">활성화된 각 채널의 URL(블로그 주소, 인스타그램 링크 등)을 입력합니다. 블로그+클립은 URL 입력이 필요하지 않습니다.</p>
                 </div>
                 <div class="step-card" data-step="3">
-                  <p class="text-sm text-gray-600">저장하면 Quick Copy 신청문구에 자동 반영됩니다.</p>
+                  <p class="font-semibold text-gray-700">Quick Copy 항목 확인 & 저장</p>
+                  <p class="text-sm text-gray-500 mt-0.5">홈 화면 Quick Copy에 표시할 문구를 확인하고 <strong>저장</strong>합니다. URL이 등록되지 않은 채널의 복사 버튼을 누르면 "입력된 주소가 없습니다" 팝업이 표시됩니다.</p>
                 </div>
               </div>
             </div>
 
-            <!-- Quick Copy 연동 -->
+            <!-- 기본 설정 -->
             <div>
-              <h3 class="font-bold text-gray-700 text-lg">Quick Copy 연동</h3>
-              <p class="text-sm text-gray-600 leading-relaxed mt-1">프로필에 등록한 SNS 주소와 블로그 정보가 Quick Copy 신청문구 템플릿에 자동으로 연동됩니다. 프로필 정보를 업데이트하면 모든 템플릿에 자동 반영되므로, 항상 최신 정보를 유지해 주세요.</p>
-              <div class="tip-box mt-3">
-                <strong>TIP:</strong> 프로필을 완성해 두면 협찬 신청 시 매번 SNS 주소를 입력하는 번거로움을 줄일 수 있습니다.
+              <h3 class="font-bold text-gray-700 text-lg" style="color: var(--sky-700);">기본 설정 탭</h3>
+              <p class="text-sm text-gray-600 leading-relaxed mt-1">계정 관련 설정을 관리합니다.</p>
+              <div class="grid gap-3 sm:grid-cols-2 mt-3">
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="font-semibold text-gray-700 text-sm mb-1">계정 이메일 확인</p>
+                  <p class="text-xs text-gray-500">현재 로그인된 계정의 이메일을 확인합니다.</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="font-semibold text-gray-700 text-sm mb-1">생체인증 로그인</p>
+                  <p class="text-xs text-gray-500">Face ID 또는 지문 인증을 활성화 / 비활성화합니다. 활성화하면 다음 로그인부터 생체인증으로 빠르게 접속할 수 있습니다.</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4">
+                  <p class="font-semibold text-gray-700 text-sm mb-1">비밀번호 변경</p>
+                  <p class="text-xs text-gray-500">현재 비밀번호를 새 비밀번호로 변경합니다.</p>
+                </div>
+                <div class="border border-gray-100 rounded-lg p-4 border-red-100 bg-red-50">
+                  <p class="font-semibold text-red-700 text-sm mb-1">계정 탈퇴</p>
+                  <p class="text-xs text-red-600">계정을 영구 삭제합니다. 탈퇴 후에는 모든 데이터가 삭제되며 복구할 수 없습니다.</p>
+                </div>
               </div>
             </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- SECTION 9: 환경 설정 -->
+    <!-- ============================================================ -->
+    <section id="section-9" class="guide-section mb-10">
+      <div class="accordion-toggle open" onclick="toggleAccordion(this)">
+        <div class="flex items-center justify-between bg-white rounded-xl shadow-sm px-5 py-4 cursor-pointer" style="border-left: 5px solid var(--sky-500);">
+          <h2 class="text-xl font-bold flex items-center gap-2" style="color: var(--sky-800);">
+            <span class="flex items-center justify-center w-8 h-8 rounded-full text-white text-sm font-bold" style="background: var(--sky-500);">9</span>
+            환경 설정
+          </h2>
+          <span class="chevron text-gray-400">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </span>
+        </div>
+        <div class="accordion-body">
+          <div class="bg-white rounded-b-xl shadow-sm px-5 pb-5 pt-3 space-y-5 -mt-2">
+
+            <p class="text-sm text-gray-600 leading-relaxed mt-2">화면 우측 상단의 <strong>⚙ 설정 아이콘</strong>을 탭하면 앱 전체의 표시 설정을 변경할 수 있습니다.</p>
+
+            <!-- 글자 크기 -->
+            <div>
+              <h3 class="font-bold text-gray-700 text-lg">글자 크기</h3>
+              <p class="text-sm text-gray-600 leading-relaxed mt-1">앱 전체 글자 크기를 <strong>작게 / 보통 / 크게</strong> 세 단계로 조절할 수 있습니다. 변경한 설정은 저장되어 다음에도 유지됩니다.</p>
+            </div>
+
+            <!-- 색상 테마 -->
+            <div>
+              <h3 class="font-bold text-gray-700 text-lg">색상 테마</h3>
+              <p class="text-sm text-gray-600 leading-relaxed mt-1">블루 계열 5가지 테마 중 원하는 색상을 선택합니다.</p>
+              <div class="flex flex-wrap gap-2 mt-3">
+                <span class="badge" style="background:#e0f2fe;color:#0369a1;">스카이</span>
+                <span class="badge" style="background:#dbeafe;color:#1d4ed8;">블루</span>
+                <span class="badge" style="background:#e0e7ff;color:#4338ca;">인디고</span>
+                <span class="badge" style="background:#ccfbf1;color:#0f766e;">아쿠아</span>
+                <span class="badge" style="background:#dbeafe;color:#1e3a5f;">네이비</span>
+              </div>
+              <div class="tip-box mt-3">
+                <strong>TIP:</strong> 테마 색상은 버튼, 강조 색상, 배지 등 앱 전체에 반영됩니다.
+              </div>
+            </div>
+
+            <!-- 로그아웃 -->
+            <div>
+              <h3 class="font-bold text-gray-700 text-lg">로그아웃</h3>
+              <p class="text-sm text-gray-600 leading-relaxed mt-1">설정 메뉴 하단의 <strong>로그아웃</strong> 버튼을 눌러 현재 계정에서 로그아웃합니다.</p>
+            </div>
+
           </div>
         </div>
       </div>

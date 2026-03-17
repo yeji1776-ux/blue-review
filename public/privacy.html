@@ -26,7 +26,7 @@
     <!-- Page Title -->
     <div class="mb-10">
       <h2 class="text-3xl font-bold text-gray-900 mb-2">개인정보처리방침</h2>
-      <p class="text-sm text-gray-500">시행일: 2026년 3월 15일</p>
+      <p class="text-sm text-gray-500">시행일: 2026년 3월 16일</p>
     </div>
 
     <!-- Table of Contents -->
@@ -38,7 +38,8 @@
         <li><a href="#section3" class="text-sky-600 hover:text-sky-800 hover:underline">제3조 (개인정보 보관 및 파기)</a></li>
         <li><a href="#section4" class="text-sky-600 hover:text-sky-800 hover:underline">제4조 (개인정보의 제3자 제공)</a></li>
         <li><a href="#section5" class="text-sky-600 hover:text-sky-800 hover:underline">제5조 (이용자의 권리)</a></li>
-        <li><a href="#section6" class="text-sky-600 hover:text-sky-800 hover:underline">제6조 (로컬 데이터)</a></li>
+        <li><a href="#section6" class="text-sky-600 hover:text-sky-800 hover:underline">제6조 (데이터 저장 방식)</a></li>
+        <li><a href="#section6b" class="text-sky-600 hover:text-sky-800 hover:underline">제6조의 2 (브랜드·업체 정보 관련 면책)</a></li>
         <li><a href="#section7" class="text-sky-600 hover:text-sky-800 hover:underline">제7조 (쿠키 사용)</a></li>
         <li><a href="#section8" class="text-sky-600 hover:text-sky-800 hover:underline">제8조 (개인정보 보호 책임자)</a></li>
         <li><a href="#section9" class="text-sky-600 hover:text-sky-800 hover:underline">제9조 (방침 변경)</a></li>
@@ -55,8 +56,10 @@
 
       <section>
         <h3 id="section1" class="section-title text-xl font-bold text-gray-900 mb-3 pb-2 border-b border-gray-200">제1조 (수집하는 개인정보 항목)</h3>
-        <p class="text-gray-700 leading-7 mb-3">서비스는 소셜 로그인(Google, Kakao)을 통해 다음의 개인정보를 수집합니다.</p>
-        <div class="overflow-x-auto">
+        <p class="text-gray-700 leading-7 mb-3">서비스는 다음과 같이 개인정보를 수집합니다.</p>
+
+        <p class="text-sm font-semibold text-gray-700 mb-2 mt-4">① 회원 인증 정보 (소셜 로그인 시 자동 수집)</p>
+        <div class="overflow-x-auto mb-4">
           <table class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
             <thead class="bg-gray-100">
               <tr>
@@ -89,7 +92,48 @@
             </tbody>
           </table>
         </div>
-        <p class="text-sm text-gray-500 mt-3">* 일정, 메모 등 서비스 이용 데이터는 이용자의 브라우저(localStorage)에만 저장되며, 서버로 수집하지 않습니다.</p>
+
+        <p class="text-sm font-semibold text-gray-700 mb-2">② 서비스 이용 데이터 (로그인 회원에 한해 서버 저장)</p>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="text-left px-4 py-3 font-semibold text-gray-700 border-b">수집 항목</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-700 border-b">저장 위치</th>
+                <th class="text-left px-4 py-3 font-semibold text-gray-700 border-b">목적</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              <tr>
+                <td class="px-4 py-3 text-gray-700">협찬 일정 데이터</td>
+                <td class="px-4 py-3 text-gray-600">Supabase DB + 브라우저 캐시</td>
+                <td class="px-4 py-3 text-gray-600">다기기 동기화 및 데이터 백업</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-gray-700">블로그 글쓰기 템플릿</td>
+                <td class="px-4 py-3 text-gray-600">Supabase DB + 브라우저 캐시</td>
+                <td class="px-4 py-3 text-gray-600">다기기 동기화 및 데이터 백업</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-gray-700">해시태그 목록</td>
+                <td class="px-4 py-3 text-gray-600">Supabase DB + 브라우저 캐시</td>
+                <td class="px-4 py-3 text-gray-600">다기기 동기화 및 데이터 백업</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-gray-700">블로그 프로필 정보</td>
+                <td class="px-4 py-3 text-gray-600">Supabase DB + 브라우저 캐시</td>
+                <td class="px-4 py-3 text-gray-600">다기기 동기화 및 데이터 백업</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 text-gray-700">저장된 텍스트</td>
+                <td class="px-4 py-3 text-gray-600">Supabase DB + 브라우저 캐시</td>
+                <td class="px-4 py-3 text-gray-600">다기기 동기화 및 데이터 백업</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-sm text-gray-500 mt-3">* 비로그인(게스트) 이용 시 서비스 데이터는 브라우저(localStorage)에만 저장되며 서버로 전송되지 않습니다.</p>
+        <p class="text-sm text-gray-500 mt-1">* 서비스 이용 데이터에는 협찬 브랜드명, 업체명, 주소 등 이용자가 직접 입력한 정보가 포함될 수 있습니다. 이는 이용자가 직접 제공하는 데이터로, 제3자의 개인정보가 포함되지 않도록 주의하여 입력하시기 바랍니다.</p>
       </section>
 
       <section>
@@ -102,7 +146,11 @@
           </li>
           <li class="flex items-start">
             <span class="inline-block w-1.5 h-1.5 bg-sky-500 rounded-full mt-2.5 mr-3 flex-shrink-0"></span>
-            <span><strong>서비스 제공:</strong> 이용자별 서비스 접근 관리</span>
+            <span><strong>서비스 데이터 저장 및 동기화:</strong> 협찬 일정, 템플릿, 해시태그 등 서비스 이용 데이터를 서버에 저장하여 다기기 동기화 및 데이터 손실 방지</span>
+          </li>
+          <li class="flex items-start">
+            <span class="inline-block w-1.5 h-1.5 bg-sky-500 rounded-full mt-2.5 mr-3 flex-shrink-0"></span>
+            <span><strong>서비스 제공:</strong> 이용자별 개인화 서비스 제공</span>
           </li>
           <li class="flex items-start">
             <span class="inline-block w-1.5 h-1.5 bg-sky-500 rounded-full mt-2.5 mr-3 flex-shrink-0"></span>
@@ -114,7 +162,7 @@
       <section>
         <h3 id="section3" class="section-title text-xl font-bold text-gray-900 mb-3 pb-2 border-b border-gray-200">제3조 (개인정보 보관 및 파기)</h3>
         <ol class="list-decimal list-inside space-y-2 text-gray-700 leading-7">
-          <li>이용자의 개인정보는 Supabase Auth 서비스에 보관되며, <strong>회원 탈퇴 시 지체 없이 파기</strong>합니다.</li>
+          <li>이용자의 개인정보(인증 정보 및 서비스 이용 데이터)는 Supabase 서비스에 보관되며, <strong>회원 탈퇴 시 지체 없이 파기</strong>합니다.</li>
           <li>다만, 관련 법령에 의해 보존이 필요한 경우에는 해당 법령에서 정한 기간 동안 보관합니다.
             <ul class="list-disc list-inside ml-5 mt-1 space-y-1 text-gray-600">
               <li>전자상거래법에 의한 계약 또는 청약 철회 기록: 5년</li>
@@ -142,6 +190,11 @@
                 <td class="px-4 py-3 font-medium text-gray-700">Supabase Auth</td>
                 <td class="px-4 py-3 text-gray-600">소셜 로그인 인증 처리</td>
                 <td class="px-4 py-3 text-gray-600">이메일, 소셜 계정 ID, 프로필 정보</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-medium text-gray-700">Supabase Database</td>
+                <td class="px-4 py-3 text-gray-600">서비스 데이터 저장 및 동기화</td>
+                <td class="px-4 py-3 text-gray-600">협찬 일정, 템플릿, 해시태그, 프로필 등 이용자가 입력한 서비스 데이터</td>
               </tr>
               <tr>
                 <td class="px-4 py-3 font-medium text-gray-700">Google Gemini AI</td>
@@ -177,15 +230,27 @@
       </section>
 
       <section>
-        <h3 id="section6" class="section-title text-xl font-bold text-gray-900 mb-3 pb-2 border-b border-gray-200">제6조 (로컬 데이터)</h3>
+        <h3 id="section6" class="section-title text-xl font-bold text-gray-900 mb-3 pb-2 border-b border-gray-200">제6조 (데이터 저장 방식)</h3>
+        <div class="bg-sky-50 border border-sky-200 rounded-lg p-4 mb-4 text-sm text-sky-800">
+          <strong>로그인 회원:</strong> 서비스 이용 데이터는 브라우저(localStorage) 캐시와 Supabase 서버 데이터베이스에 함께 저장됩니다. 다기기 동기화가 지원됩니다.
+        </div>
         <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4 text-sm text-amber-800">
-          <strong>중요:</strong> 서비스의 핵심 데이터(일정, 메모 등)는 이용자의 브라우저 localStorage에만 저장됩니다.
+          <strong>비로그인(게스트):</strong> 서비스 이용 데이터는 이용자의 브라우저(localStorage)에만 저장되며 서버로 전송되지 않습니다.
         </div>
         <ol class="list-decimal list-inside space-y-2 text-gray-700 leading-7">
-          <li>일정, 메모 등 서비스 이용 데이터는 이용자의 <strong>브라우저(localStorage)에만 저장</strong>되며, 운영자의 서버로 전송되지 않습니다.</li>
-          <li>이 데이터는 운영자가 접근하거나 열람할 수 없습니다.</li>
-          <li>브라우저 데이터 삭제, 기기 변경, 브라우저 변경 시 해당 데이터는 <strong>복구할 수 없습니다.</strong></li>
-          <li>로컬 데이터의 백업 및 관리 책임은 이용자에게 있습니다.</li>
+          <li>로그인 회원의 서비스 데이터(일정, 템플릿, 해시태그 등)는 Supabase 데이터베이스에 암호화된 연결로 저장됩니다. 이는 데이터 손실 방지와 다기기 동기화를 위한 목적입니다.</li>
+          <li>Supabase 데이터베이스에 저장된 데이터는 해당 이용자 계정으로만 접근할 수 있으며, 다른 이용자는 접근할 수 없습니다.</li>
+          <li>브라우저 데이터(localStorage) 삭제, 기기 변경 시에도 로그인 후 서버에서 데이터를 복구할 수 있습니다. 단, 게스트 이용 중 기기 변경 시 데이터는 <strong>복구할 수 없습니다.</strong></li>
+          <li>회원 탈퇴 시 서버에 저장된 모든 서비스 데이터도 함께 삭제됩니다.</li>
+        </ol>
+      </section>
+
+      <section>
+        <h3 id="section6b" class="section-title text-xl font-bold text-gray-900 mb-3 pb-2 border-b border-gray-200">제6조의 2 (브랜드·업체 정보 관련 면책)</h3>
+        <ol class="list-decimal list-inside space-y-2 text-gray-700 leading-7">
+          <li>서비스에 표시되는 체험단 플랫폼 명칭(레뷰, 리뷰노트 등)은 이용자의 편의를 위한 분류 도구로만 사용되며, 해당 업체와의 제휴·협력 관계를 의미하지 않습니다.</li>
+          <li>이용자가 입력한 협찬 업체 정보, 금액, 조건 등은 이용자 본인만 확인할 수 있으며, 서비스 운영자는 해당 정보를 마케팅 또는 제3자 제공 목적으로 사용하지 않습니다.</li>
+          <li>서비스는 공정거래위원회 추천·보증 등에 관한 표시·광고 심사지침 관련 문구 템플릿을 참고용으로 제공합니다. 최신 법령 준수 여부는 이용자 본인이 직접 확인하여야 하며, 이로 인한 법적 책임은 이용자에게 있습니다.</li>
         </ol>
       </section>
 
