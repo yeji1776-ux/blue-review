@@ -383,7 +383,8 @@ const BloggerMasterApp = () => {
       facebookUrl: '',
       youtubeUrl: '',
       phone: '',
-      enabledPlatforms: { blogUrl: true, blogClipUrl: false, instaId: true, reelsUrl: false, facebookUrl: false, youtubeUrl: false },
+      email: '',
+      enabledPlatforms: { blogUrl: true, blogClipUrl: false, instaId: true, reelsUrl: false, facebookUrl: false, youtubeUrl: false, email: false },
     };
     if (!saved) return defaults;
     const parsed = JSON.parse(saved);
@@ -1457,6 +1458,7 @@ ${text}`
                     { key: 'reelsUrl',    label: '릴스',       value: profile.reelsUrl,    icon: <Eye size={14} />,       bg: 'bg-violet-50 text-violet-500' },
                     { key: 'facebookUrl', label: '페이스북',   value: profile.facebookUrl, icon: <Globe size={14} />,     bg: 'bg-blue-50 text-blue-500' },
                     { key: 'youtubeUrl',  label: '유튜브',     value: profile.youtubeUrl,  icon: <Youtube size={14} />,   bg: 'bg-rose-50 text-rose-500' },
+                    { key: 'email',       label: '이메일',     value: profile.email,       icon: <Mail size={14} />,      bg: 'bg-emerald-50 text-emerald-500' },
                   ].filter(({ key }) => profile.enabledPlatforms?.[key]).map(({ label, value, icon, bg }) => (
                     <button key={label} onClick={() => copyWithCheck(value, label)} className="flex flex-col items-center gap-1 sm:gap-1.5 py-2 sm:py-3 rounded-xl sm:rounded-2xl active:bg-sky-50 transition-all">
                       <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${bg}`}>{icon}</div>
@@ -3354,6 +3356,7 @@ ${text}`
                     { key: 'reelsUrl',    label: '릴스',        value: profile.reelsUrl },
                     { key: 'facebookUrl', label: '페이스북',    value: profile.facebookUrl },
                     { key: 'youtubeUrl',  label: '유튜브',      value: profile.youtubeUrl },
+                    { key: 'email',       label: '이메일',      value: profile.email },
                   ].filter(({ key }) => profile.enabledPlatforms?.[key]).map(({ label, value }) => (
                     <button key={label} onClick={() => copyWithCheck(value, label)}
                       className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-sky-50 text-[10px] font-bold text-slate-600 active:bg-sky-100 transition-all">
@@ -3374,6 +3377,7 @@ ${text}`
                     { key: 'reelsUrl',    label: '릴스',       icon: <Eye size={14} /> },
                     { key: 'facebookUrl', label: '페이스북',   icon: <ExternalLink size={14} /> },
                     { key: 'youtubeUrl',  label: '유튜브',     icon: <Youtube size={14} /> },
+                    { key: 'email',       label: '이메일',     icon: <Mail size={14} /> },
                   ].map(({ key, label, icon }) => {
                     const enabled = profile.enabledPlatforms?.[key];
                     return (
@@ -3402,6 +3406,7 @@ ${text}`
                   { key: 'reelsUrl',    label: '릴스 주소',     placeholder: 'https://www.instagram.com/reels/...', icon: <Eye size={18} /> },
                   { key: 'facebookUrl', label: '페이스북 주소', placeholder: 'https://facebook.com/mypage',         icon: <ExternalLink size={18} /> },
                   { key: 'youtubeUrl',  label: '유튜브 채널',   placeholder: 'https://youtube.com/@mychannel',      icon: <Youtube size={18} /> },
+                  { key: 'email',       label: '이메일',        placeholder: 'my@email.com',                        icon: <Mail size={18} /> },
                 ].filter(({ key }) => profile.enabledPlatforms?.[key]).map(({ key, label, placeholder, icon }) => (
                   <div key={key} className="jelly-card p-4">
                     <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-2">
