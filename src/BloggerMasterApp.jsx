@@ -378,6 +378,7 @@ const BloggerMasterApp = () => {
       nickname: '',
       blogUrl: '',
       blogClipUrl: '',
+      blogClipId: '',
       instaId: '',
       reelsUrl: '',
       facebookUrl: '',
@@ -1454,6 +1455,7 @@ ${text}`
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2">
                   {[
                     { key: 'blogUrl',     label: '블로그',     value: profile.blogUrl,     icon: <Globe size={14} />,     bg: 'bg-sky-50 text-sky-500' },
+                    { key: 'blogClipUrl', label: '클립',       value: profile.blogClipId,  icon: <PenTool size={14} />,   bg: 'bg-teal-50 text-teal-500' },
                     { key: 'instaId',     label: '인스타',     value: profile.instaId,     icon: <Instagram size={14} />, bg: 'bg-pink-50 text-pink-500' },
                     { key: 'reelsUrl',    label: '릴스',       value: profile.reelsUrl,    icon: <Eye size={14} />,       bg: 'bg-violet-50 text-violet-500' },
                     { key: 'facebookUrl', label: '페이스북',   value: profile.facebookUrl, icon: <Globe size={14} />,     bg: 'bg-blue-50 text-blue-500' },
@@ -3352,6 +3354,7 @@ ${text}`
                 <div className="grid grid-cols-3 gap-1.5">
                   {[
                     { key: 'blogUrl',     label: '블로그',      value: profile.blogUrl },
+                    { key: 'blogClipUrl', label: '클립',        value: profile.blogClipId },
                     { key: 'instaId',     label: '인스타',      value: profile.instaId },
                     { key: 'reelsUrl',    label: '릴스',        value: profile.reelsUrl },
                     { key: 'facebookUrl', label: '페이스북',    value: profile.facebookUrl },
@@ -3417,6 +3420,23 @@ ${text}`
                       onChange={(e) => updateProfile(key, e.target.value)} />
                   </div>
                 ))}
+                {profile.enabledPlatforms?.blogClipUrl && (
+                  <div className="jelly-card p-4">
+                    <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-2">
+                      <span className="text-sky-500"><PenTool size={18} /></span>클립 ID
+                    </label>
+                    <div className="flex gap-2">
+                      <input className="flex-1 px-4 py-3 rounded-xl bg-sky-50/50 ring-1 ring-slate-100 focus:ring-2 focus:ring-sky-400 outline-none text-sm transition-all"
+                        placeholder="클립 아이디" value={profile.blogClipId || ''}
+                        onChange={(e) => updateProfile('blogClipId', e.target.value)} />
+                      <button
+                        onClick={async () => { const t = await navigator.clipboard.readText(); updateProfile('blogClipId', t.trim()); }}
+                        className="px-3 py-3 rounded-xl bg-teal-50 text-teal-500 text-xs font-bold active:scale-95 transition-all shrink-0">
+                        붙여넣기
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {profile.enabledPlatforms?.instaId && (
                   <div className="jelly-card p-4">
                     <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-2">
