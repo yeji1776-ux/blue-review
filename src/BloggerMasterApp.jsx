@@ -3073,7 +3073,7 @@ ${text}`
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-0 w-full rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+                    <div className="flex flex-col gap-0 w-full rounded-2xl border border-slate-100 bg-white overflow-hidden">
                       <div className="flex items-center justify-between p-5 border-b border-slate-100">
                         <span className="text-[11px] font-bold text-slate-400 flex items-center gap-2"><Calendar size={14} /> 방문 일자</span>
                         <span className="text-[13px] font-black text-slate-800">{item.visitDate || '미정'}</span>
