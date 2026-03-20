@@ -16,10 +16,11 @@ const translateError = (msg) => {
 
 const LoginPage = ({ onEmailSignIn, onEmailSignUp, onVerifyOtp, onSocialLogin, onGuestLogin, onForgotPassword, onBiometricLogin, authError }) => {
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup' | 'verify'
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => localStorage.getItem('saveId') === 'true' ? (localStorage.getItem('savedEmail') || '') : '');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
   const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('rememberMe') !== 'false');
+  const [saveId, setSaveId] = useState(() => localStorage.getItem('saveId') === 'true');
   const [localError, setLocalError] = useState('');
   const [localSuccess, setLocalSuccess] = useState('');
   const [domainSuggestions, setDomainSuggestions] = useState([]);
@@ -69,6 +70,9 @@ const LoginPage = ({ onEmailSignIn, onEmailSignUp, onVerifyOtp, onSocialLogin, o
     if (authMode === 'signup' && !nickname.trim()) return setLocalError('닉네임을 입력해주세요.');
 
     localStorage.setItem('rememberMe', rememberMe);
+    localStorage.setItem('saveId', saveId);
+    if (saveId) localStorage.setItem('savedEmail', email.trim());
+    else localStorage.removeItem('savedEmail');
     if (authMode === 'login') {
       await onEmailSignIn(email, password, rememberMe);
     } else {
@@ -277,13 +281,22 @@ const LoginPage = ({ onEmailSignIn, onEmailSignUp, onVerifyOtp, onSocialLogin, o
               />
               {authMode === 'login' && (
                 <div className="flex items-center justify-between px-1">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <div onClick={() => setRememberMe(v => !v)}
-                      className={`w-4.5 h-4.5 w-[18px] h-[18px] rounded-md border-2 flex items-center justify-center transition-all ${rememberMe ? 'bg-sky-500 border-sky-500' : 'bg-white border-slate-300'}`}>
-                      {rememberMe && <svg width="10" height="8" viewBox="0 0 11 9" fill="none"><path d="M1 4L4 7.5L10 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                    </div>
-                    <span className="text-xs font-bold text-slate-500">자동 로그인</span>
-                  </label>
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <div onClick={() => setSaveId(v => !v)}
+                        className={`w-[18px] h-[18px] rounded-md border-2 flex items-center justify-center transition-all ${saveId ? 'bg-sky-500 border-sky-500' : 'bg-white border-slate-300'}`}>
+                        {saveId && <svg width="10" height="8" viewBox="0 0 11 9" fill="none"><path d="M1 4L4 7.5L10 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                      </div>
+                      <span className="text-xs font-bold text-slate-500">아이디 저장</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <div onClick={() => setRememberMe(v => !v)}
+                        className={`w-[18px] h-[18px] rounded-md border-2 flex items-center justify-center transition-all ${rememberMe ? 'bg-sky-500 border-sky-500' : 'bg-white border-slate-300'}`}>
+                        {rememberMe && <svg width="10" height="8" viewBox="0 0 11 9" fill="none"><path d="M1 4L4 7.5L10 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                      </div>
+                      <span className="text-xs font-bold text-slate-500">자동 로그인</span>
+                    </label>
+                  </div>
                   <button type="button" onClick={() => { setShowForgot(true); setLocalError(''); setLocalSuccess(''); }} className="text-xs font-bold text-sky-500 underline underline-offset-2">비밀번호 찾기</button>
                 </div>
               )}
