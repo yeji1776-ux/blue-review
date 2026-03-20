@@ -845,17 +845,16 @@ const BloggerMasterApp = () => {
     const card = imageCardRefs.current[id];
     if (!card) return;
     try {
-      // 캡처를 위해 body에 임시 클론 생성
-      const clone = card.cloneNode(true);
-      clone.style.cssText = 'position:fixed;left:0;top:0;width:420px;z-index:-1;pointer-events:none;';
-      document.body.appendChild(clone);
+      // 원본 요소를 잠시 화면에 보이게 한 뒤 캡처
+      const origStyle = card.style.cssText;
+      card.style.cssText = 'position:fixed;left:0;top:0;width:420px;z-index:-1;';
       await new Promise(r => setTimeout(r, 100));
-      const dataUrl = await domToPng(clone, {
+      const dataUrl = await domToPng(card, {
         scale: 2,
         backgroundColor: '#ffffff',
         filter: (node) => node.dataset?.noImage !== 'true',
       });
-      document.body.removeChild(clone);
+      card.style.cssText = origStyle;
       // dataUrl → Blob 변환
       const res = await fetch(dataUrl);
       const blob = await res.blob();
@@ -876,9 +875,8 @@ const BloggerMasterApp = () => {
     } catch (err) {
       console.error('이미지 저장 실패:', err);
       alert('이미지 저장에 실패했습니다.');
-      // 실패 시에도 복원
-      const card2 = imageCardRefs.current[id];
-      if (card2) card2.style.cssText = '';
+      // 실패 시에도 원래 위치로 복원
+      if (card) card.style.cssText = 'position:absolute;left:-9999px;top:0;width:420px;';
     }
   };
 
@@ -3062,62 +3060,41 @@ ${text}`
                   </button>
                   <div
                     ref={(el) => (imageCardRefs.current[`share_${item.id}`] = el)}
-                    className="absolute left-[-9999px] top-0 w-[420px] bg-slate-50 p-6 flex flex-col gap-6"
+                    className="absolute left-[-9999px] top-0 w-[420px] bg-white p-10 flex flex-col gap-10"
                     style={{ fontFamily: "'Inter', 'Pretendard', sans-serif" }}
                   >
-                    <div className="bg-white rounded-[2rem] p-8 shadow-xl border border-slate-100/50 flex flex-col gap-6 relative overflow-hidden text-center z-10">
-                      <div className="absolute top-[-20%] left-[-10%] w-40 h-40 bg-sky-200/50 rounded-full blur-3xl -z-10"></div>
-                      <div className="absolute bottom-[-10%] right-[-10%] w-32 h-32 bg-indigo-200/40 rounded-full blur-2xl -z-10"></div>
+                    <div className="flex flex-col items-center justify-center gap-5 pt-2">
+                      <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center p-3 mb-2">
+                        <img src="/favicon.png" alt="logo" className="w-full h-full object-contain mix-blend-multiply" />
+                      </div>
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-black tracking-widest uppercase">{item.type || '맛집'}</span>
+                        <h2 className="text-[26px] font-black text-slate-900 break-keep leading-snug text-center">{item.title}</h2>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-0 w-full rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+                      <div className="flex items-center justify-between p-5 border-b border-slate-100">
+                        <span className="text-[11px] font-bold text-slate-400 flex items-center gap-2"><Calendar size={14} /> 방문 일자</span>
+                        <span className="text-[13px] font-black text-slate-800">{item.visitDate || '미정'}</span>
+                      </div>
                       
-                      <div className="flex flex-col items-center justify-center gap-3">
-                        <img src="/favicon.png" alt="logo" className="w-16 h-16 object-contain drop-shadow-xl" />
-                        <div className="inline-block px-3 py-1 bg-slate-100 text-slate-500 text-xs font-black rounded-full mb-1">
-                          {item.type || '맛집'}
-                        </div>
-                        <h2 className="text-3xl font-black text-slate-800 break-keep leading-tight">{item.title}</h2>
+                      <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50">
+                        <span className="text-[11px] font-bold text-slate-400 flex items-center gap-2"><Clock size={14} /> 방문 시간</span>
+                        <span className="text-[13px] font-black text-slate-800">{item.visitSetTime || item.visitTime || '미정'}</span>
+                      </div>
+                      
+                      <div className="flex flex-col gap-2 p-5 border-b border-slate-100">
+                        <span className="text-[11px] font-bold text-slate-400 flex items-center gap-2"><MapPin size={14} /> 장소</span>
+                        <span className="text-[13px] font-black text-slate-800 break-keep leading-relaxed">{item.address || '주소 정보 없음'}</span>
                       </div>
 
-                      <div className="bg-slate-50/80 rounded-2xl p-5 flex flex-col gap-4 text-left border border-slate-100">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 shrink-0 bg-sky-100 text-sky-500 rounded-xl flex items-center justify-center">
-                            <Calendar size={20} />
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-black text-slate-400">방문 일자</p>
-                            <p className="text-base font-bold text-slate-700">{item.visitDate || '미정'}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 shrink-0 bg-amber-100 text-amber-500 rounded-xl flex items-center justify-center">
-                            <Clock size={20} />
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-black text-slate-400">방문 시간</p>
-                            <p className="text-base font-bold text-slate-700">{item.visitSetTime || item.visitTime || '미정'}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 shrink-0 bg-rose-100 text-rose-500 rounded-xl flex items-center justify-center mt-0.5">
-                            <MapPin size={20} />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-[10px] font-black text-slate-400">장소</p>
-                            <p className="text-sm font-bold text-slate-700 break-keep">{item.address || '주소 정보 없음'}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 shrink-0 bg-emerald-100 text-emerald-500 rounded-xl flex items-center justify-center mt-0.5">
-                            <Globe size={20} />
-                          </div>
-                          <div className="flex-1 overflow-hidden">
-                            <p className="text-[10px] font-black text-slate-400">네이버 플레이스</p>
-                            <p className="text-[10px] font-medium text-sky-500 break-all leading-tight mt-0.5">
-                              {item.placeUrl || `https://map.naver.com/v5/search/${encodeURIComponent(item.title || '')}`}
-                            </p>
-                          </div>
-                        </div>
+                      <div className="flex flex-col gap-2 p-5 bg-slate-50/50">
+                        <span className="text-[11px] font-bold text-slate-400 flex items-center gap-2"><Globe size={14} /> 네이버 플레이스</span>
+                        <span className="text-[11px] font-bold text-slate-500 break-all leading-relaxed">
+                          {item.placeUrl || `https://map.naver.com/v5/search/${encodeURIComponent(item.title || '')}`}
+                        </span>
                       </div>
-                      <p className="text-xs font-black text-slate-300">Blue Review</p>
                     </div>
                   </div>
                 </div>
