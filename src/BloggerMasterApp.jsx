@@ -3715,16 +3715,9 @@ ${text}`
                     <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-2">
                       <span className="text-sky-500"><PenTool size={18} /></span>클립 ID
                     </label>
-                    <div className="flex gap-2">
-                      <input className="flex-1 px-4 py-3 rounded-xl bg-sky-50/50 ring-1 ring-slate-100 focus:ring-2 focus:ring-sky-400 outline-none text-sm transition-all"
-                        placeholder="클립 아이디" value={profile.blogClipId || ''}
-                        onChange={(e) => updateProfile('blogClipId', e.target.value)} />
-                      <button
-                        onClick={async () => { const t = await navigator.clipboard.readText(); updateProfile('blogClipId', t.trim()); }}
-                        className="px-3 py-3 rounded-xl bg-teal-50 text-teal-500 text-xs font-bold active:scale-95 transition-all shrink-0">
-                        붙여넣기
-                      </button>
-                    </div>
+                    <input className="w-full px-4 py-3 rounded-xl bg-sky-50/50 ring-1 ring-slate-100 focus:ring-2 focus:ring-sky-400 outline-none text-sm transition-all"
+                      placeholder="클립 아이디" value={profile.blogClipId || ''}
+                      onChange={(e) => updateProfile('blogClipId', e.target.value)} />
                   </div>
                 )}
                 {profile.enabledPlatforms?.instaId && (
