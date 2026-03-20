@@ -845,17 +845,17 @@ const BloggerMasterApp = () => {
     const card = imageCardRefs.current[id];
     if (!card) return;
     try {
-      // 캡처를 위해 화면 안으로 이동
-      const origStyle = card.style.cssText;
-      card.style.cssText = 'position:fixed;left:0;top:0;z-index:9999;opacity:0;pointer-events:none;';
-      await new Promise(r => setTimeout(r, 50));
-      const dataUrl = await domToPng(card, {
+      // 캡처를 위해 body에 임시 클론 생성
+      const clone = card.cloneNode(true);
+      clone.style.cssText = 'position:fixed;left:0;top:0;width:420px;z-index:-1;pointer-events:none;';
+      document.body.appendChild(clone);
+      await new Promise(r => setTimeout(r, 100));
+      const dataUrl = await domToPng(clone, {
         scale: 2,
         backgroundColor: '#ffffff',
         filter: (node) => node.dataset?.noImage !== 'true',
       });
-      // 원래 위치로 복원
-      card.style.cssText = origStyle;
+      document.body.removeChild(clone);
       const link = document.createElement('a');
       link.download = `체험단_${id}.png`;
       link.href = dataUrl;
