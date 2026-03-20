@@ -1533,7 +1533,9 @@ ${text}`
                             {task.brand && task.brand !== '기타' && <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black border ${getBrandBadge(task.brand)}`}>{task.brand}</span>}
                             <p className="flex-1 text-sm font-bold text-slate-700 truncate">{task.title}</p>
                             {task.visitDate === date && task.visitSetTime && (() => {
-                              if (isToday) { const [hh, mm] = (task.visitSetTime || '').split(':').map(Number); const now = new Date(); if (now.getHours() > hh || (now.getHours() === hh && now.getMinutes() >= (mm || 0))) return null; }
+                              const now = new Date(); const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+                              if (date < todayStr) return null;
+                              if (isToday) { const [hh, mm] = (task.visitSetTime || '').split(':').map(Number); if (now.getHours() > hh || (now.getHours() === hh && now.getMinutes() >= (mm || 0))) return null; }
                               return <span className={`shrink-0 text-[10px] font-black ${isToday ? 'text-sky-600' : 'text-slate-500'}`}>{task.visitSetTime}</span>;
                             })()}
                             <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${isToday ? 'text-sky-500 bg-sky-100' : 'text-slate-500 bg-slate-100'}`}>
@@ -2452,11 +2454,10 @@ ${text}`
                             <span className={`px-1.5 py-0.5 rounded text-[9px] font-black text-white shrink-0 ${e.isDone || getDday(e.deadline) < 0 ? 'bg-slate-300' : e._color === 'rose' ? 'bg-rose-400' : 'bg-sky-400'}`}>{e._label}</span>
                             <span className={`text-xs font-bold truncate flex-1 ${e.isDone || getDday(e.deadline) < 0 ? 'text-slate-500 line-through' : isHighlighted ? 'text-sky-700' : 'text-slate-700'}`}>{e.title}</span>
                             {e._label === '체험' && e.visitSetTime && !e.isDone && (() => {
-                              const today = new Date(); const vd = e.visitDate;
-                              if (vd === `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`) {
-                                const [hh, mm] = (e.visitSetTime || '').split(':').map(Number);
-                                if (today.getHours() > hh || (today.getHours() === hh && today.getMinutes() >= (mm || 0))) return null;
-                              }
+                              const now = new Date(); const vd = e.visitDate;
+                              const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+                              if (vd < todayStr) return null;
+                              if (vd === todayStr) { const [hh, mm] = (e.visitSetTime || '').split(':').map(Number); if (now.getHours() > hh || (now.getHours() === hh && now.getMinutes() >= (mm || 0))) return null; }
                               return <span className="shrink-0 text-[10px] font-black text-sky-500 bg-sky-50 px-1.5 py-0.5 rounded-lg">{e.visitSetTime}</span>;
                             })()}
                           </button>
