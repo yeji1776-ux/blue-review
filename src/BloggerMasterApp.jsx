@@ -856,12 +856,23 @@ const BloggerMasterApp = () => {
         filter: (node) => node.dataset?.noImage !== 'true',
       });
       document.body.removeChild(clone);
-      const link = document.createElement('a');
-      link.download = `체험단_${id}.png`;
-      link.href = dataUrl;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // dataUrl → Blob 변환
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      const file = new File([blob], `체험단_${id}.png`, { type: 'image/png' });
+      // 모바일: navigator.share, PC: 다운로드
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: '일정 공유' });
+      } else {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = file.name;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
     } catch (err) {
       console.error('이미지 저장 실패:', err);
       alert('이미지 저장에 실패했습니다.');
