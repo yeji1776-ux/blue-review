@@ -32,11 +32,12 @@ const SortableTemplateItem = ({ t, onEdit }) => {
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }}
       className="flex items-center gap-2">
-      <div {...attributes} {...listeners} className="p-2 text-slate-300 cursor-grab active:cursor-grabbing touch-none">
+      <div {...attributes} {...listeners} className="p-2 text-slate-300 cursor-grab active:cursor-grabbing touch-none shrink-0">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>
       </div>
-      <button onClick={() => onEdit(t.id)} className="flex-1 text-left px-4 py-3 rounded-xl text-sm font-bold text-slate-600 bg-sky-50/50 active:bg-sky-100 transition-all truncate">
-        {t.title}
+      <button onClick={() => onEdit(t.id)} className="flex-1 text-left px-4 py-3 rounded-xl bg-sky-50/50 active:bg-sky-100 transition-all min-w-0">
+        <p className="text-sm font-bold text-slate-600 truncate">{t.title}</p>
+        {t.content && <p className="text-xs text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">{t.content}</p>}
       </button>
     </div>
   );
@@ -539,6 +540,68 @@ const BloggerMasterApp = () => {
     localStorage.setItem('theme_color', themeColor);
   }, [themeColor]);
 
+  // --- 구글 캘린더 연동 ---
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const [gcalToken, setGcalToken] = useState(() => {
+    const token = localStorage.getItem('gcal_token');
+    const expiry = localStorage.getItem('gcal_token_expiry');
+    if (token && expiry && Date.now() < parseInt(expiry)) return token;
+    return null;
+  });
+  const [gcalConnecting, setGcalConnecting] = useState(false);
+
+  const connectGoogleCalendar = () => {
+    if (!window.google || !GOOGLE_CLIENT_ID) return;
+    setGcalConnecting(true);
+    const tokenClient = window.google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/calendar.events',
+      callback: (resp) => {
+        setGcalConnecting(false);
+        if (resp.access_token) {
+          localStorage.setItem('gcal_token', resp.access_token);
+          localStorage.setItem('gcal_token_expiry', String(Date.now() + resp.expires_in * 1000));
+          setGcalToken(resp.access_token);
+        }
+      },
+      error_callback: () => setGcalConnecting(false),
+    });
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  };
+
+  const disconnectGoogleCalendar = () => {
+    localStorage.removeItem('gcal_token');
+    localStorage.removeItem('gcal_token_expiry');
+    setGcalToken(null);
+  };
+
+  const addToGoogleCalendar = async (schedule, visitDate, visitTime) => {
+    const token = localStorage.getItem('gcal_token');
+    const expiry = localStorage.getItem('gcal_token_expiry');
+    if (!token || Date.now() > parseInt(expiry || '0')) return false;
+    const [h, m] = (visitTime || '12:00').split(':');
+    const endHour = String(parseInt(h) + 1).padStart(2, '0');
+    const event = {
+      summary: `[협찬] ${schedule.title || schedule.brand}`,
+      location: schedule.address || '',
+      description: [
+        schedule.mission ? `📋 기본미션:\n${schedule.mission}` : '',
+        schedule.personalMission ? `\n✨ 개인미션:\n${schedule.personalMission}` : '',
+        schedule.contact ? `\n📞 연락처: ${schedule.contact}` : '',
+      ].filter(Boolean).join(''),
+      start: { dateTime: `${visitDate}T${h.padStart(2, '0')}:${m || '00'}:00`, timeZone: 'Asia/Seoul' },
+      end: { dateTime: `${visitDate}T${endHour}:${m || '00'}:00`, timeZone: 'Asia/Seoul' },
+    };
+    try {
+      const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(event),
+      });
+      return res.ok;
+    } catch { return false; }
+  };
+
   // --- 설정 패널 ---
   const [showSettings, setShowSettings] = useState(false);
   useEffect(() => {
@@ -604,6 +667,7 @@ const BloggerMasterApp = () => {
   const [notePopupId, setNotePopupId] = useState(null); // 체험 느낌 메모 팝업
   const [showTemplatePickerId, setShowTemplatePickerId] = useState(null); // 스케줄 상세 신청문구 복사 팝업
   const [confirmDeleteId, setConfirmDeleteId] = useState(null); // 삭제 확인 팝업용
+  const [confirmDeleteTemplateId, setConfirmDeleteTemplateId] = useState(null); // 신청문구 삭제 확인 팝업용
   const [manageOngoingOpen, setManageOngoingOpen] = useState(true);
   const [manageDoneOpen, setManageDoneOpen] = useState(false);
   const [homeSchedulesOpen, setHomeSchedulesOpen] = useState(true);
@@ -612,7 +676,7 @@ const BloggerMasterApp = () => {
   const [homeFtcOpen, setHomeFtcOpen] = useState(true);
   const [collapsedBrands, setCollapsedBrands] = useState({});
   const toggleBrand = (brand) => setCollapsedBrands(prev => ({ ...prev, [brand]: !prev[brand] }));
-  const [detailSections, setDetailSections] = useState({ extraInfo: false, caution: false, mission: false, personalMission: true });
+  const [detailSections, setDetailSections] = useState({ extraInfo: false, caution: false, mission: false, personalMission: true, publishedContent: false });
 
   const deleteSchedule = (id) => {
     const updated = schedules.filter(s => s.id !== id);
@@ -730,7 +794,7 @@ const BloggerMasterApp = () => {
     brand: '리뷰노트', type: '맛집', title: '', address: '', contact: '',
     mission: '', personalMission: '', experiencePeriod: '', deadline: '', provided: '',
     visitDays: '', visitTime: '', visitDate: '', visitSetTime: '', caution: '', ftcImageUrl: '',
-    keywords: '',
+    keywords: '', placeUrl: '',
     platforms: [],
   };
 
@@ -1112,8 +1176,8 @@ ${text}`
     try {
       const result = await parseWithGemini(text);
       setParsedData({
-        brand: (['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스'].includes(result.brand)) ? result.brand : '기타(수기)',
-        brandCustom: (['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스'].includes(result.brand)) ? '' : (result.brand || ''),
+        brand: (['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스'].includes(result.brand)) ? result.brand : (parsedData.brand || '리뷰노트'),
+        brandCustom: (['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스'].includes(result.brand)) ? '' : (parsedData.brandCustom || ''),
         type: result.type || '맛집',
         title: result.title || '',
         address: result.address || '',
@@ -1330,6 +1394,28 @@ ${text}`
               </div>
             </div>
 
+            {/* 구글 캘린더 연동 */}
+            <div className="mb-5">
+              <p className="text-xs font-black text-slate-500 mb-3">구글 캘린더 연동</p>
+              {gcalToken ? (
+                <div className="flex items-center justify-between bg-green-50 border border-green-100 rounded-2xl px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full" />
+                    <span className="text-xs font-bold text-green-600">연동됨 — 체험일 등록 시 자동 추가</span>
+                  </div>
+                  <button onClick={disconnectGoogleCalendar} className="text-[10px] font-bold text-slate-400 active:scale-95">해제</button>
+                </div>
+              ) : (
+                <button
+                  onClick={connectGoogleCalendar}
+                  disabled={gcalConnecting}
+                  className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-sky-50 text-sky-600 font-black text-sm active:scale-95 transition-all border border-sky-100 disabled:opacity-50"
+                >
+                  <Calendar size={16} /> {gcalConnecting ? '연결 중...' : '구글 캘린더 연결하기'}
+                </button>
+              )}
+            </div>
+
             {/* 로그아웃 */}
             <button
               onClick={() => { setShowSettings(false); handleLogout(); }}
@@ -1414,33 +1500,50 @@ ${text}`
               );
             })()}
 
-            {/* 오늘의 할일 */}
+            {/* 3일치 할일 */}
             {(() => {
               const _now = new Date();
-              const today = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`;
-              const todayTasks = schedules.filter(s => {
-                if (s.isDone) return false;
-                return s.deadline === today || s.visitDate === today;
+              const toStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+              const days = [0, 1, 2].map(offset => {
+                const d = new Date(_now);
+                d.setDate(d.getDate() + offset);
+                return { date: toStr(d), label: offset === 0 ? '오늘' : offset === 1 ? '내일' : '모레', day: d };
               });
+              const allEmpty = days.every(({ date }) => schedules.filter(s => !s.isDone && (s.deadline === date || s.visitDate === date)).length === 0);
               return (
-                <div className="space-y-2">
-                  <p className="text-[11px] font-black text-sky-600 px-1">📋 오늘의 할일 {todayTasks.length > 0 ? `(${todayTasks.length}개)` : ''}</p>
-                  {todayTasks.length === 0 ? (
+                <div className="space-y-3">
+                  <p className="text-[11px] font-black text-sky-600 px-1">📋 3일 일정</p>
+                  {allEmpty ? (
                     <div className="w-full p-4 rounded-2xl bg-sky-50 border border-sky-100 text-center text-xs text-sky-300 font-bold">
-                      오늘 예정된 일정이 없어요 🎉
+                      3일간 예정된 일정이 없어요 🎉
                     </div>
-                  ) : todayTasks.map(task => (
-                    <button key={task.id} onClick={() => setSelectedScheduleId(task.id)} className="w-full flex items-center gap-3 p-3 rounded-2xl text-left active:scale-[0.99] transition-all bg-sky-50 border border-sky-200 shadow-sm shadow-sky-100">
-                      {task.brand && task.brand !== '기타' && <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black border ${getBrandBadge(task.brand)}`}>{task.brand}</span>}
-                      <p className="flex-1 text-sm font-bold text-slate-700 truncate">{task.title}</p>
-                      {task.visitDate === today && task.visitSetTime && (
-                        <span className="shrink-0 text-[10px] font-black text-sky-600">{task.visitSetTime}</span>
-                      )}
-                      <span className="shrink-0 text-[10px] font-bold text-sky-500 bg-sky-100 px-2 py-0.5 rounded-full">
-                        {task.visitDate === today ? '체험일' : '마감일'}
-                      </span>
-                    </button>
-                  ))}
+                  ) : days.map(({ date, label, day }) => {
+                    const tasks = schedules.filter(s => !s.isDone && (s.deadline === date || s.visitDate === date));
+                    if (tasks.length === 0) return null;
+                    const isToday = label === '오늘';
+                    return (
+                      <div key={date} className="space-y-1.5">
+                        <p className="text-[10px] font-black px-1 text-slate-400">
+                          {isToday ? '🔵' : '⚪'} {label} <span className="font-medium">{day.getMonth() + 1}/{day.getDate()}</span>
+                          <span className="ml-1 text-sky-400">({tasks.length})</span>
+                        </p>
+                        {tasks.map(task => (
+                          <button key={task.id} onClick={() => setSelectedScheduleId(task.id)}
+                            className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left active:scale-[0.99] transition-all shadow-sm ${isToday ? 'bg-sky-50 border border-sky-200 shadow-sky-100' : 'bg-slate-50 border border-slate-200 shadow-slate-100'}`}>
+                            {task.brand && task.brand !== '기타' && <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black border ${getBrandBadge(task.brand)}`}>{task.brand}</span>}
+                            <p className="flex-1 text-sm font-bold text-slate-700 truncate">{task.title}</p>
+                            {task.visitDate === date && task.visitSetTime && (() => {
+                              if (isToday) { const [hh, mm] = (task.visitSetTime || '').split(':').map(Number); const now = new Date(); if (now.getHours() > hh || (now.getHours() === hh && now.getMinutes() >= (mm || 0))) return null; }
+                              return <span className={`shrink-0 text-[10px] font-black ${isToday ? 'text-sky-600' : 'text-slate-500'}`}>{task.visitSetTime}</span>;
+                            })()}
+                            <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${isToday ? 'text-sky-500 bg-sky-100' : 'text-slate-500 bg-slate-100'}`}>
+                              {task.visitDate === date ? '체험일' : '마감일'}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })()}
@@ -2348,9 +2451,14 @@ ${text}`
                             <span className={`text-[11px] font-black w-10 shrink-0 ${isHighlighted ? 'text-sky-600' : 'text-slate-500'}`}>{e._date.getMonth() + 1}/{e._date.getDate()}</span>
                             <span className={`px-1.5 py-0.5 rounded text-[9px] font-black text-white shrink-0 ${e.isDone || getDday(e.deadline) < 0 ? 'bg-slate-300' : e._color === 'rose' ? 'bg-rose-400' : 'bg-sky-400'}`}>{e._label}</span>
                             <span className={`text-xs font-bold truncate flex-1 ${e.isDone || getDday(e.deadline) < 0 ? 'text-slate-500 line-through' : isHighlighted ? 'text-sky-700' : 'text-slate-700'}`}>{e.title}</span>
-                            {e._label === '체험' && e.visitSetTime && !e.isDone && (
-                              <span className="shrink-0 text-[10px] font-black text-sky-500 bg-sky-50 px-1.5 py-0.5 rounded-lg">{e.visitSetTime}</span>
-                            )}
+                            {e._label === '체험' && e.visitSetTime && !e.isDone && (() => {
+                              const today = new Date(); const vd = e.visitDate;
+                              if (vd === `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`) {
+                                const [hh, mm] = (e.visitSetTime || '').split(':').map(Number);
+                                if (today.getHours() > hh || (today.getHours() === hh && today.getMinutes() >= (mm || 0))) return null;
+                              }
+                              return <span className="shrink-0 text-[10px] font-black text-sky-500 bg-sky-50 px-1.5 py-0.5 rounded-lg">{e.visitSetTime}</span>;
+                            })()}
                           </button>
                         );
                       })}
@@ -2460,7 +2568,7 @@ ${text}`
                 <button onClick={() => { localStorage.setItem('blogTemplates', JSON.stringify(templates)); }} className="flex-1 jelly-button text-white py-4 rounded-2xl font-black text-sm active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md shadow-sky-200">
                   <Save size={16} /> 저장
                 </button>
-                <button onClick={() => deleteTemplate(t.id)} className="flex-1 bg-rose-50 text-rose-500 py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all">
+                <button onClick={() => setConfirmDeleteTemplateId(t.id)} className="flex-1 bg-rose-50 text-rose-500 py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all">
                   삭제
                 </button>
               </div>
@@ -2653,6 +2761,7 @@ ${text}`
                   {[
                     { label: '업체명', key: 'title' },
                     { label: '주소', key: 'address' },
+                    { label: '지도URL', key: 'placeUrl' },
                     { label: '연락처', key: 'contact' },
                     { label: '제공내역', key: 'provided' },
                     { label: '체험기간', key: 'experiencePeriod' },
@@ -2782,7 +2891,16 @@ ${text}`
                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">기본 미션</p>
                       <ChevronRight size={13} className={`text-slate-500 transition-transform ${detailSections.mission ? 'rotate-90' : ''}`} />
                     </button>
-                    {detailSections.mission && <p className="text-xs text-slate-600 leading-loose font-medium whitespace-pre-line px-5 pb-4">{item.mission}</p>}
+                    {detailSections.mission && (
+                      <>
+                        <p className="text-xs text-slate-600 leading-loose font-medium whitespace-pre-line px-5 pb-3">{item.mission}</p>
+                        <div className="px-5 pb-4">
+                          <button onClick={() => copyToClipboard(item.mission)} className="flex items-center gap-1 text-[10px] font-bold text-sky-500 active:scale-95 transition-all">
+                            <Copy size={10} /> 복사
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -2793,7 +2911,16 @@ ${text}`
                       <p className="text-[10px] font-black text-pink-400 uppercase tracking-widest">개인 미션</p>
                       <ChevronRight size={13} className={`text-pink-400 transition-transform ${detailSections.personalMission ? 'rotate-90' : ''}`} />
                     </button>
-                    {detailSections.personalMission && <p className="text-xs text-slate-600 leading-loose font-medium whitespace-pre-line px-5 pb-4">{item.personalMission}</p>}
+                    {detailSections.personalMission && (
+                      <>
+                        <p className="text-xs text-slate-600 leading-loose font-medium whitespace-pre-line px-5 pb-3">{item.personalMission}</p>
+                        <div className="px-5 pb-4">
+                          <button onClick={() => copyToClipboard(item.personalMission)} className="flex items-center gap-1 text-[10px] font-bold text-pink-500 active:scale-95 transition-all">
+                            <Copy size={10} /> 복사
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
@@ -2855,7 +2982,123 @@ ${text}`
                     )}
                   </div>
                 </div>
+
+                {/* 작성한 글 내용 */}
+                <div className="bg-violet-50/50 rounded-2xl border border-dashed border-violet-200 overflow-hidden">
+                  <button onClick={() => setDetailSections(p => ({ ...p, publishedContent: !p.publishedContent }))} className="w-full flex items-center justify-between px-5 py-3">
+                    <div className="flex items-center gap-2">
+                      <p className="text-[10px] font-black text-violet-500 uppercase tracking-widest">작성한 글 내용</p>
+                      {item.publishedContent && (
+                        <span className="text-[9px] font-bold text-violet-400 bg-violet-100 px-1.5 py-0.5 rounded-full">
+                          {item.publishedContent.replace(/\s+/g, '').length}자
+                        </span>
+                      )}
+                    </div>
+                    <ChevronRight size={13} className={`text-violet-400 transition-transform ${detailSections.publishedContent ? 'rotate-90' : ''}`} />
+                  </button>
+                  {detailSections.publishedContent && (
+                    <div className="px-5 pb-4 space-y-2">
+                      <textarea
+                        className="w-full bg-white/80 px-3 py-2.5 rounded-xl ring-1 ring-violet-100 focus:ring-2 focus:ring-violet-300 outline-none text-xs font-medium text-slate-700 h-48 resize-none transition-all leading-relaxed"
+                        placeholder="수정해서 올린 최종 포스팅 내용을 붙여넣으세요"
+                        value={item.publishedContent || ''}
+                        onChange={(e) => setSchedules(schedules.map(s => s.id === item.id ? { ...s, publishedContent: e.target.value } : s))}
+                      />
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold text-violet-400">
+                          {item.publishedContent ? `${(item.publishedContent || '').replace(/\s+/g, '').length}자 (공백포함 ${(item.publishedContent || '').length}자)` : '내용을 입력하면 글자수가 표시됩니다'}
+                        </span>
+                        <div className="flex gap-1.5">
+                          {item.publishedContent && (
+                            <button onClick={() => copyToClipboard(item.publishedContent)} className="px-3 py-2 bg-violet-50 text-violet-500 rounded-xl text-xs font-bold active:scale-95 transition-all flex items-center gap-1">
+                              <Copy size={12} /> 복사
+                            </button>
+                          )}
+                          <button
+                            onClick={() => { localStorage.setItem('blogSchedules', JSON.stringify(schedules)); alert('저장되었습니다!'); }}
+                            disabled={!item.publishedContent}
+                            className="px-3 py-2 bg-violet-500 text-white rounded-xl text-xs font-bold active:scale-95 transition-all flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            <Save size={12} /> 저장
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>}
+
+              {/* 공유용 이미지 템플릿 & 공유 버튼 */}
+              {!isEditing && (
+                <div data-no-image="true" className="w-full">
+                  <button
+                    onClick={() => saveCardAsImage(`share_${item.id}`)}
+                    className="w-full bg-gradient-to-r from-sky-400 to-indigo-400 text-white shadow-lg shadow-sky-200/50 py-3.5 rounded-2xl font-black text-sm active:scale-95 transition-all flex items-center justify-center gap-2 mb-2"
+                  >
+                    <Download size={16} /> 동행자 일정 전송용 이미지 저장
+                  </button>
+                  <div
+                    ref={(el) => (imageCardRefs.current[`share_${item.id}`] = el)}
+                    className="absolute left-[-9999px] top-0 w-[420px] bg-slate-50 p-6 flex flex-col gap-6"
+                    style={{ fontFamily: "'Inter', 'Pretendard', sans-serif" }}
+                  >
+                    <div className="bg-white rounded-[2rem] p-8 shadow-xl border border-slate-100/50 flex flex-col gap-6 relative overflow-hidden text-center z-10">
+                      <div className="absolute top-[-20%] left-[-10%] w-40 h-40 bg-sky-200/50 rounded-full blur-3xl -z-10"></div>
+                      <div className="absolute bottom-[-10%] right-[-10%] w-32 h-32 bg-indigo-200/40 rounded-full blur-2xl -z-10"></div>
+                      
+                      <div className="flex flex-col items-center justify-center gap-3">
+                        <img src="/favicon.png" alt="logo" className="w-16 h-16 object-contain drop-shadow-xl" />
+                        <div className="inline-block px-3 py-1 bg-slate-100 text-slate-500 text-xs font-black rounded-full mb-1">
+                          {item.type || '맛집'}
+                        </div>
+                        <h2 className="text-3xl font-black text-slate-800 break-keep leading-tight">{item.title}</h2>
+                      </div>
+
+                      <div className="bg-slate-50/80 rounded-2xl p-5 flex flex-col gap-4 text-left border border-slate-100">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 shrink-0 bg-sky-100 text-sky-500 rounded-xl flex items-center justify-center">
+                            <Calendar size={20} />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-slate-400">방문 일자</p>
+                            <p className="text-base font-bold text-slate-700">{item.visitDate || '미정'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 shrink-0 bg-amber-100 text-amber-500 rounded-xl flex items-center justify-center">
+                            <Clock size={20} />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black text-slate-400">방문 시간</p>
+                            <p className="text-base font-bold text-slate-700">{item.visitSetTime || item.visitTime || '미정'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 shrink-0 bg-rose-100 text-rose-500 rounded-xl flex items-center justify-center mt-0.5">
+                            <MapPin size={20} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-[10px] font-black text-slate-400">장소</p>
+                            <p className="text-sm font-bold text-slate-700 break-keep">{item.address || '주소 정보 없음'}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 shrink-0 bg-emerald-100 text-emerald-500 rounded-xl flex items-center justify-center mt-0.5">
+                            <Globe size={20} />
+                          </div>
+                          <div className="flex-1 overflow-hidden">
+                            <p className="text-[10px] font-black text-slate-400">네이버 플레이스</p>
+                            <p className="text-[10px] font-medium text-sky-500 break-all leading-tight mt-0.5">
+                              {item.placeUrl || `https://map.naver.com/v5/search/${encodeURIComponent(item.title || '')}`}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs font-black text-slate-300">Blue Review</p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* 하단 버튼 3개: 글자수계산기 | 닫기 | 리뷰등록 */}
               <div data-no-image="true" className="flex items-center gap-2">
@@ -3026,6 +3269,38 @@ ${text}`
         );
       })()}
 
+      {/* --- 신청문구 삭제 확인 팝업 --- */}
+      {confirmDeleteTemplateId && (() => {
+        const t = templates.find(x => x.id === confirmDeleteTemplateId);
+        if (!t) return null;
+        return (
+          <div className="fixed inset-0 bg-slate-400/30 backdrop-blur-md z-[60] flex items-center justify-center p-6" onClick={() => setConfirmDeleteTemplateId(null)}>
+            <div className="bg-white w-full max-w-sm rounded-[32px] p-8 text-center shadow-2xl animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+              <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-5">
+                <Trash2 size={32} className="text-rose-500" />
+              </div>
+              <h3 className="text-xl font-black text-slate-800 mb-2">정말 삭제할까요?</h3>
+              <p className="text-sm font-bold text-rose-500 mb-1 px-2 leading-snug">"{t.title}"</p>
+              <p className="text-xs text-slate-500 mb-8">삭제하면 되돌릴 수 없어요.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmDeleteTemplateId(null)}
+                  className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={() => { deleteTemplate(confirmDeleteTemplateId); setConfirmDeleteTemplateId(null); }}
+                  className="flex-1 bg-rose-500 text-white py-4 rounded-2xl font-black text-sm active:scale-95 transition-all shadow-lg shadow-rose-200"
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* --- 작성 글 삭제 확인 팝업 --- */}
       {confirmDeleteTextId && (() => {
         const target = savedTexts.find(t => t.id === confirmDeleteTextId);
@@ -3079,37 +3354,33 @@ ${text}`
                   <Clock size={16} className="text-sky-400 shrink-0" />
                   <span className="text-xs font-bold text-slate-500">시간 선택</span>
                 </div>
-                <div className="flex items-center justify-center gap-2">
-                  {/* 시 다이얼 */}
-                  <div className="relative h-[120px] w-20 overflow-hidden rounded-2xl bg-white">
-                    <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none" />
-                    <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none" />
-                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-sky-100 rounded-xl z-0" />
-                    <div className="h-full overflow-y-auto overflow-x-hidden snap-y snap-mandatory scrollbar-hide py-10"
-                      style={{ touchAction: 'pan-y' }}
-                      ref={el => { if (el && !el.dataset.scrolled) { const h = parseInt((confirmVisitDate.time || '12:00').split(':')[0]); el.scrollTop = (h - 1) * 40; el.dataset.scrolled = '1'; } }}
-                      onScroll={(e) => { const idx = Math.round(e.target.scrollTop / 40); const h = idx + 1; if (h >= 1 && h <= 24) { const m = (confirmVisitDate.time || '').split(':')[1] || '00'; setConfirmVisitDate({ ...confirmVisitDate, time: `${h}:${m}` }); } }}
+                <div className="flex items-center justify-center gap-3">
+                  {/* 시 선택 */}
+                  <div className="relative">
+                    <select
+                      className="appearance-none bg-white w-24 h-14 rounded-2xl text-center text-2xl font-black text-sky-600 ring-1 ring-sky-100 focus:ring-2 focus:ring-sky-400 outline-none shadow-inner"
+                      value={parseInt((confirmVisitDate.time || '12:00').split(':')[0])}
+                      onChange={(e) => { const h = e.target.value; const m = (confirmVisitDate.time || '12:00').split(':')[1] || '00'; setConfirmVisitDate(prev => ({ ...prev, time: `${h}:${m}` })); }}
                     >
                       {Array.from({ length: 24 }, (_, i) => i + 1).map(h => (
-                        <div key={h} className={`h-10 flex items-center justify-center snap-center text-lg font-black transition-all ${String(h) === (confirmVisitDate.time || '12:00').split(':')[0] ? 'text-sky-600 scale-110' : 'text-slate-500'}`}>{h}</div>
+                        <option key={h} value={h}>{h}</option>
                       ))}
-                    </div>
+                    </select>
+                    <p className="text-[9px] font-bold text-sky-400 text-center mt-1">시</p>
                   </div>
-                  <span className="text-2xl font-black text-sky-400">:</span>
-                  {/* 분 다이얼 */}
-                  <div className="relative h-[120px] w-20 overflow-hidden rounded-2xl bg-white">
-                    <div className="absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none" />
-                    <div className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none" />
-                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-10 bg-sky-100 rounded-xl z-0" />
-                    <div className="h-full overflow-y-auto overflow-x-hidden snap-y snap-mandatory scrollbar-hide py-10"
-                      style={{ touchAction: 'pan-y' }}
-                      ref={el => { if (el && !el.dataset.scrolled) { const m = (confirmVisitDate.time || '12:00').split(':')[1]; el.scrollTop = m === '30' ? 40 : 0; el.dataset.scrolled = '1'; } }}
-                      onScroll={(e) => { const idx = Math.round(e.target.scrollTop / 40); const m = idx === 1 ? '30' : '00'; const h = (confirmVisitDate.time || '12').split(':')[0]; setConfirmVisitDate({ ...confirmVisitDate, time: `${h}:${m}` }); }}
+                  <span className="text-2xl font-black text-sky-400 -mt-4">:</span>
+                  {/* 분 선택 */}
+                  <div className="relative">
+                    <select
+                      className="appearance-none bg-white w-24 h-14 rounded-2xl text-center text-2xl font-black text-sky-600 ring-1 ring-sky-100 focus:ring-2 focus:ring-sky-400 outline-none shadow-inner"
+                      value={(confirmVisitDate.time || '12:00').split(':')[1] || '00'}
+                      onChange={(e) => { const m = e.target.value; const h = (confirmVisitDate.time || '12:00').split(':')[0]; setConfirmVisitDate(prev => ({ ...prev, time: `${h}:${m}` })); }}
                     >
                       {['00', '30'].map(m => (
-                        <div key={m} className={`h-10 flex items-center justify-center snap-center text-lg font-black transition-all ${m === ((confirmVisitDate.time || '12:00').split(':')[1] || '00') ? 'text-sky-600 scale-110' : 'text-slate-500'}`}>{m}</div>
+                        <option key={m} value={m}>{m}</option>
                       ))}
-                    </div>
+                    </select>
+                    <p className="text-[9px] font-bold text-sky-400 text-center mt-1">분</p>
                   </div>
                 </div>
               </div>
@@ -3122,14 +3393,18 @@ ${text}`
                 취소
               </button>
               <button
-                onClick={() => {
+                onClick={async () => {
                   if (!confirmVisitDate.date) return;
+                  const targetSchedule = schedules.find(s => s.id === confirmVisitDate.id);
                   setSchedules(schedules.map(s => s.id === confirmVisitDate.id ? { ...s, visitDate: confirmVisitDate.date, visitSetTime: confirmVisitDate.time } : s));
                   setConfirmVisitDate(null);
+                  if (gcalToken && targetSchedule) {
+                    await addToGoogleCalendar(targetSchedule, confirmVisitDate.date, confirmVisitDate.time);
+                  }
                 }}
                 className="flex-1 jelly-button py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all"
               >
-                등록하기
+                {gcalToken ? '등록 + 캘린더 추가' : '등록하기'}
               </button>
             </div>
           </div>
