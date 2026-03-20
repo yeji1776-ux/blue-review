@@ -2710,29 +2710,31 @@ ${text}`
                   <h3 className={`text-base font-black leading-snug ${item.isDone ? 'text-slate-500 line-through' : 'text-slate-800'}`}>{item.title}</h3>
                   {dday && <span className={`shrink-0 mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-black text-white whitespace-nowrap ${dday.color}`}>{dday.text}</span>}
                 </div>
-                {/* 4행: 일정 + 메모/신청문구 */}
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div>
-                    {item.visitDate ? (
-                      <p className="text-[11px] font-bold text-sky-500 flex items-center gap-1 flex-wrap">
-                        <CalendarDays size={11} />
-                        <span className="whitespace-nowrap">{item.visitDate}{item.visitSetTime && ` · ${item.visitSetTime}`}</span>
-                        <button data-no-image="true" onClick={() => setConfirmVisitDate({ id: item.id, date: item.visitDate, time: item.visitSetTime || '' })} className="text-sky-400 underline whitespace-nowrap">변경</button>
-                      </p>
-                    ) : (
-                      <button data-no-image="true" onClick={() => setConfirmVisitDate({ id: item.id, date: '', time: '' })} className="text-[11px] font-black text-white flex items-center gap-1 jelly-button px-3 py-1.5 rounded-full shadow-md shadow-sky-200 active:scale-95 transition-all whitespace-nowrap">
-                        <CalendarDays size={11} /> 체험일 설정
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex gap-1.5" data-no-image="true">
-                    <button onClick={() => setShowTemplatePickerId(item.id)} className="text-[11px] font-black text-emerald-600 flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm bg-emerald-50 active:scale-95 transition-all whitespace-nowrap">
-                      <FileText size={11} /> 신청문구
+                {/* 4행: 일정 */}
+                <div>
+                  {item.visitDate ? (
+                    <p className="text-[11px] font-bold text-sky-500 flex items-center gap-1 flex-wrap">
+                      <CalendarDays size={11} />
+                      <span className="whitespace-nowrap">{item.visitDate}{item.visitSetTime && ` · ${item.visitSetTime}`}</span>
+                      <button data-no-image="true" onClick={() => setConfirmVisitDate({ id: item.id, date: item.visitDate, time: item.visitSetTime || '' })} className="text-sky-400 underline whitespace-nowrap">변경</button>
+                    </p>
+                  ) : (
+                    <button data-no-image="true" onClick={() => setConfirmVisitDate({ id: item.id, date: '', time: '' })} className="text-[11px] font-black text-white flex items-center gap-1 jelly-button px-3 py-1.5 rounded-full shadow-md shadow-sky-200 active:scale-95 transition-all whitespace-nowrap">
+                      <CalendarDays size={11} /> 체험일 설정
                     </button>
-                    <button onClick={() => setNotePopupId(item.id)} className={`text-[11px] font-black flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm active:scale-95 transition-all whitespace-nowrap ${item.experienceNote ? 'bg-violet-500 text-white shadow-violet-200' : 'bg-violet-100 text-violet-500'}`}>
-                      <PenTool size={11} /> {item.experienceNote ? '메모 보기' : '체험 메모'}
-                    </button>
-                  </div>
+                  )}
+                </div>
+                {/* 5행: 일정공유 / 신청문구 / 메모 */}
+                <div className="flex gap-1.5" data-no-image="true">
+                  <button onClick={() => saveCardAsImage(`share_${item.id}`)} className="text-[11px] font-black text-sky-600 flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm bg-sky-50 active:scale-95 transition-all whitespace-nowrap">
+                    <Download size={11} /> 일정 공유
+                  </button>
+                  <button onClick={() => setShowTemplatePickerId(item.id)} className="text-[11px] font-black text-emerald-600 flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm bg-emerald-50 active:scale-95 transition-all whitespace-nowrap">
+                    <FileText size={11} /> 신청문구
+                  </button>
+                  <button onClick={() => setNotePopupId(item.id)} className={`text-[11px] font-black flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm active:scale-95 transition-all whitespace-nowrap ${item.experienceNote ? 'bg-violet-500 text-white shadow-violet-200' : 'bg-violet-100 text-violet-500'}`}>
+                    <PenTool size={11} /> {item.experienceNote ? '메모 보기' : '체험 메모'}
+                  </button>
                 </div>
               </div>
 
