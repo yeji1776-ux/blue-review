@@ -845,11 +845,17 @@ const BloggerMasterApp = () => {
     const card = imageCardRefs.current[id];
     if (!card) return;
     try {
+      // 캡처를 위해 화면 안으로 이동
+      const origStyle = card.style.cssText;
+      card.style.cssText = 'position:fixed;left:0;top:0;z-index:9999;opacity:0;pointer-events:none;';
+      await new Promise(r => setTimeout(r, 50));
       const dataUrl = await domToPng(card, {
         scale: 2,
         backgroundColor: '#ffffff',
         filter: (node) => node.dataset?.noImage !== 'true',
       });
+      // 원래 위치로 복원
+      card.style.cssText = origStyle;
       const link = document.createElement('a');
       link.download = `체험단_${id}.png`;
       link.href = dataUrl;
@@ -859,6 +865,9 @@ const BloggerMasterApp = () => {
     } catch (err) {
       console.error('이미지 저장 실패:', err);
       alert('이미지 저장에 실패했습니다.');
+      // 실패 시에도 복원
+      const card2 = imageCardRefs.current[id];
+      if (card2) card2.style.cssText = '';
     }
   };
 
