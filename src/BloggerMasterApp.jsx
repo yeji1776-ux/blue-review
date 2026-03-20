@@ -1601,15 +1601,15 @@ ${text}`
             <div className="grid grid-cols-2 gap-3 items-start">
               {/* 신청 문구 */}
               <section className="jelly-card p-4">
-                <button onClick={() => setHomeTemplatesOpen(o => !o)} className="w-full flex items-center justify-between mb-3">
+                <div role="button" tabIndex={0} onClick={() => setHomeTemplatesOpen(o => !o)} className="w-full flex items-center justify-between mb-3 cursor-pointer select-none">
                   <h3 className="text-[10px] font-black text-slate-500 uppercase">신청 문구</h3>
                   <div className="flex items-center gap-1.5">
-                    <button onClick={(e) => { e.stopPropagation(); addTemplate(); }} className="flex items-center gap-1 text-[10px] font-bold text-sky-500 active:scale-95 transition-all">
+                    <button onClick={(e) => { e.stopPropagation(); addTemplate(); }} className="flex items-center gap-1 text-[10px] font-bold text-sky-500 active:scale-95 transition-all cursor-pointer">
                       <Plus size={12} /> 추가
                     </button>
                     <ChevronRight size={13} className={`text-slate-500 transition-transform ${homeTemplatesOpen ? 'rotate-90' : ''}`} />
                   </div>
-                </button>
+                </div>
                 {homeTemplatesOpen && <div className="space-y-2">
                   <DndContext sensors={dndSensors} collisionDetection={closestCenter}
                     onDragEnd={({ active, over }) => {
@@ -2816,7 +2816,7 @@ ${text}`
               {!isEditing && <><div className="space-y-2">
                 {item.address && (
                   <div className="flex items-start gap-2">
-                    <a href={`https://map.naver.com/v5/search/${encodeURIComponent(item.title)}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-start gap-3 text-xs text-slate-500 bg-sky-50 p-3 rounded-2xl active:bg-sky-100 transition-all">
+                    <a href={item.placeUrl || `https://map.naver.com/v5/search/${encodeURIComponent((item.address ? item.address + ' ' : '') + item.title)}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-start gap-3 text-xs text-slate-500 bg-sky-50 p-3 rounded-2xl active:bg-sky-100 transition-all">
                       <MapPin size={14} className="text-sky-400 shrink-0 mt-0.5" /> <span className="break-words line-clamp-2">{item.address}</span>
                       <ExternalLink size={12} className="text-sky-300 shrink-0 ml-auto mt-0.5" />
                     </a>
@@ -3092,7 +3092,7 @@ ${text}`
                       <div className="flex flex-col gap-2 p-5 bg-slate-50/50">
                         <span className="text-[11px] font-bold text-slate-400 flex items-center gap-2"><Globe size={14} /> 네이버 플레이스</span>
                         <span className="text-[11px] font-bold text-slate-500 break-all leading-relaxed">
-                          {item.placeUrl || `https://map.naver.com/v5/search/${encodeURIComponent(item.title || '')}`}
+                          {item.placeUrl || `https://map.naver.com/v5/search/${encodeURIComponent((item.address ? item.address + ' ' : '') + (item.title || ''))}`}
                         </span>
                       </div>
                     </div>
