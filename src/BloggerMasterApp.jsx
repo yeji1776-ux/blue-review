@@ -1698,6 +1698,13 @@ ${text}`
                   if (!brandGroups[brand]) brandGroups[brand] = [];
                   brandGroups[brand].push(item);
                 });
+                // 각 브랜드 그룹 내에서 visitDate 있는 건 날짜순, 없는 건 맨 아래
+                Object.values(brandGroups).forEach(arr => arr.sort((a, b) => {
+                  if (a.visitDate && b.visitDate) return a.visitDate.localeCompare(b.visitDate);
+                  if (a.visitDate && !b.visitDate) return -1;
+                  if (!a.visitDate && b.visitDate) return 1;
+                  return 0;
+                }));
                 const brandNames = Object.keys(brandGroups);
                 const brandColors = {
                   '리뷰노트': { bg: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-600', badge: 'bg-teal-100 text-teal-600', dot: 'bg-teal-400' },
