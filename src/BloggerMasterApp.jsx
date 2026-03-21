@@ -1646,15 +1646,15 @@ ${text}`
 
               {/* 공정위 문구 */}
               <section className="jelly-card p-4">
-                <button onClick={() => setHomeFtcOpen(o => !o)} className="w-full flex items-center justify-between mb-3">
+                <div role="button" tabIndex={0} onClick={() => setHomeFtcOpen(o => !o)} className="w-full flex items-center justify-between mb-3 cursor-pointer select-none">
                   <h3 className="text-[10px] font-black text-slate-500 uppercase">공정위 문구</h3>
                   <div className="flex items-center gap-1.5">
-                    <button onClick={(e) => { e.stopPropagation(); addFtcTemplate(); }} className="flex items-center gap-1 text-[10px] font-bold text-orange-500 active:scale-95 transition-all">
+                    <button onClick={(e) => { e.stopPropagation(); addFtcTemplate(); }} className="flex items-center gap-1 text-[10px] font-bold text-orange-500 active:scale-95 transition-all cursor-pointer">
                       <Plus size={12} /> 추가
                     </button>
                     <ChevronRight size={13} className={`text-slate-500 transition-transform ${homeFtcOpen ? 'rotate-90' : ''}`} />
                   </div>
-                </button>
+                </div>
                 {homeFtcOpen && <div className="space-y-2">
                   {ftcTemplates.slice(0, 3).map((t, idx) => {
                     const colors = [
@@ -3089,12 +3089,6 @@ ${text}`
                         <span className="text-[13px] font-black text-slate-800 break-keep leading-relaxed">{item.address || '주소 정보 없음'}</span>
                       </div>
 
-                      <div className="flex flex-col gap-2 p-5 bg-slate-50/50">
-                        <span className="text-[11px] font-bold text-slate-400 flex items-center gap-2"><Globe size={14} /> 네이버 플레이스</span>
-                        <span className="text-[11px] font-bold text-slate-500 break-all leading-relaxed">
-                          {item.placeUrl || `https://map.naver.com/v5/search/${encodeURIComponent((item.address ? item.address + ' ' : '') + (item.title || ''))}`}
-                        </span>
-                      </div>
                     </div>
                   </div>
                 </div>
