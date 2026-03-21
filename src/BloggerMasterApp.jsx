@@ -3094,10 +3094,7 @@ ${text}`
                   >
                     {/* Main Shareable Card */}
                     <div className="relative w-full max-w-[380px] aspect-[4/6] glass-card rounded-card flex flex-col overflow-hidden px-10 pt-10 pb-16">
-                      {/* Decorative Ghost Heart (App Favicon) */}
-                      <div className="absolute -top-12 -right-12 opacity-[0.06] pointer-events-none select-none">
-                        <img crossOrigin="anonymous" alt="Decorative Background" className="w-80 h-80 object-contain" src="/favicon.png" />
-                      </div>
+
                       
                       {/* Header */}
                       <div className="relative z-10 flex items-center gap-3 mb-10">
