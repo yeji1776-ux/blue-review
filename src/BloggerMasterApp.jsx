@@ -1587,34 +1587,30 @@ ${text}`
                 </div>
               </button>
               {homeQuickCopyOpen && (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {[
-                      { key: 'blogUrl',     label: '블로그',     value: profile.blogUrl,     icon: <Globe size={14} />,     bg: 'bg-sky-50 text-sky-500' },
-                      { key: 'blogClipUrl', label: '클립',       value: profile.blogClipId,  icon: <PenTool size={14} />,   bg: 'bg-teal-50 text-teal-500' },
-                      { key: 'instaId',     label: '인스타',     value: profile.instaId,     icon: <Instagram size={14} />, bg: 'bg-pink-50 text-pink-500' },
-                      { key: 'reelsUrl',    label: '릴스',       value: profile.reelsUrl,    icon: <Eye size={14} />,       bg: 'bg-violet-50 text-violet-500' },
-                      { key: 'youtubeUrl',  label: '유튜브',     value: profile.youtubeUrl,  icon: <Youtube size={14} />,   bg: 'bg-rose-50 text-rose-500' },
-                      { key: 'email',       label: '이메일',     value: profile.email,       icon: <Mail size={14} />,      bg: 'bg-emerald-50 text-emerald-500' },
+                      { key: 'blogUrl',     label: '블로그',     value: profile.blogUrl,     icon: <Globe size={12} />,     bg: 'bg-sky-50 text-sky-500' },
+                      { key: 'blogClipUrl', label: '클립',       value: profile.blogClipId,  icon: <PenTool size={12} />,   bg: 'bg-teal-50 text-teal-500' },
+                      { key: 'instaId',     label: '인스타',     value: profile.instaId,     icon: <Instagram size={12} />, bg: 'bg-pink-50 text-pink-500' },
+                      { key: 'reelsUrl',    label: '릴스',       value: profile.reelsUrl,    icon: <Eye size={12} />,       bg: 'bg-violet-50 text-violet-500' },
+                      { key: 'youtubeUrl',  label: '유튜브',     value: profile.youtubeUrl,  icon: <Youtube size={12} />,   bg: 'bg-rose-50 text-rose-500' },
+                      { key: 'email',       label: '이메일',     value: profile.email,       icon: <Mail size={12} />,      bg: 'bg-emerald-50 text-emerald-500' },
                     ].filter(({ key }) => profile.enabledPlatforms?.[key]).map(({ label, value, icon, bg }) => (
-                      <button key={label} onClick={() => copyWithCheck(value, label)} className="flex flex-col items-center gap-1 sm:gap-1.5 py-2 sm:py-3 rounded-xl sm:rounded-2xl active:bg-sky-50 transition-all">
-                        <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${bg}`}>{icon}</div>
-                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-600">{label}</span>
+                      <button key={label} onClick={() => copyWithCheck(value, label)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold active:scale-95 transition-all ${bg}`}>
+                        {icon} {label}
                       </button>
                     ))}
                   </div>
                   {/* 공정위 URL 브랜드별 복사 */}
                   {profile.brandFtcUrls && Object.entries(profile.brandFtcUrls).some(([, v]) => v) && (
-                    <div>
-                      <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest mb-2">공정위 URL</p>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {Object.entries(profile.brandFtcUrls || {}).filter(([, v]) => v).map(([brand, url]) => (
-                          <button key={brand} onClick={() => copyWithCheck(url, `${brand} 공정위`)} className="flex flex-col items-center gap-1 py-2 rounded-xl active:bg-orange-50 transition-all">
-                            <div className="p-1.5 rounded-lg bg-orange-50 text-orange-500"><Copy size={14} /></div>
-                            <span className="text-[9px] font-bold text-slate-600">{brand}</span>
-                          </button>
-                        ))}
-                      </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[9px] font-black text-orange-400">공정위</span>
+                      {Object.entries(profile.brandFtcUrls || {}).filter(([, v]) => v).map(([brand, url]) => (
+                        <button key={brand} onClick={() => copyWithCheck(url, `${brand} 공정위`)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-500 active:scale-95 transition-all">
+                          <Copy size={10} /> {brand}
+                        </button>
+                      ))}
                     </div>
                   )}
                 </div>
