@@ -3090,75 +3090,88 @@ ${text}`
                   </button>
                   <div
                     ref={(el) => (imageCardRefs.current[`share_${item.id}`] = el)}
-                    className="absolute left-[-9999px] top-0 w-[420px] bg-slate-100 p-8 flex flex-col"
+                    className="absolute left-[-9999px] top-0 w-[460px] bg-[#D1EFFF] p-10 flex flex-col"
                     style={{ fontFamily: "'Inter', 'Pretendard', sans-serif" }}
                   >
-                    <div className="flex flex-col drop-shadow-xl">
-                      {/* 상단 티켓 */}
-                      <div className="bg-white rounded-t-3xl px-8 pt-10 pb-6 flex flex-col items-center">
-                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center p-3 mb-4">
-                          <img src="/favicon.png" alt="logo" className="w-full h-full object-contain drop-shadow-sm mix-blend-multiply" />
-                        </div>
-                        <span className="px-3 py-1 bg-sky-50 text-sky-500 rounded-full text-[10px] font-black tracking-widest uppercase mb-3">
-                          {item.type || '맛집'}
-                        </span>
-                        <h2 className="text-3xl font-black text-slate-900 break-keep leading-snug text-center">{item.title}</h2>
-                      </div>
-                      
-                      {/* 점선 구분선 */}
-                      <div className="h-8 bg-white relative flex items-center justify-center">
-                        <div className="absolute left-[-16px] w-8 h-8 bg-slate-100 rounded-full"></div>
-                        <div className="absolute right-[-16px] w-8 h-8 bg-slate-100 rounded-full"></div>
-                        <div className="w-full mx-6 border-t-2 border-dashed border-slate-200"></div>
+                    <div className="bg-white rounded-[3rem] p-10 shadow-2xl flex flex-col relative overflow-hidden min-h-[640px]">
+                      {/* 1. Watermark */}
+                      <div className="absolute top-32 right-[-2rem] text-[9rem] font-serif italic text-slate-900 opacity-[0.03] select-none pointer-events-none">
+                        Review
                       </div>
 
-                      {/* 하단 내용 */}
-                      <div className="bg-white rounded-b-3xl px-8 pt-6 pb-10 flex flex-col gap-6 text-left">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 shrink-0 bg-sky-50 text-sky-500 rounded-2xl flex items-center justify-center">
-                            <Calendar size={20} />
+                      {/* 2. Header Section */}
+                      <div className="flex items-center gap-3 mb-10 z-10">
+                        <div className="w-12 h-12 rounded-full border border-[#F0F7F9] flex items-center justify-center p-2.5 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
+                          <img src="/favicon.png" alt="logo" className="w-full h-full object-contain mix-blend-multiply" />
+                        </div>
+                        <div className="w-[1px] h-4 bg-[#E5E7EB]"></div>
+                        <span className="text-[10px] tracking-[0.2em] text-[#A2B9C2] font-extrabold uppercase mt-0.5">
+                          Curated Invitation
+                        </span>
+                      </div>
+
+                      {/* 3. Hero Title Section */}
+                      <div className="flex flex-col gap-1 mb-12 z-10">
+                        <span className="text-[11px] font-bold text-[#5B92A0] uppercase tracking-widest mb-1">
+                          {item.type || 'SCHEDULE'}
+                        </span>
+                        <h2 className="text-[2.5rem] font-black text-[#1A2B3D] leading-[1.1] break-keep tracking-tight">
+                          {item.title}
+                        </h2>
+                        <h3 className="text-2xl font-bold text-[#A7C2C9] leading-[1.1] tracking-tight mt-1">
+                          {item.brand && item.brand !== '기타' ? item.brand : 'Blue Review'}
+                        </h3>
+                      </div>
+
+                      {/* 4. Information Grid */}
+                      <div className="flex flex-col gap-8 z-10">
+                        {/* Date */}
+                        <div className="flex items-start gap-5">
+                          <div className="mt-1 text-[#5B92A0]">
+                            <Calendar size={22} strokeWidth={2.5} />
                           </div>
-                          <div>
-                            <p className="text-[11px] font-black text-slate-400 mb-0.5">방문 일자</p>
-                            <p className="text-[15px] font-black text-slate-800">{item.visitDate || '미정'}</p>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[10px] text-[#A7C2C9] font-black tracking-[0.15em] uppercase">Date</span>
+                            <span className="text-xl font-bold text-[#1A2B3D] tracking-tight">{item.visitDate || '미정'}</span>
                           </div>
                         </div>
-                        
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 shrink-0 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center">
-                            <Clock size={20} />
+
+                        {/* Time */}
+                        <div className="flex items-start gap-5">
+                          <div className="mt-1 text-[#5B92A0]">
+                            <Clock size={22} strokeWidth={2.5} />
                           </div>
-                          <div>
-                            <p className="text-[11px] font-black text-slate-400 mb-0.5">방문 시간</p>
-                            <p className="text-[15px] font-black text-slate-800">{item.visitSetTime || item.visitTime || '미정'}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 shrink-0 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mt-1">
-                            <MapPin size={20} />
-                          </div>
-                          <div className="flex-1 mt-0.5">
-                            <p className="text-[11px] font-black text-slate-400 mb-0.5">장소</p>
-                            <p className="text-[13px] font-black text-slate-800 break-keep leading-relaxed">{item.address || '주소 정보 없음'}</p>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[10px] text-[#A7C2C9] font-black tracking-[0.15em] uppercase">Time</span>
+                            <span className="text-xl font-bold text-[#1A2B3D] tracking-tight">{item.visitSetTime || item.visitTime || '미정'}</span>
                           </div>
                         </div>
-                        
-                        <div className="flex items-start gap-4">
-                          <div className="w-12 h-12 shrink-0 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center mt-1">
-                            <Globe size={20} />
+
+                        {/* Location */}
+                        <div className="flex items-start gap-5">
+                          <div className="mt-1 w-[22px] h-[22px] rounded-full bg-[#5B92A0]/10 flex items-center justify-center text-[#5B92A0]">
+                            <MapPin size={12} strokeWidth={3} />
                           </div>
-                          <div className="flex-1 overflow-hidden mt-0.5">
-                            <p className="text-[11px] font-black text-slate-400 mb-0.5">네이버 플레이스</p>
-                            <p className="text-[11px] font-bold text-slate-500 break-all leading-relaxed">
+                          <div className="flex flex-col gap-0.5 flex-1 mt-0.5">
+                            <span className="text-[10px] text-[#A7C2C9] font-black tracking-[0.15em] uppercase">Location</span>
+                            <span className="text-[15px] font-bold text-[#4F6270] break-keep leading-snug mt-0.5">{item.address || '주소 정보 없음'}</span>
+                          </div>
+                        </div>
+
+                        {/* Place URL */}
+                        <div className="flex items-start gap-5">
+                          <div className="mt-1 text-[#5B92A0]">
+                            <Globe size={22} strokeWidth={2.5} />
+                          </div>
+                          <div className="flex flex-col gap-0.5 flex-1">
+                            <span className="text-[10px] text-[#A7C2C9] font-black tracking-[0.15em] uppercase">Place Info</span>
+                            <span className="text-[12px] font-bold text-[#4F6270] break-all leading-snug mt-0.5">
                               {item.placeUrl || `https://map.naver.com/v5/search/${encodeURIComponent(item.title || '')}`}
-                            </p>
+                            </span>
                           </div>
                         </div>
                       </div>
                     </div>
-                    
-                    <p className="text-center text-[10px] font-black text-slate-400 tracking-wider mt-6 uppercase">Blue Review</p>
                   </div>
                 </div>
               )}
