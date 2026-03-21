@@ -3101,9 +3101,7 @@ ${text}`
                       
                       {/* Header */}
                       <div className="relative z-10 flex items-center gap-3 mb-10">
-                        <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-sm bg-white/60 p-1 flex items-center justify-center">
-                          <img crossOrigin="anonymous" alt="Logo" className="w-full h-full object-contain rounded-xl" src="/favicon.png" />
-                        </div>
+                        <img crossOrigin="anonymous" alt="Logo" className="w-10 h-10 object-contain drop-shadow-sm" src="/favicon.png" />
                         <div className="h-4 w-px bg-primary/20"></div>
                         <span className="text-[10px] font-bold tracking-[0.2em] text-primary/70 uppercase">Blue Review</span>
                       </div>
