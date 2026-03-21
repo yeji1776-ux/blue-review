@@ -861,7 +861,7 @@ const BloggerMasterApp = () => {
       const file = new File([blob], `체험단_${id}.png`, { type: 'image/png' });
       // 모바일: navigator.share, PC: 다운로드
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: '일정 공유' });
+        await navigator.share({ files: [file] });
       } else {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
