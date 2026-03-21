@@ -3090,7 +3090,7 @@ ${text}`
                   </button>
                   <div
                     ref={(el) => (imageCardRefs.current[`share_${item.id}`] = el)}
-                    className="absolute left-[-9999px] top-0 w-[460px] mesh-bg flex items-center justify-center p-8 font-body text-on-surface antialiased overflow-hidden"
+                    className="absolute left-[-9999px] top-0 w-[480px] mesh-bg flex items-center justify-center p-12 font-body text-on-surface antialiased"
                   >
                     {/* Main Shareable Card */}
                     <div className="relative w-full max-w-[380px] aspect-[4/6] glass-card rounded-card flex flex-col overflow-hidden px-10 pt-10 pb-16">
@@ -3122,29 +3122,29 @@ ${text}`
                         {/* Date */}
                         <div className="flex items-start gap-4">
                           <div className="mt-1 w-6 h-6 flex items-center justify-center text-primary/80">
-                            <span className="material-symbols-outlined text-2xl">calendar_today</span>
+                            <Calendar size={24} strokeWidth={2.5} />
                           </div>
                           <div>
                             <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Date</p>
-                            <p className="font-headline font-bold text-xl text-slate-800">{item.visitDate || '미정'}</p>
+                            <p className="font-headline font-bold text-xl text-slate-800 tracking-tight">{item.visitDate || '미정'}</p>
                           </div>
                         </div>
                         
                         {/* Time */}
                         <div className="flex items-start gap-4">
                           <div className="mt-1 w-6 h-6 flex items-center justify-center text-primary/80">
-                            <span className="material-symbols-outlined text-2xl">schedule</span>
+                            <Clock size={24} strokeWidth={2.5} />
                           </div>
                           <div>
                             <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Time</p>
-                            <p className="font-headline font-bold text-xl text-slate-800">{item.visitSetTime || item.visitTime || '미정'}</p>
+                            <p className="font-headline font-bold text-xl text-slate-800 tracking-tight">{item.visitSetTime || item.visitTime || '미정'}</p>
                           </div>
                         </div>
                         
                         {/* Location */}
                         <div className="flex items-start gap-4">
                           <div className="mt-1 w-6 h-6 flex items-center justify-center text-primary/80">
-                            <span className="material-symbols-outlined text-2xl">location_on</span>
+                            <MapPin size={24} strokeWidth={2.5} />
                           </div>
                           <div className="flex-1">
                             <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Location</p>
