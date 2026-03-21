@@ -3090,87 +3090,83 @@ ${text}`
                   </button>
                   <div
                     ref={(el) => (imageCardRefs.current[`share_${item.id}`] = el)}
-                    className="absolute left-[-9999px] top-0 w-[460px] bg-[#D1EFFF] p-10 flex flex-col"
-                    style={{ fontFamily: "'Inter', 'Pretendard', sans-serif" }}
+                    className="absolute left-[-9999px] top-0 w-[460px] mesh-bg flex items-center justify-center p-8 font-body text-on-surface antialiased overflow-hidden"
                   >
-                    <div className="bg-white rounded-[3rem] p-10 shadow-2xl flex flex-col relative overflow-hidden min-h-[640px]">
-                      {/* 1. Watermark */}
-                      <div className="absolute top-32 right-[-2rem] text-[9rem] font-serif italic text-slate-900 opacity-[0.03] select-none pointer-events-none">
-                        Review
+                    {/* Main Shareable Card */}
+                    <div className="relative w-full max-w-[380px] aspect-[4/6] glass-card rounded-card flex flex-col overflow-hidden px-10 pt-10 pb-16">
+                      {/* Decorative Ghost Heart (App Favicon) */}
+                      <div className="absolute -top-12 -right-12 opacity-[0.06] pointer-events-none select-none">
+                        <img crossOrigin="anonymous" alt="Decorative Background" className="w-80 h-80 object-contain" src="/favicon.png" />
                       </div>
-
-                      {/* 2. Header Section */}
-                      <div className="flex items-center gap-3 mb-10 z-10">
-                        <div className="w-12 h-12 rounded-full border border-[#F0F7F9] flex items-center justify-center p-2.5 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
-                          <img src="/favicon.png" alt="logo" className="w-full h-full object-contain mix-blend-multiply" />
+                      
+                      {/* Header */}
+                      <div className="relative z-10 flex items-center gap-3 mb-10">
+                        <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-sm bg-white/60 p-1 flex items-center justify-center">
+                          <img crossOrigin="anonymous" alt="Logo" className="w-full h-full object-contain rounded-xl" src="/favicon.png" />
                         </div>
-                        <div className="w-[1px] h-4 bg-[#E5E7EB]"></div>
-                        <span className="text-[10px] tracking-[0.2em] text-[#A2B9C2] font-extrabold uppercase mt-0.5">
-                          Curated Invitation
-                        </span>
+                        <div className="h-4 w-px bg-primary/20"></div>
+                        <span className="text-[10px] font-bold tracking-[0.2em] text-primary/70 uppercase">Blue Review</span>
                       </div>
-
-                      {/* 3. Hero Title Section */}
-                      <div className="flex flex-col gap-1 mb-12 z-10">
-                        <span className="text-[11px] font-bold text-[#5B92A0] uppercase tracking-widest mb-1">
-                          {item.type || 'SCHEDULE'}
-                        </span>
-                        <h2 className="text-[2.5rem] font-black text-[#1A2B3D] leading-[1.1] break-keep tracking-tight">
-                          {item.title}
-                        </h2>
-                        <h3 className="text-2xl font-bold text-[#A7C2C9] leading-[1.1] tracking-tight mt-1">
-                          {item.brand && item.brand !== '기타' ? item.brand : 'Blue Review'}
-                        </h3>
+                      
+                      {/* Title Section */}
+                      <div className="relative z-10 mb-12">
+                        <p className="text-[11px] font-extrabold text-primary tracking-widest uppercase mb-3">{item.type || 'Schedule'}</p>
+                        <h1 className="font-headline text-[2.75rem] font-extrabold text-slate-900 leading-[1.1] tracking-tight">
+                          {item.title}<br/>
+                          <span className="text-primary/40">{item.brand && item.brand !== '기타' ? item.brand : ''}</span>
+                        </h1>
                       </div>
-
-                      {/* 4. Information Grid */}
-                      <div className="flex flex-col gap-8 z-10">
+                      
+                      {/* Information List (Stacked Vertically) */}
+                      <div className="relative z-10 flex-grow space-y-4">
                         {/* Date */}
-                        <div className="flex items-start gap-5">
-                          <div className="mt-1 text-[#5B92A0]">
-                            <Calendar size={22} strokeWidth={2.5} />
+                        <div className="flex items-start gap-4">
+                          <div className="mt-1 w-6 h-6 flex items-center justify-center text-primary/80">
+                            <span className="material-symbols-outlined text-2xl">calendar_today</span>
                           </div>
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-[10px] text-[#A7C2C9] font-black tracking-[0.15em] uppercase">Date</span>
-                            <span className="text-xl font-bold text-[#1A2B3D] tracking-tight">{item.visitDate || '미정'}</span>
+                          <div>
+                            <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Date</p>
+                            <p className="font-headline font-bold text-xl text-slate-800">{item.visitDate || '미정'}</p>
                           </div>
                         </div>
-
+                        
                         {/* Time */}
-                        <div className="flex items-start gap-5">
-                          <div className="mt-1 text-[#5B92A0]">
-                            <Clock size={22} strokeWidth={2.5} />
+                        <div className="flex items-start gap-4">
+                          <div className="mt-1 w-6 h-6 flex items-center justify-center text-primary/80">
+                            <span className="material-symbols-outlined text-2xl">schedule</span>
                           </div>
-                          <div className="flex flex-col gap-0.5">
-                            <span className="text-[10px] text-[#A7C2C9] font-black tracking-[0.15em] uppercase">Time</span>
-                            <span className="text-xl font-bold text-[#1A2B3D] tracking-tight">{item.visitSetTime || item.visitTime || '미정'}</span>
+                          <div>
+                            <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Time</p>
+                            <p className="font-headline font-bold text-xl text-slate-800">{item.visitSetTime || item.visitTime || '미정'}</p>
                           </div>
                         </div>
-
+                        
                         {/* Location */}
-                        <div className="flex items-start gap-5">
-                          <div className="mt-1 w-[22px] h-[22px] rounded-full bg-[#5B92A0]/10 flex items-center justify-center text-[#5B92A0]">
-                            <MapPin size={12} strokeWidth={3} />
+                        <div className="flex items-start gap-4">
+                          <div className="mt-1 w-6 h-6 flex items-center justify-center text-primary/80">
+                            <span className="material-symbols-outlined text-2xl">location_on</span>
                           </div>
-                          <div className="flex flex-col gap-0.5 flex-1 mt-0.5">
-                            <span className="text-[10px] text-[#A7C2C9] font-black tracking-[0.15em] uppercase">Location</span>
-                            <span className="text-[15px] font-bold text-[#4F6270] break-keep leading-snug mt-0.5">{item.address || '주소 정보 없음'}</span>
-                          </div>
-                        </div>
-
-                        {/* Place URL */}
-                        <div className="flex items-start gap-5">
-                          <div className="mt-1 text-[#5B92A0]">
-                            <Globe size={22} strokeWidth={2.5} />
-                          </div>
-                          <div className="flex flex-col gap-0.5 flex-1">
-                            <span className="text-[10px] text-[#A7C2C9] font-black tracking-[0.15em] uppercase">Place Info</span>
-                            <span className="text-[12px] font-bold text-[#4F6270] break-all leading-snug mt-0.5">
-                              {item.placeUrl || `https://map.naver.com/v5/search/${encodeURIComponent(item.title || '')}`}
-                            </span>
+                          <div className="flex-1">
+                            <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Location</p>
+                            <p className="font-medium text-[14px] leading-relaxed text-slate-600 break-keep">
+                              {item.address || '주소 정보 없음'}
+                            </p>
                           </div>
                         </div>
                       </div>
+                      
+                      {/* Footer */}
+                      <div className="relative z-10 pt-8 border-t border-white/40 flex items-center justify-between mt-auto">
+                        <div className="flex gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary/30"></span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary/20"></span>
+                        </div>
+                        <span className="text-[9px] font-bold tracking-widest uppercase text-primary/50">Blue Review</span>
+                      </div>
+                      
+                      {/* Surface Highlight */}
+                      <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent pointer-events-none"></div>
                     </div>
                   </div>
                 </div>
