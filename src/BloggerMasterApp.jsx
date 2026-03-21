@@ -1587,21 +1587,36 @@ ${text}`
                 </div>
               </button>
               {homeQuickCopyOpen && (
-                <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2">
-                  {[
-                    { key: 'blogUrl',     label: '블로그',     value: profile.blogUrl,     icon: <Globe size={14} />,     bg: 'bg-sky-50 text-sky-500' },
-                    { key: 'blogClipUrl', label: '클립',       value: profile.blogClipId,  icon: <PenTool size={14} />,   bg: 'bg-teal-50 text-teal-500' },
-                    { key: 'instaId',     label: '인스타',     value: profile.instaId,     icon: <Instagram size={14} />, bg: 'bg-pink-50 text-pink-500' },
-                    { key: 'reelsUrl',    label: '릴스',       value: profile.reelsUrl,    icon: <Eye size={14} />,       bg: 'bg-violet-50 text-violet-500' },
-                    { key: 'facebookUrl', label: '페이스북',   value: profile.facebookUrl, icon: <Globe size={14} />,     bg: 'bg-blue-50 text-blue-500' },
-                    { key: 'youtubeUrl',  label: '유튜브',     value: profile.youtubeUrl,  icon: <Youtube size={14} />,   bg: 'bg-rose-50 text-rose-500' },
-                    { key: 'email',       label: '이메일',     value: profile.email,       icon: <Mail size={14} />,      bg: 'bg-emerald-50 text-emerald-500' },
-                  ].filter(({ key }) => profile.enabledPlatforms?.[key]).map(({ label, value, icon, bg }) => (
-                    <button key={label} onClick={() => copyWithCheck(value, label)} className="flex flex-col items-center gap-1 sm:gap-1.5 py-2 sm:py-3 rounded-xl sm:rounded-2xl active:bg-sky-50 transition-all">
-                      <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${bg}`}>{icon}</div>
-                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-600">{label}</span>
-                    </button>
-                  ))}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 sm:gap-2">
+                    {[
+                      { key: 'blogUrl',     label: '블로그',     value: profile.blogUrl,     icon: <Globe size={14} />,     bg: 'bg-sky-50 text-sky-500' },
+                      { key: 'blogClipUrl', label: '클립',       value: profile.blogClipId,  icon: <PenTool size={14} />,   bg: 'bg-teal-50 text-teal-500' },
+                      { key: 'instaId',     label: '인스타',     value: profile.instaId,     icon: <Instagram size={14} />, bg: 'bg-pink-50 text-pink-500' },
+                      { key: 'reelsUrl',    label: '릴스',       value: profile.reelsUrl,    icon: <Eye size={14} />,       bg: 'bg-violet-50 text-violet-500' },
+                      { key: 'youtubeUrl',  label: '유튜브',     value: profile.youtubeUrl,  icon: <Youtube size={14} />,   bg: 'bg-rose-50 text-rose-500' },
+                      { key: 'email',       label: '이메일',     value: profile.email,       icon: <Mail size={14} />,      bg: 'bg-emerald-50 text-emerald-500' },
+                    ].filter(({ key }) => profile.enabledPlatforms?.[key]).map(({ label, value, icon, bg }) => (
+                      <button key={label} onClick={() => copyWithCheck(value, label)} className="flex flex-col items-center gap-1 sm:gap-1.5 py-2 sm:py-3 rounded-xl sm:rounded-2xl active:bg-sky-50 transition-all">
+                        <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl ${bg}`}>{icon}</div>
+                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-600">{label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  {/* 공정위 URL 브랜드별 복사 */}
+                  {profile.brandFtcUrls && Object.entries(profile.brandFtcUrls).some(([, v]) => v) && (
+                    <div>
+                      <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest mb-2">공정위 URL</p>
+                      <div className="grid grid-cols-3 gap-1.5">
+                        {Object.entries(profile.brandFtcUrls || {}).filter(([, v]) => v).map(([brand, url]) => (
+                          <button key={brand} onClick={() => copyWithCheck(url, `${brand} 공정위`)} className="flex flex-col items-center gap-1 py-2 rounded-xl active:bg-orange-50 transition-all">
+                            <div className="p-1.5 rounded-lg bg-orange-50 text-orange-500"><Copy size={14} /></div>
+                            <span className="text-[9px] font-bold text-slate-600">{brand}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </section>
@@ -3796,6 +3811,26 @@ ${text}`
                       onChange={(e) => updateProfile('instaId', e.target.value)} />
                   </div>
                 )}
+              </div>
+
+              {/* 브랜드별 공정위 URL */}
+              <div className="jelly-card p-4">
+                <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-3">
+                  <span className="text-orange-500"><Globe size={18} /></span>브랜드별 공정위 URL
+                </label>
+                <div className="space-y-2">
+                  {['리뷰노트', '강남맛집', '레뷰', '슈퍼멤버스', '디너의여왕', '리뷰플레이스'].map(brand => (
+                    <div key={brand} className="flex items-center gap-2">
+                      <span className="w-16 shrink-0 text-[10px] font-black text-orange-400">{brand}</span>
+                      <input
+                        className="flex-1 px-3 py-2 rounded-xl bg-orange-50/50 ring-1 ring-orange-100 focus:ring-2 focus:ring-orange-400 outline-none text-xs transition-all"
+                        placeholder="공정위 이미지 URL"
+                        value={(profile.brandFtcUrls || {})[brand] || ''}
+                        onChange={(e) => updateProfile('brandFtcUrls', { ...(profile.brandFtcUrls || {}), [brand]: e.target.value })}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <button onClick={saveProfile}
