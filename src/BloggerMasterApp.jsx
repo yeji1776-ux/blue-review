@@ -2773,8 +2773,8 @@ ${text}`
                     </button>
                   )}
                 </div>
-                {/* 5행: 일정공유 / 신청문구 / 메모 */}
-                <div className="flex gap-1.5" data-no-image="true">
+                {/* 5행: 일정공유 / 신청문구 / 메모 / 공정위 */}
+                <div className="flex flex-wrap gap-1.5" data-no-image="true">
                   <button onClick={() => saveCardAsImage(`share_${item.id}`)} className="text-[11px] font-black text-sky-600 flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm bg-sky-50 active:scale-95 transition-all whitespace-nowrap">
                     <Download size={11} /> 일정 공유
                   </button>
@@ -2784,6 +2784,11 @@ ${text}`
                   <button onClick={() => setNotePopupId(item.id)} className={`text-[11px] font-black flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm active:scale-95 transition-all whitespace-nowrap ${item.experienceNote ? 'bg-violet-500 text-white shadow-violet-200' : 'bg-violet-100 text-violet-500'}`}>
                     <PenTool size={11} /> {item.experienceNote ? '메모 보기' : '체험 메모'}
                   </button>
+                  {item.ftcImageUrl && (
+                    <button onClick={() => copyToClipboard(item.ftcImageUrl)} className="text-[11px] font-black text-orange-600 flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm bg-orange-50 active:scale-95 transition-all whitespace-nowrap">
+                      <Copy size={11} /> 공정위
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -3079,15 +3084,9 @@ ${text}`
                 </div>
               </>}
 
-              {/* 공유용 이미지 템플릿 & 공유 버튼 */}
+              {/* 공유용 이미지 템플릿 (숨김) */}
               {!isEditing && (
                 <div data-no-image="true" className="w-full">
-                  <button
-                    onClick={() => saveCardAsImage(`share_${item.id}`)}
-                    className="w-full bg-gradient-to-r from-sky-400 to-indigo-400 text-white shadow-lg shadow-sky-200/50 py-3.5 rounded-2xl font-black text-sm active:scale-95 transition-all flex items-center justify-center gap-2 mb-2"
-                  >
-                    <Download size={16} /> 동행자 일정 전송용 이미지 저장
-                  </button>
                   <div
                     ref={(el) => (imageCardRefs.current[`share_${item.id}`] = el)}
                     className="absolute left-[-9999px] top-0 w-[480px] mesh-bg flex items-center justify-center p-12 font-body text-on-surface antialiased"
