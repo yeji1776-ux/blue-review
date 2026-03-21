@@ -1536,7 +1536,16 @@ ${text}`
                       3일간 예정된 일정이 없어요 🎉
                     </div>
                   ) : days.map(({ date, label, day }) => {
-                    const tasks = schedules.filter(s => !s.isDone && (s.deadline === date || s.visitDate === date));
+                    const tasks = schedules.filter(s => !s.isDone && (s.deadline === date || s.visitDate === date))
+                      .sort((a, b) => {
+                        // 체험일이 오늘인 것 우선, 그 안에서 시간순
+                        const aVisit = a.visitDate === date ? 0 : 1;
+                        const bVisit = b.visitDate === date ? 0 : 1;
+                        if (aVisit !== bVisit) return aVisit - bVisit;
+                        const aTime = (a.visitSetTime || '99:99').replace(':', '');
+                        const bTime = (b.visitSetTime || '99:99').replace(':', '');
+                        return aTime.localeCompare(bTime);
+                      });
                     if (tasks.length === 0) return null;
                     const isToday = label === '오늘';
                     return (
@@ -1698,16 +1707,20 @@ ${text}`
                   if (!brandGroups[brand]) brandGroups[brand] = [];
                   brandGroups[brand].push(item);
                 });
-                // 각 브랜드 그룹 내에서: 체험일 있는 건 날짜순 → 체험일 없으면 마감일순 → 둘 다 없으면 맨 아래
+                // 각 브랜드 그룹 내에서: 체험일 있는 건 날짜+시간순 → 없으면 마감일순 → 둘 다 없으면 맨 아래
                 Object.values(brandGroups).forEach(arr => arr.sort((a, b) => {
                   const dateA = a.visitDate || '';
                   const dateB = b.visitDate || '';
-                  // 둘 다 체험일 있으면 체험일 순
-                  if (dateA && dateB) return dateA.localeCompare(dateB);
-                  // 체험일 있는 게 위로
+                  if (dateA && dateB) {
+                    const cmp = dateA.localeCompare(dateB);
+                    if (cmp !== 0) return cmp;
+                    // 같은 날이면 시간순
+                    const tA = (a.visitSetTime || '99:99').replace(':', '');
+                    const tB = (b.visitSetTime || '99:99').replace(':', '');
+                    return tA.localeCompare(tB);
+                  }
                   if (dateA && !dateB) return -1;
                   if (!dateA && dateB) return 1;
-                  // 둘 다 체험일 없으면 마감일 순
                   const dlA = a.deadline || '';
                   const dlB = b.deadline || '';
                   if (dlA && dlB) return dlA.localeCompare(dlB);
@@ -3077,36 +3090,75 @@ ${text}`
                   </button>
                   <div
                     ref={(el) => (imageCardRefs.current[`share_${item.id}`] = el)}
-                    className="absolute left-[-9999px] top-0 w-[420px] bg-white p-10 flex flex-col gap-10"
+                    className="absolute left-[-9999px] top-0 w-[420px] bg-slate-100 p-8 flex flex-col"
                     style={{ fontFamily: "'Inter', 'Pretendard', sans-serif" }}
                   >
-                    <div className="flex flex-col items-center justify-center gap-5 pt-2">
-                      <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center p-3 mb-2">
-                        <img src="/favicon.png" alt="logo" className="w-full h-full object-contain mix-blend-multiply" />
-                      </div>
-                      <div className="flex flex-col items-center gap-2">
-                        <span className="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-[10px] font-black tracking-widest uppercase">{item.type || '맛집'}</span>
-                        <h2 className="text-[26px] font-black text-slate-900 break-keep leading-snug text-center">{item.title}</h2>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-0 w-full rounded-2xl border border-slate-100 bg-white overflow-hidden">
-                      <div className="flex items-center justify-between p-5 border-b border-slate-100">
-                        <span className="text-[11px] font-bold text-slate-400 flex items-center gap-2"><Calendar size={14} /> 방문 일자</span>
-                        <span className="text-[13px] font-black text-slate-800">{item.visitDate || '미정'}</span>
+                    <div className="flex flex-col drop-shadow-xl">
+                      {/* 상단 티켓 */}
+                      <div className="bg-white rounded-t-3xl px-8 pt-10 pb-6 flex flex-col items-center">
+                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center p-3 mb-4">
+                          <img src="/favicon.png" alt="logo" className="w-full h-full object-contain drop-shadow-sm mix-blend-multiply" />
+                        </div>
+                        <span className="px-3 py-1 bg-sky-50 text-sky-500 rounded-full text-[10px] font-black tracking-widest uppercase mb-3">
+                          {item.type || '맛집'}
+                        </span>
+                        <h2 className="text-3xl font-black text-slate-900 break-keep leading-snug text-center">{item.title}</h2>
                       </div>
                       
-                      <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50">
-                        <span className="text-[11px] font-bold text-slate-400 flex items-center gap-2"><Clock size={14} /> 방문 시간</span>
-                        <span className="text-[13px] font-black text-slate-800">{item.visitSetTime || item.visitTime || '미정'}</span>
-                      </div>
-                      
-                      <div className="flex flex-col gap-2 p-5 border-b border-slate-100">
-                        <span className="text-[11px] font-bold text-slate-400 flex items-center gap-2"><MapPin size={14} /> 장소</span>
-                        <span className="text-[13px] font-black text-slate-800 break-keep leading-relaxed">{item.address || '주소 정보 없음'}</span>
+                      {/* 점선 구분선 */}
+                      <div className="h-8 bg-white relative flex items-center justify-center">
+                        <div className="absolute left-[-16px] w-8 h-8 bg-slate-100 rounded-full"></div>
+                        <div className="absolute right-[-16px] w-8 h-8 bg-slate-100 rounded-full"></div>
+                        <div className="w-full mx-6 border-t-2 border-dashed border-slate-200"></div>
                       </div>
 
+                      {/* 하단 내용 */}
+                      <div className="bg-white rounded-b-3xl px-8 pt-6 pb-10 flex flex-col gap-6 text-left">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 shrink-0 bg-sky-50 text-sky-500 rounded-2xl flex items-center justify-center">
+                            <Calendar size={20} />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-black text-slate-400 mb-0.5">방문 일자</p>
+                            <p className="text-[15px] font-black text-slate-800">{item.visitDate || '미정'}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 shrink-0 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center">
+                            <Clock size={20} />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-black text-slate-400 mb-0.5">방문 시간</p>
+                            <p className="text-[15px] font-black text-slate-800">{item.visitSetTime || item.visitTime || '미정'}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 shrink-0 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mt-1">
+                            <MapPin size={20} />
+                          </div>
+                          <div className="flex-1 mt-0.5">
+                            <p className="text-[11px] font-black text-slate-400 mb-0.5">장소</p>
+                            <p className="text-[13px] font-black text-slate-800 break-keep leading-relaxed">{item.address || '주소 정보 없음'}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 shrink-0 bg-emerald-50 text-emerald-500 rounded-2xl flex items-center justify-center mt-1">
+                            <Globe size={20} />
+                          </div>
+                          <div className="flex-1 overflow-hidden mt-0.5">
+                            <p className="text-[11px] font-black text-slate-400 mb-0.5">네이버 플레이스</p>
+                            <p className="text-[11px] font-bold text-slate-500 break-all leading-relaxed">
+                              {item.placeUrl || `https://map.naver.com/v5/search/${encodeURIComponent(item.title || '')}`}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                    
+                    <p className="text-center text-[10px] font-black text-slate-400 tracking-wider mt-6 uppercase">Blue Review</p>
                   </div>
                 </div>
               )}
