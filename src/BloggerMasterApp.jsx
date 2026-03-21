@@ -1698,11 +1698,21 @@ ${text}`
                   if (!brandGroups[brand]) brandGroups[brand] = [];
                   brandGroups[brand].push(item);
                 });
-                // 각 브랜드 그룹 내에서 visitDate 있는 건 날짜순, 없는 건 맨 아래
+                // 각 브랜드 그룹 내에서: 체험일 있는 건 날짜순 → 체험일 없으면 마감일순 → 둘 다 없으면 맨 아래
                 Object.values(brandGroups).forEach(arr => arr.sort((a, b) => {
-                  if (a.visitDate && b.visitDate) return a.visitDate.localeCompare(b.visitDate);
-                  if (a.visitDate && !b.visitDate) return -1;
-                  if (!a.visitDate && b.visitDate) return 1;
+                  const dateA = a.visitDate || '';
+                  const dateB = b.visitDate || '';
+                  // 둘 다 체험일 있으면 체험일 순
+                  if (dateA && dateB) return dateA.localeCompare(dateB);
+                  // 체험일 있는 게 위로
+                  if (dateA && !dateB) return -1;
+                  if (!dateA && dateB) return 1;
+                  // 둘 다 체험일 없으면 마감일 순
+                  const dlA = a.deadline || '';
+                  const dlB = b.deadline || '';
+                  if (dlA && dlB) return dlA.localeCompare(dlB);
+                  if (dlA && !dlB) return -1;
+                  if (!dlA && dlB) return 1;
                   return 0;
                 }));
                 const brandNames = Object.keys(brandGroups);
