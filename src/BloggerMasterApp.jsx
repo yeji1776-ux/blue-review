@@ -3762,52 +3762,42 @@ ${text}`
                 </div>
               </div>
 
-              {/* 입력 필드 */}
-              <div className="space-y-3">
-                <div className="jelly-card p-4">
-                  <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-2">
-                    <span className="text-sky-500"><User size={18} /></span>닉네임 / 이름
-                  </label>
-                  <input className="w-full px-4 py-3 rounded-xl bg-sky-50/50 ring-1 ring-slate-100 focus:ring-2 focus:ring-sky-400 outline-none text-sm transition-all"
-                    placeholder="블로거 닉네임이나 이름" value={profile.nickname}
-                    onChange={(e) => updateProfile('nickname', e.target.value)} />
+              {/* 닉네임 */}
+              <div className="jelly-card p-4">
+                <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-2">
+                  <span className="text-sky-500"><User size={18} /></span>닉네임 / 이름
+                </label>
+                <input className="w-full px-4 py-3 rounded-xl bg-sky-50/50 ring-1 ring-slate-100 focus:ring-2 focus:ring-sky-400 outline-none text-sm transition-all"
+                  placeholder="블로거 닉네임이나 이름" value={profile.nickname}
+                  onChange={(e) => updateProfile('nickname', e.target.value)} />
+              </div>
+
+              {/* 채널별 주소/ID */}
+              <div className="jelly-card p-4">
+                <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-3">
+                  <span className="text-sky-500"><Globe size={18} /></span>채널별 주소 / ID
+                </label>
+                <div className="space-y-2">
+                  {[
+                    { key: 'blogUrl',     label: '블로그',     placeholder: 'https://blog.naver.com/myid' },
+                    { key: 'blogClipId',  label: '클립 ID',    placeholder: '클립 아이디',                   enableKey: 'blogClipUrl' },
+                    { key: 'instaId',     label: '인스타',     placeholder: '@my_instagram',                enableKey: 'instaId' },
+                    { key: 'reelsUrl',    label: '릴스',       placeholder: 'https://www.instagram.com/reels/...' },
+                    { key: 'facebookUrl', label: '페이스북',   placeholder: 'https://facebook.com/mypage' },
+                    { key: 'youtubeUrl',  label: '유튜브',     placeholder: 'https://youtube.com/@mychannel' },
+                    { key: 'email',       label: '이메일',     placeholder: 'my@email.com' },
+                  ].filter(({ key, enableKey }) => profile.enabledPlatforms?.[enableKey || key]).map(({ key, label, placeholder }) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className="w-14 shrink-0 text-[10px] font-black text-sky-400">{label}</span>
+                      <input
+                        className="flex-1 px-3 py-2 rounded-xl bg-sky-50/50 ring-1 ring-sky-100 focus:ring-2 focus:ring-sky-400 outline-none text-xs transition-all"
+                        placeholder={placeholder}
+                        value={profile[key] || ''}
+                        onChange={(e) => updateProfile(key, e.target.value)}
+                      />
+                    </div>
+                  ))}
                 </div>
-                {[
-                  { key: 'blogUrl',     label: '블로그 주소',   placeholder: 'https://blog.naver.com/myid',         icon: <Globe size={18} /> },
-                  { key: 'reelsUrl',    label: '릴스 주소',     placeholder: 'https://www.instagram.com/reels/...', icon: <Eye size={18} /> },
-                  { key: 'facebookUrl', label: '페이스북 주소', placeholder: 'https://facebook.com/mypage',         icon: <ExternalLink size={18} /> },
-                  { key: 'youtubeUrl',  label: '유튜브 채널',   placeholder: 'https://youtube.com/@mychannel',      icon: <Youtube size={18} /> },
-                  { key: 'email',       label: '이메일',        placeholder: 'my@email.com',                        icon: <Mail size={18} /> },
-                ].filter(({ key }) => profile.enabledPlatforms?.[key]).map(({ key, label, placeholder, icon }) => (
-                  <div key={key} className="jelly-card p-4">
-                    <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-2">
-                      <span className="text-sky-500">{icon}</span>{label}
-                    </label>
-                    <input className="w-full px-4 py-3 rounded-xl bg-sky-50/50 ring-1 ring-slate-100 focus:ring-2 focus:ring-sky-400 outline-none text-sm transition-all"
-                      placeholder={placeholder} value={profile[key] || ''}
-                      onChange={(e) => updateProfile(key, e.target.value)} />
-                  </div>
-                ))}
-                {profile.enabledPlatforms?.blogClipUrl && (
-                  <div className="jelly-card p-4">
-                    <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-2">
-                      <span className="text-sky-500"><PenTool size={18} /></span>클립 ID
-                    </label>
-                    <input className="w-full px-4 py-3 rounded-xl bg-sky-50/50 ring-1 ring-slate-100 focus:ring-2 focus:ring-sky-400 outline-none text-sm transition-all"
-                      placeholder="클립 아이디" value={profile.blogClipId || ''}
-                      onChange={(e) => updateProfile('blogClipId', e.target.value)} />
-                  </div>
-                )}
-                {profile.enabledPlatforms?.instaId && (
-                  <div className="jelly-card p-4">
-                    <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-2">
-                      <span className="text-sky-500"><Instagram size={18} /></span>인스타그램 ID
-                    </label>
-                    <input className="w-full px-4 py-3 rounded-xl bg-sky-50/50 ring-1 ring-slate-100 focus:ring-2 focus:ring-sky-400 outline-none text-sm transition-all"
-                      placeholder="@my_instagram" value={profile.instaId || ''}
-                      onChange={(e) => updateProfile('instaId', e.target.value)} />
-                  </div>
-                )}
               </div>
 
               {/* 브랜드별 공정위 URL */}
