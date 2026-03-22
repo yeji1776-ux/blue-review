@@ -1724,8 +1724,11 @@ ${text}`
                             <span className={`ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full ${c.badge}`}>{brandGroups[brand].length}</span>
                             <ChevronRight size={11} className={`${c.text} transition-transform shrink-0 ${collapsedBrands[brand] ? '' : 'rotate-90'}`} />
                           </button>
-                          {!collapsedBrands[brand] && <div className="space-y-2">
-                            {brandGroups[brand].map(item => {
+                          {!collapsedBrands[brand] && (() => {
+                            const items = brandGroups[brand];
+                            const visible = items.slice(0, 3);
+                            const rest = items.slice(3);
+                            const renderItem = (item) => {
                               const dday = getDdayLabel(item.deadline);
                               return (
                                 <button
@@ -1746,8 +1749,22 @@ ${text}`
                                   {dday && <span className={`shrink-0 px-1.5 py-0.5 rounded-full text-[8px] font-black text-white ${dday.color}`}>{dday.text}</span>}
                                 </button>
                               );
-                            })}
-                          </div>}
+                            };
+                            return (
+                              <div className="space-y-2">
+                                {visible.map(renderItem)}
+                                {rest.length > 0 && (
+                                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ scrollSnapType: 'x mandatory' }}>
+                                    {rest.map(item => (
+                                      <div key={item.id} className="shrink-0 w-[85%]" style={{ scrollSnapAlign: 'start' }}>
+                                        {renderItem(item)}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                       );
                     })}
