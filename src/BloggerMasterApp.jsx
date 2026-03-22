@@ -1588,7 +1588,8 @@ ${text}`
               </button>
               {homeQuickCopyOpen && (
                 <div className="space-y-2">
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-[9px] font-black text-sky-400">채널</span>
                     {[
                       { key: 'blogUrl',     label: '블로그',     value: profile.blogUrl,     icon: <Globe size={12} />,     bg: 'bg-sky-50 text-sky-500' },
                       { key: 'blogClipUrl', label: '클립',       value: profile.blogClipId,  icon: <PenTool size={12} />,   bg: 'bg-teal-50 text-teal-500' },
