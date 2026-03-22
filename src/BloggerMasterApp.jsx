@@ -1633,28 +1633,32 @@ ${text}`
             <section className="jelly-card p-4">
               <div className="space-y-2">
                 {/* 신청 문구 */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-[9px] font-black text-sky-400">신청문구</span>
-                  {templates.map(t => (
-                    <button key={t.id} onClick={() => setEditingTemplateId(t.id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-600 active:scale-95 transition-all truncate max-w-[120px]">
-                      <FileText size={10} /> {t.title}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] font-black text-sky-400 shrink-0">신청문구</span>
+                  <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+                    {templates.map(t => (
+                      <button key={t.id} onClick={() => setEditingTemplateId(t.id)} className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-600 active:scale-95 transition-all whitespace-nowrap">
+                        <FileText size={10} /> {t.title}
+                      </button>
+                    ))}
+                    <button onClick={addTemplate} className="shrink-0 flex items-center gap-0.5 px-2 py-1.5 rounded-full text-[10px] font-bold text-sky-400 bg-sky-50/50 active:scale-95 transition-all">
+                      <Plus size={10} />
                     </button>
-                  ))}
-                  <button onClick={addTemplate} className="flex items-center gap-0.5 px-2 py-1.5 rounded-full text-[10px] font-bold text-sky-400 bg-sky-50/50 active:scale-95 transition-all">
-                    <Plus size={10} />
-                  </button>
+                  </div>
                 </div>
                 {/* 공정위 문구 */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-[9px] font-black text-orange-400">공정위</span>
-                  {ftcTemplates.map(t => (
-                    <button key={t.id} onClick={() => setEditingFtcTemplateId(t.id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-600 active:scale-95 transition-all truncate max-w-[120px]">
-                      <FileText size={10} /> {t.title}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] font-black text-orange-400 shrink-0">공정위</span>
+                  <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+                    {ftcTemplates.map(t => (
+                      <button key={t.id} onClick={() => setEditingFtcTemplateId(t.id)} className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-600 active:scale-95 transition-all whitespace-nowrap">
+                        <FileText size={10} /> {t.title}
+                      </button>
+                    ))}
+                    <button onClick={addFtcTemplate} className="shrink-0 flex items-center gap-0.5 px-2 py-1.5 rounded-full text-[10px] font-bold text-orange-400 bg-orange-50/50 active:scale-95 transition-all">
+                      <Plus size={10} />
                     </button>
-                  ))}
-                  <button onClick={addFtcTemplate} className="flex items-center gap-0.5 px-2 py-1.5 rounded-full text-[10px] font-bold text-orange-400 bg-orange-50/50 active:scale-95 transition-all">
-                    <Plus size={10} />
-                  </button>
+                  </div>
                 </div>
               </div>
             </section>
@@ -1724,11 +1728,8 @@ ${text}`
                             <span className={`ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full ${c.badge}`}>{brandGroups[brand].length}</span>
                             <ChevronRight size={11} className={`${c.text} transition-transform shrink-0 ${collapsedBrands[brand] ? '' : 'rotate-90'}`} />
                           </button>
-                          {!collapsedBrands[brand] && (() => {
-                            const items = brandGroups[brand];
-                            const visible = items.slice(0, 3);
-                            const rest = items.slice(3);
-                            const renderItem = (item) => {
+                          {!collapsedBrands[brand] && <div className={`space-y-2 ${brandGroups[brand].length > 3 ? 'max-h-[180px] overflow-y-auto scrollbar-hide' : ''}`}>
+                            {brandGroups[brand].map(item => {
                               const dday = getDdayLabel(item.deadline);
                               return (
                                 <button
@@ -1749,22 +1750,8 @@ ${text}`
                                   {dday && <span className={`shrink-0 px-1.5 py-0.5 rounded-full text-[8px] font-black text-white ${dday.color}`}>{dday.text}</span>}
                                 </button>
                               );
-                            };
-                            return (
-                              <div className="space-y-2">
-                                {visible.map(renderItem)}
-                                {rest.length > 0 && (
-                                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1" style={{ scrollSnapType: 'x mandatory' }}>
-                                    {rest.map(item => (
-                                      <div key={item.id} className="shrink-0 w-[85%]" style={{ scrollSnapAlign: 'start' }}>
-                                        {renderItem(item)}
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })()}
+                            })}
+                          </div>}
                         </div>
                       );
                     })}
