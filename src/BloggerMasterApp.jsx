@@ -1603,6 +1603,17 @@ ${text}`
                       </button>
                     ))}
                   </div>
+                  {/* 브랜드 사이트 바로가기 */}
+                  {profile.brandSiteUrls && Object.entries(profile.brandSiteUrls).some(([, v]) => v) && (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[9px] font-black text-sky-400">브랜드</span>
+                      {Object.entries(profile.brandSiteUrls || {}).filter(([, v]) => v).map(([brand, url]) => (
+                        <a key={brand} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-500 active:scale-95 transition-all">
+                          <ExternalLink size={10} /> {brand}
+                        </a>
+                      ))}
+                    </div>
+                  )}
                   {/* 공정위 URL 브랜드별 복사 */}
                   {profile.brandFtcUrls && Object.entries(profile.brandFtcUrls).some(([, v]) => v) && (
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -3794,6 +3805,26 @@ ${text}`
                         placeholder={placeholder}
                         value={profile[key] || ''}
                         onChange={(e) => updateProfile(key, e.target.value)}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 브랜드별 웹사이트/앱 URL */}
+              <div className="jelly-card p-4">
+                <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-3">
+                  <span className="text-sky-500"><ExternalLink size={18} /></span>브랜드별 사이트 URL
+                </label>
+                <div className="space-y-2">
+                  {['리뷰노트', '강남맛집', '레뷰', '슈퍼멤버스', '디너의여왕', '리뷰플레이스'].map(brand => (
+                    <div key={brand} className="flex items-center gap-2">
+                      <span className="w-16 shrink-0 text-[10px] font-black text-sky-400">{brand}</span>
+                      <input
+                        className="flex-1 px-3 py-2 rounded-xl bg-sky-50/50 ring-1 ring-sky-100 focus:ring-2 focus:ring-sky-400 outline-none text-xs transition-all"
+                        placeholder="웹사이트 또는 앱 URL"
+                        value={(profile.brandSiteUrls || {})[brand] || ''}
+                        onChange={(e) => updateProfile('brandSiteUrls', { ...(profile.brandSiteUrls || {}), [brand]: e.target.value })}
                       />
                     </div>
                   ))}
