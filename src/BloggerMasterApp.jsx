@@ -2776,10 +2776,10 @@ ${text}`
                     <p className="text-[11px] font-bold text-sky-500 flex items-center gap-1 flex-wrap">
                       <CalendarDays size={11} />
                       <span className="whitespace-nowrap">{item.visitDate}{item.visitSetTime && ` · ${item.visitSetTime}`}</span>
-                      <button data-no-image="true" onClick={() => setConfirmVisitDate({ id: item.id, date: item.visitDate, time: item.visitSetTime || '' })} className="text-sky-400 underline whitespace-nowrap">변경</button>
+                      <button data-no-image="true" onClick={() => setConfirmVisitDate({ id: item.id, date: item.visitDate, time: item.visitSetTime || '12:00' })} className="text-sky-400 underline whitespace-nowrap">변경</button>
                     </p>
                   ) : (
-                    <button data-no-image="true" onClick={() => setConfirmVisitDate({ id: item.id, date: '', time: '' })} className="text-[11px] font-black text-white flex items-center gap-1 jelly-button px-3 py-1.5 rounded-full shadow-md shadow-sky-200 active:scale-95 transition-all whitespace-nowrap">
+                    <button data-no-image="true" onClick={() => setConfirmVisitDate({ id: item.id, date: '', time: '12:00' })} className="text-[11px] font-black text-white flex items-center gap-1 jelly-button px-3 py-1.5 rounded-full shadow-md shadow-sky-200 active:scale-95 transition-all whitespace-nowrap">
                       <CalendarDays size={11} /> 체험일 설정
                     </button>
                   )}
