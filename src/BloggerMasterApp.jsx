@@ -1629,87 +1629,35 @@ ${text}`
               )}
             </section>
 
-            {/* 신청 문구 + 공정위 문구 2컬럼 */}
-            <div className="grid grid-cols-2 gap-3 items-start">
-              {/* 신청 문구 */}
-              <section className="jelly-card p-4">
-                <div role="button" tabIndex={0} onClick={() => setHomeTemplatesOpen(o => !o)} className="w-full flex items-center justify-between mb-3 cursor-pointer select-none">
-                  <h3 className="text-[10px] font-black text-slate-500 uppercase">신청 문구</h3>
-                  <div className="flex items-center gap-1.5">
-                    <button onClick={(e) => { e.stopPropagation(); addTemplate(); }} className="flex items-center gap-1 text-[10px] font-bold text-sky-500 active:scale-95 transition-all cursor-pointer">
-                      <Plus size={12} /> 추가
+            {/* 신청 문구 + 공정위 문구 — 컴팩트 */}
+            <section className="jelly-card p-4">
+              <div className="space-y-2">
+                {/* 신청 문구 */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[9px] font-black text-sky-400">신청문구</span>
+                  {templates.map(t => (
+                    <button key={t.id} onClick={() => setEditingTemplateId(t.id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-600 active:scale-95 transition-all truncate max-w-[120px]">
+                      <FileText size={10} /> {t.title}
                     </button>
-                    <ChevronRight size={13} className={`text-slate-500 transition-transform ${homeTemplatesOpen ? 'rotate-90' : ''}`} />
-                  </div>
+                  ))}
+                  <button onClick={addTemplate} className="flex items-center gap-0.5 px-2 py-1.5 rounded-full text-[10px] font-bold text-sky-400 bg-sky-50/50 active:scale-95 transition-all">
+                    <Plus size={10} />
+                  </button>
                 </div>
-                {homeTemplatesOpen && <div className="space-y-2">
-                  <DndContext sensors={dndSensors} collisionDetection={closestCenter}
-                    onDragEnd={({ active, over }) => {
-                      if (active.id !== over?.id) {
-                        const oldIdx = templates.findIndex(t => t.id === active.id);
-                        const newIdx = templates.findIndex(t => t.id === over.id);
-                        saveTemplates(arrayMove(templates, oldIdx, newIdx));
-                      }
-                    }}>
-                    <SortableContext items={templates.slice(0, 3).map(t => t.id)} strategy={verticalListSortingStrategy}>
-                      {templates.slice(0, 3).map((t, idx) => {
-                        const colors = [
-                          'bg-sky-50 border-sky-200 text-sky-700',
-                          'bg-pink-50 border-pink-200 text-pink-700',
-                          'bg-violet-50 border-violet-200 text-violet-700',
-                          'bg-amber-50 border-amber-200 text-amber-700',
-                          'bg-teal-50 border-teal-200 text-teal-700',
-                          'bg-orange-50 border-orange-200 text-orange-700',
-                        ];
-                        return (
-                          <SortableHomeTemplateButton key={t.id} t={t} colorClass={colors[idx % colors.length]} onEdit={setEditingTemplateId} />
-                        );
-                      })}
-                    </SortableContext>
-                  </DndContext>
-                  {templates.length > 3 && (
-                    <button onClick={() => setEditingTemplateId('list')}
-                      className="w-full text-center py-1.5 rounded-xl text-[10px] font-bold text-sky-400 bg-sky-50 active:bg-sky-100 transition-all">
-                      +{templates.length - 3}개 더
+                {/* 공정위 문구 */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[9px] font-black text-orange-400">공정위</span>
+                  {ftcTemplates.map(t => (
+                    <button key={t.id} onClick={() => setEditingFtcTemplateId(t.id)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-600 active:scale-95 transition-all truncate max-w-[120px]">
+                      <FileText size={10} /> {t.title}
                     </button>
-                  )}
-                </div>}
-              </section>
-
-              {/* 공정위 문구 */}
-              <section className="jelly-card p-4">
-                <div role="button" tabIndex={0} onClick={() => setHomeFtcOpen(o => !o)} className="w-full flex items-center justify-between mb-3 cursor-pointer select-none">
-                  <h3 className="text-[10px] font-black text-slate-500 uppercase">공정위 문구</h3>
-                  <div className="flex items-center gap-1.5">
-                    <button onClick={(e) => { e.stopPropagation(); addFtcTemplate(); }} className="flex items-center gap-1 text-[10px] font-bold text-orange-500 active:scale-95 transition-all cursor-pointer">
-                      <Plus size={12} /> 추가
-                    </button>
-                    <ChevronRight size={13} className={`text-slate-500 transition-transform ${homeFtcOpen ? 'rotate-90' : ''}`} />
-                  </div>
+                  ))}
+                  <button onClick={addFtcTemplate} className="flex items-center gap-0.5 px-2 py-1.5 rounded-full text-[10px] font-bold text-orange-400 bg-orange-50/50 active:scale-95 transition-all">
+                    <Plus size={10} />
+                  </button>
                 </div>
-                {homeFtcOpen && <div className="space-y-2">
-                  {ftcTemplates.slice(0, 3).map((t, idx) => {
-                    const colors = [
-                      'bg-orange-50 border-orange-200 text-orange-700',
-                      'bg-amber-50 border-amber-200 text-amber-700',
-                      'bg-rose-50 border-rose-200 text-rose-700',
-                    ];
-                    return (
-                      <button key={t.id} onClick={() => setEditingFtcTemplateId(t.id)}
-                        className={`w-full text-left px-3 py-2 rounded-xl text-xs font-bold border active:scale-95 transition-all truncate ${colors[idx % colors.length]}`}>
-                        {t.title}
-                      </button>
-                    );
-                  })}
-                  {ftcTemplates.length > 3 && (
-                    <button onClick={() => setEditingFtcTemplateId('list')}
-                      className="w-full text-center py-1.5 rounded-xl text-[10px] font-bold text-orange-400 bg-orange-50 active:bg-orange-100 transition-all">
-                      +{ftcTemplates.length - 3}개 더
-                    </button>
-                  )}
-                </div>}
-              </section>
-            </div>
+              </div>
+            </section>
 
             {/* 일정 리스트 - 브랜드별 분할 */}
             <section>
