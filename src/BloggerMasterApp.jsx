@@ -1059,14 +1059,14 @@ const BloggerMasterApp = () => {
   const [pullY, setPullY] = useState(0);
   const pullStartY = useRef(0);
   const PULL_THRESHOLD = 38;
-  const handleTouchStart = (e) => { if (window.scrollY === 0) pullStartY.current = e.touches[0].clientY; };
+  const handleTouchStart = (e) => { if (window.scrollY === 0 && !selectedScheduleId && !notePopupId && !confirmDeleteId && !confirmDoneId) pullStartY.current = e.touches[0].clientY; else pullStartY.current = 0; };
   const handleTouchMove = (e) => {
-    if (window.scrollY !== 0) return;
+    if (window.scrollY !== 0 || selectedScheduleId || notePopupId || confirmDeleteId || confirmDoneId) return;
     const dy = e.touches[0].clientY - pullStartY.current;
     if (dy > 0) { setIsPulling(true); setPullY(Math.min(dy, PULL_THRESHOLD + 20)); }
   };
   const handleTouchEnd = () => {
-    if (pullY >= PULL_THRESHOLD) window.location.reload();
+    if (pullY >= PULL_THRESHOLD && !selectedScheduleId && !notePopupId && !confirmDeleteId && !confirmDoneId) window.location.reload();
     setIsPulling(false); setPullY(0);
   };
   const [confirmDeleteAccount2, setConfirmDeleteAccount2] = useState(false);
@@ -1486,6 +1486,35 @@ ${text}`
                 <p className="text-[11px] font-black text-slate-700">안녕하세요! <span className="text-sky-500">{profile.nickname}</span>님 :)</p>
               </div>
             )}
+            {/* 방문일정 미등록 알림 배너 */}
+            {(() => {
+              const now = new Date();
+              const unscheduled = schedules.filter(s => {
+                if (s.isDone || s.visitDate) return false;
+                if (!s.createdAt) return false;
+                const created = new Date(s.createdAt);
+                const diffDays = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+                return diffDays >= 2;
+              });
+              if (unscheduled.length === 0) return null;
+              return (
+                <div className="space-y-2">
+                  {unscheduled.map(item => (
+                    <button key={item.id} onClick={() => setSelectedScheduleId(item.id)} className="w-full flex items-center gap-3 p-3 sm:p-4 rounded-2xl text-left active:scale-[0.99] transition-all bg-sky-50 border border-sky-200 shadow-sky-100 shadow-md">
+                      <div className="p-2 rounded-xl bg-sky-100">
+                        <CalendarDays size={18} className="text-sky-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-black text-sky-500">방문 일정을 잡아주세요!</p>
+                        <p className="text-sm font-bold text-slate-700 truncate">{item.title}</p>
+                      </div>
+                      {item.brand && item.brand !== '기타' && <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black border ${getBrandBadge(item.brand)}`}>{item.brand}</span>}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
+
             {/* 마감 알림 배너 */}
             {(() => {
               const urgent = schedules.filter(s => {
