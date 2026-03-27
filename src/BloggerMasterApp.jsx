@@ -676,6 +676,8 @@ const BloggerMasterApp = () => {
   const [homeFtcOpen, setHomeFtcOpen] = useState(true);
   const [collapsedBrands, setCollapsedBrands] = useState({});
   const toggleBrand = (brand) => setCollapsedBrands(prev => ({ ...prev, [brand]: !prev[brand] }));
+  const [expandedBrands, setExpandedBrands] = useState({});
+  const toggleExpandBrand = (brand) => setExpandedBrands(prev => ({ ...prev, [brand]: !prev[brand] }));
   const [detailSections, setDetailSections] = useState({ extraInfo: false, caution: false, mission: false, personalMission: true, publishedContent: false });
 
   const deleteSchedule = (id) => {
@@ -1758,7 +1760,7 @@ ${text}`
                             <ChevronRight size={11} className={`${c.text} transition-transform shrink-0 ${collapsedBrands[brand] ? '' : 'rotate-90'}`} />
                           </button>
                           {!collapsedBrands[brand] && <div className="space-y-2">
-                            {brandGroups[brand].map(item => {
+                            {(expandedBrands[brand] ? brandGroups[brand] : brandGroups[brand].slice(0, 3)).map(item => {
                               const dday = getDdayLabel(item.deadline);
                               return (
                                 <button
@@ -1780,6 +1782,14 @@ ${text}`
                                 </button>
                               );
                             })}
+                            {brandGroups[brand].length > 3 && (
+                              <button
+                                onClick={() => toggleExpandBrand(brand)}
+                                className={`w-full py-1.5 rounded-lg text-[9px] font-bold ${c.text} ${c.bg} border ${c.border} active:opacity-70 transition-all`}
+                              >
+                                {expandedBrands[brand] ? '▲ 접기' : `▼ 더보기 +${brandGroups[brand].length - 3}`}
+                              </button>
+                            )}
                           </div>}
                         </div>
                       );
