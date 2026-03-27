@@ -3722,25 +3722,6 @@ ${text}`
                 </div>
               </div>
 
-              {/* 브랜드별 공정위 URL */}
-              <div className="jelly-card p-4">
-                <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-3">
-                  <span className="text-orange-500"><Globe size={18} /></span>브랜드별 공정위 URL
-                </label>
-                <div className="space-y-2">
-                  {['리뷰노트', '강남맛집', '레뷰', '슈퍼멤버스', '디너의여왕', '리뷰플레이스'].map(brand => (
-                    <div key={brand} className="flex items-center gap-2">
-                      <span className="w-16 shrink-0 text-[10px] font-black text-orange-400">{brand}</span>
-                      <input
-                        className="flex-1 px-3 py-2 rounded-xl bg-orange-50/50 ring-1 ring-orange-100 focus:ring-2 focus:ring-orange-400 outline-none text-xs transition-all"
-                        placeholder="공정위 이미지 URL"
-                        value={(profile.brandFtcUrls || {})[brand] || ''}
-                        onChange={(e) => updateProfile('brandFtcUrls', { ...(profile.brandFtcUrls || {}), [brand]: e.target.value })}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
 
               <button onClick={saveProfile}
                 className="w-full jelly-button py-3 rounded-2xl font-black text-sm shadow-lg shadow-sky-200 active:scale-95 transition-all flex items-center justify-center gap-2">
