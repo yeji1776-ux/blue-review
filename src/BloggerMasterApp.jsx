@@ -1757,7 +1757,7 @@ ${text}`
                             <span className={`ml-auto text-[9px] font-bold px-1.5 py-0.5 rounded-full ${c.badge}`}>{brandGroups[brand].length}</span>
                             <ChevronRight size={11} className={`${c.text} transition-transform shrink-0 ${collapsedBrands[brand] ? '' : 'rotate-90'}`} />
                           </button>
-                          {!collapsedBrands[brand] && <div className={`space-y-2 ${brandGroups[brand].length > 3 ? 'max-h-[180px] overflow-y-auto scrollbar-hide' : ''}`}>
+                          {!collapsedBrands[brand] && <div className="space-y-2">
                             {brandGroups[brand].map(item => {
                               const dday = getDdayLabel(item.deadline);
                               return (
@@ -3326,7 +3326,8 @@ ${text}`
                   {/* 시 선택 */}
                   <div className="relative">
                     <select
-                      className="appearance-none bg-white w-24 h-14 rounded-2xl text-center text-2xl font-black text-sky-600 ring-1 ring-sky-100 focus:ring-2 focus:ring-sky-400 outline-none shadow-inner"
+                      className="appearance-none bg-white w-24 h-14 rounded-2xl text-center text-lg font-bold text-sky-600 ring-1 ring-sky-100 focus:ring-2 focus:ring-sky-400 outline-none shadow-inner"
+                      style={{ textAlignLast: 'center' }}
                       value={parseInt((confirmVisitDate.time || '12:00').split(':')[0])}
                       onChange={(e) => { const h = e.target.value; const m = (confirmVisitDate.time || '12:00').split(':')[1] || '00'; setConfirmVisitDate(prev => ({ ...prev, time: `${h}:${m}` })); }}
                     >
@@ -3340,7 +3341,8 @@ ${text}`
                   {/* 분 선택 */}
                   <div className="relative">
                     <select
-                      className="appearance-none bg-white w-24 h-14 rounded-2xl text-center text-2xl font-black text-sky-600 ring-1 ring-sky-100 focus:ring-2 focus:ring-sky-400 outline-none shadow-inner"
+                      className="appearance-none bg-white w-24 h-14 rounded-2xl text-center text-lg font-bold text-sky-600 ring-1 ring-sky-100 focus:ring-2 focus:ring-sky-400 outline-none shadow-inner"
+                      style={{ textAlignLast: 'center' }}
                       value={(confirmVisitDate.time || '12:00').split(':')[1] || '00'}
                       onChange={(e) => { const m = e.target.value; const h = (confirmVisitDate.time || '12:00').split(':')[0]; setConfirmVisitDate(prev => ({ ...prev, time: `${h}:${m}` })); }}
                     >
