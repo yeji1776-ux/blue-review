@@ -920,8 +920,11 @@ const BloggerMasterApp = () => {
     try {
       // 원본 요소를 잠시 화면에 보이게 한 뒤 캡처
       const origStyle = card.style.cssText;
-      card.style.cssText = 'position:fixed;left:0;top:0;width:420px;z-index:-1;';
-      await new Promise(r => setTimeout(r, 100));
+      const isShareCard = id.toString().startsWith('share_');
+      card.style.cssText = isShareCard
+        ? 'position:fixed;left:0;top:0;width:480px;height:480px;z-index:-1;'
+        : 'position:fixed;left:0;top:0;width:420px;z-index:-1;';
+      await new Promise(r => setTimeout(r, 150));
       const dataUrl = await domToPng(card, {
         scale: 2,
         backgroundColor: '#ffffff',
@@ -3112,68 +3115,86 @@ ${text}`
                 <div data-no-image="true" className="w-full">
                   <div
                     ref={(el) => (imageCardRefs.current[`share_${item.id}`] = el)}
-                    className="absolute left-[-9999px] top-0 w-[480px] mesh-bg flex items-center justify-center p-12 font-body text-on-surface antialiased"
+                    className="absolute left-[-9999px] top-0 w-[480px] h-[480px] mesh-bg flex items-center justify-center p-10 font-body text-on-surface antialiased"
                   >
-                    {/* Main Shareable Card */}
-                    <div className="relative w-full max-w-[380px] aspect-[4/6] glass-card rounded-card flex flex-col overflow-hidden px-10 pt-10 pb-16">
+                    {/* Main Shareable Card — auto-scale to fit square */}
+                    <div
+                      ref={(el) => {
+                        if (!el) return;
+                        requestAnimationFrame(() => {
+                          const inner = el.firstElementChild;
+                          if (!inner) return;
+                          inner.style.transform = 'none';
+                          const containerH = 460; // 480 - padding
+                          const containerW = 460;
+                          const naturalH = inner.scrollHeight;
+                          const naturalW = inner.scrollWidth;
+                          const scale = Math.min(1, containerH / naturalH, containerW / naturalW);
+                          inner.style.transform = `scale(${scale})`;
+                          inner.style.transformOrigin = 'top left';
+                        });
+                      }}
+                      className="relative w-full h-full flex items-start justify-start"
+                    >
+                    <div className="relative w-[400px] glass-card rounded-card flex flex-col px-10 pt-8 pb-10" style={{ transformOrigin: 'top left' }}>
 
-                      
+
                       {/* Header */}
-                      <div className="relative z-10 flex items-center gap-3 mb-10">
-                        <img crossOrigin="anonymous" alt="Logo" className="w-10 h-10 object-contain drop-shadow-sm" src="/favicon.png" />
+                      <div className="relative z-10 flex items-center gap-3 mb-6">
+                        <img crossOrigin="anonymous" alt="Logo" className="w-9 h-9 object-contain drop-shadow-sm" src="/favicon.png" />
                         <div className="h-4 w-px bg-primary/20"></div>
                         <span className="text-[10px] font-bold tracking-[0.2em] text-primary/70 uppercase">Blue Review</span>
                       </div>
-                      
+
                       {/* Title Section */}
-                      <div className="relative z-10 mb-12">
-                        <p className="text-[11px] font-extrabold text-primary tracking-widest uppercase mb-3">{item.type || 'Schedule'}</p>
-                        <h1 className="font-headline text-[2.75rem] font-extrabold text-slate-900 leading-[1.1] tracking-tight">
+                      <div className="relative z-10 mb-6">
+                        <p className="text-[11px] font-extrabold text-primary tracking-widest uppercase mb-2">{item.type || 'Schedule'}</p>
+                        <h1 className="font-headline text-[2rem] font-extrabold text-slate-900 leading-[1.15] tracking-tight break-keep">
                           {item.title}<br/>
-                          <span className="text-primary/40">{item.brand && item.brand !== '기타' ? item.brand : ''}</span>
+                          <span className="text-primary/40 text-[1.6rem]">{item.brand && item.brand !== '기타' ? item.brand : ''}</span>
                         </h1>
                       </div>
-                      
+
                       {/* Information List (Stacked Vertically) */}
-                      <div className="relative z-10 flex-grow space-y-4">
+                      <div className="relative z-10 flex-grow space-y-3">
                         {/* Date */}
-                        <div className="flex items-start gap-4">
-                          <div className="mt-1 w-6 h-6 flex items-center justify-center text-primary/80">
-                            <Calendar size={24} strokeWidth={2.5} />
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5 w-5 h-5 flex items-center justify-center text-primary/80">
+                            <Calendar size={20} strokeWidth={2.5} />
                           </div>
                           <div>
-                            <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Date</p>
-                            <p className="font-headline font-bold text-xl text-slate-800 tracking-tight">{item.visitDate || '미정'}</p>
+                            <p className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest mb-0.5">Date</p>
+                            <p className="font-headline font-bold text-base text-slate-800 tracking-tight">{item.visitDate || '미정'}</p>
                           </div>
                         </div>
-                        
+
                         {/* Time */}
-                        <div className="flex items-start gap-4">
-                          <div className="mt-1 w-6 h-6 flex items-center justify-center text-primary/80">
-                            <Clock size={24} strokeWidth={2.5} />
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5 w-5 h-5 flex items-center justify-center text-primary/80">
+                            <Clock size={20} strokeWidth={2.5} />
                           </div>
                           <div>
-                            <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Time</p>
-                            <p className="font-headline font-bold text-xl text-slate-800 tracking-tight">{item.visitSetTime || item.visitTime || '미정'}</p>
+                            <p className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest mb-0.5">Time</p>
+                            <p className="font-headline font-bold text-base text-slate-800 tracking-tight">{item.visitSetTime || item.visitTime || '미정'}</p>
                           </div>
                         </div>
-                        
+
                         {/* Location */}
-                        <div className="flex items-start gap-4">
-                          <div className="mt-1 w-6 h-6 flex items-center justify-center text-primary/80">
-                            <MapPin size={24} strokeWidth={2.5} />
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5 w-5 h-5 flex items-center justify-center text-primary/80">
+                            <MapPin size={20} strokeWidth={2.5} />
                           </div>
-                          <div className="flex-1">
-                            <p className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest mb-1">Location</p>
-                            <p className="font-medium text-[14px] leading-relaxed text-slate-600 break-keep">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest mb-0.5">Location</p>
+                            <p className="font-medium text-[13px] leading-snug text-slate-600 break-keep">
                               {item.address || '주소 정보 없음'}
                             </p>
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Footer */}
-                      <div className="relative z-10 pt-8 border-t border-white/40 flex items-center justify-between mt-auto">
+                      <div className="relative z-10 pt-5 border-t border-white/40 flex items-center justify-between mt-6">
                         <div className="flex gap-1.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
                           <span className="w-1.5 h-1.5 rounded-full bg-primary/30"></span>
@@ -3181,9 +3202,10 @@ ${text}`
                         </div>
                         <span className="text-[9px] font-bold tracking-widest uppercase text-primary/50">Blue Review</span>
                       </div>
-                      
+
                       {/* Surface Highlight */}
                       <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent pointer-events-none"></div>
+                    </div>
                     </div>
                   </div>
                 </div>
