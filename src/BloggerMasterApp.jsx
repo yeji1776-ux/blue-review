@@ -596,6 +596,15 @@ const BloggerMasterApp = () => {
         if (data.items) {
           const writable = data.items.filter(c => c.accessRole === 'owner' || c.accessRole === 'writer');
           setGcalCalendars(writable);
+          // 저장된 선택이 없거나 'primary'면 실제 기본 캘린더 ID로 설정
+          const saved = localStorage.getItem('gcal_selected_cal');
+          if (!saved || saved === 'primary') {
+            const primary = writable.find(c => c.primary);
+            if (primary) {
+              setGcalSelectedCal(primary.id);
+              localStorage.setItem('gcal_selected_cal', primary.id);
+            }
+          }
         }
       })
       .catch(() => {});
