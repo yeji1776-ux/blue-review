@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
-  const { code, redirect_uri } = req.body;
+  const { code, redirect_uri } = JSON.parse(typeof req.body === 'string' ? req.body : JSON.stringify(req.body));
   if (!code || !redirect_uri) return res.status(400).json({ error: 'missing params' });
 
   const response = await fetch('https://oauth2.googleapis.com/token', {
