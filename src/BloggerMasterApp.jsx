@@ -540,10 +540,21 @@ const BloggerMasterApp = () => {
     localStorage.setItem('theme_color', themeColor);
   }, [themeColor]);
 
-  // --- 구글 캘린더 연동 (PKCE) ---
+  // --- 구글 캘린더 연동 ---
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  const GCAL_REDIRECT_URI = 'https://blue-review.com';
   const [gcalToken, setGcalToken] = useState(() => {
+    // 서버 콜백에서 해시로 전달된 토큰 처리
+    if (window.location.hash.includes('gcal_token=')) {
+      const params = new URLSearchParams(window.location.hash.substring(1));
+      const token = params.get('gcal_token');
+      const expiry = params.get('gcal_expiry');
+      if (token) {
+        localStorage.setItem('gcal_token', token);
+        localStorage.setItem('gcal_token_expiry', expiry);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return token;
+      }
+    }
     const token = localStorage.getItem('gcal_token');
     const expiry = localStorage.getItem('gcal_token_expiry');
     if (token && expiry && Date.now() < parseInt(expiry)) return token;
@@ -551,35 +562,11 @@ const BloggerMasterApp = () => {
   });
   const [gcalConnecting, setGcalConnecting] = useState(false);
 
-  // OAuth 콜백 처리 (리디렉션 후 code 교환)
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
-    if (!code || !GOOGLE_CLIENT_ID) return;
-    window.history.replaceState({}, document.title, window.location.pathname);
-    setGcalConnecting(true);
-    fetch('/api/gcal-token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, redirect_uri: GCAL_REDIRECT_URI }),
-    })
-      .then(r => r.json())
-      .then(data => {
-        setGcalConnecting(false);
-        if (data.access_token) {
-          localStorage.setItem('gcal_token', data.access_token);
-          localStorage.setItem('gcal_token_expiry', String(Date.now() + data.expires_in * 1000));
-          setGcalToken(data.access_token);
-        }
-      })
-      .catch(() => setGcalConnecting(false));
-  }, []);
-
   const connectGoogleCalendar = () => {
     if (!GOOGLE_CLIENT_ID) return;
     const params = new URLSearchParams({
       client_id: GOOGLE_CLIENT_ID,
-      redirect_uri: GCAL_REDIRECT_URI,
+      redirect_uri: 'https://www.blue-review.com/api/gcal-callback',
       response_type: 'code',
       scope: 'https://www.googleapis.com/auth/calendar.events',
       access_type: 'online',
