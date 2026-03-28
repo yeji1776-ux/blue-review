@@ -568,7 +568,7 @@ const BloggerMasterApp = () => {
       client_id: GOOGLE_CLIENT_ID,
       redirect_uri: 'https://www.blue-review.com/api/gcal-callback',
       response_type: 'code',
-      scope: 'https://www.googleapis.com/auth/calendar.events',
+      scope: 'https://www.googleapis.com/auth/calendar',
       access_type: 'online',
     });
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
