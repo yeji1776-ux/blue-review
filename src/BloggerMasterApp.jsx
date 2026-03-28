@@ -543,6 +543,18 @@ const BloggerMasterApp = () => {
   // --- 구글 캘린더 연동 ---
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const [gcalToken, setGcalToken] = useState(() => {
+    // URL 해시에서 access_token 확인 (리디렉션 후)
+    if (window.location.hash.includes('access_token=')) {
+      const params = new URLSearchParams(window.location.hash.substring(1));
+      const token = params.get('access_token');
+      const expiresIn = params.get('expires_in');
+      if (token) {
+        localStorage.setItem('gcal_token', token);
+        localStorage.setItem('gcal_token_expiry', String(Date.now() + parseInt(expiresIn || '3600') * 1000));
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return token;
+      }
+    }
     const token = localStorage.getItem('gcal_token');
     const expiry = localStorage.getItem('gcal_token_expiry');
     if (token && expiry && Date.now() < parseInt(expiry)) return token;
@@ -551,22 +563,14 @@ const BloggerMasterApp = () => {
   const [gcalConnecting, setGcalConnecting] = useState(false);
 
   const connectGoogleCalendar = () => {
-    if (!window.google || !GOOGLE_CLIENT_ID) return;
-    setGcalConnecting(true);
-    const tokenClient = window.google.accounts.oauth2.initTokenClient({
+    if (!GOOGLE_CLIENT_ID) return;
+    const params = new URLSearchParams({
       client_id: GOOGLE_CLIENT_ID,
+      redirect_uri: 'https://blue-review.com',
+      response_type: 'token',
       scope: 'https://www.googleapis.com/auth/calendar.events',
-      callback: (resp) => {
-        setGcalConnecting(false);
-        if (resp.access_token) {
-          localStorage.setItem('gcal_token', resp.access_token);
-          localStorage.setItem('gcal_token_expiry', String(Date.now() + resp.expires_in * 1000));
-          setGcalToken(resp.access_token);
-        }
-      },
-      error_callback: () => setGcalConnecting(false),
     });
-    tokenClient.requestAccessToken({ prompt: '' });
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   };
 
   const disconnectGoogleCalendar = () => {
