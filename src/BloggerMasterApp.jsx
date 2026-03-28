@@ -542,7 +542,7 @@ const BloggerMasterApp = () => {
 
   // --- 구글 캘린더 연동 (PKCE) ---
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  const GCAL_REDIRECT_URI = 'https://www.blue-review.com';
+  const GCAL_REDIRECT_URI = 'https://blue-review.com';
   const [gcalToken, setGcalToken] = useState(() => {
     const token = localStorage.getItem('gcal_token');
     const expiry = localStorage.getItem('gcal_token_expiry');
