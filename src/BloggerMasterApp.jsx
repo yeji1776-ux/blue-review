@@ -551,26 +551,17 @@ const BloggerMasterApp = () => {
   });
   const [gcalConnecting, setGcalConnecting] = useState(false);
 
-  // PKCE 콜백 처리 (리디렉션 후 code 교환)
+  // OAuth 콜백 처리 (리디렉션 후 code 교환)
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
     if (!code || !GOOGLE_CLIENT_ID) return;
-    const codeVerifier = sessionStorage.getItem('gcal_code_verifier');
-    if (!codeVerifier) return;
-    sessionStorage.removeItem('gcal_code_verifier');
     window.history.replaceState({}, document.title, window.location.pathname);
     setGcalConnecting(true);
-    fetch('https://oauth2.googleapis.com/token', {
+    fetch('/api/gcal-token', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        code,
-        client_id: GOOGLE_CLIENT_ID,
-        redirect_uri: GCAL_REDIRECT_URI,
-        code_verifier: codeVerifier,
-        grant_type: 'authorization_code',
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, redirect_uri: GCAL_REDIRECT_URI }),
     })
       .then(r => r.json())
       .then(data => {
@@ -584,21 +575,14 @@ const BloggerMasterApp = () => {
       .catch(() => setGcalConnecting(false));
   }, []);
 
-  const connectGoogleCalendar = async () => {
+  const connectGoogleCalendar = () => {
     if (!GOOGLE_CLIENT_ID) return;
-    const array = new Uint8Array(32);
-    crypto.getRandomValues(array);
-    const codeVerifier = btoa(String.fromCharCode(...array)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(codeVerifier));
-    const codeChallenge = btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-    sessionStorage.setItem('gcal_code_verifier', codeVerifier);
     const params = new URLSearchParams({
       client_id: GOOGLE_CLIENT_ID,
       redirect_uri: GCAL_REDIRECT_URI,
       response_type: 'code',
       scope: 'https://www.googleapis.com/auth/calendar.events',
-      code_challenge: codeChallenge,
-      code_challenge_method: 'S256',
+      access_type: 'online',
     });
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   };
