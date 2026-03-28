@@ -575,7 +575,10 @@ const BloggerMasterApp = () => {
   };
 
   const [gcalCalendars, setGcalCalendars] = useState([]);
-  const [gcalSelectedCal, setGcalSelectedCal] = useState(() => localStorage.getItem('gcal_selected_cal') || 'primary');
+  const [gcalSelectedCal, setGcalSelectedCal] = useState(() => {
+    const fromProfile = JSON.parse(localStorage.getItem('blogger_profile') || '{}').gcalSelectedCal;
+    return fromProfile || localStorage.getItem('gcal_selected_cal') || 'primary';
+  });
 
   const disconnectGoogleCalendar = () => {
     localStorage.removeItem('gcal_token');
@@ -583,6 +586,8 @@ const BloggerMasterApp = () => {
     localStorage.removeItem('gcal_selected_cal');
     setGcalToken(null);
     setGcalCalendars([]);
+    setGcalSelectedCal('primary');
+    setProfile(prev => ({ ...prev, gcalSelectedCal: '' }));
   };
 
   // 캘린더 목록 가져오기
@@ -597,7 +602,8 @@ const BloggerMasterApp = () => {
           const writable = data.items.filter(c => c.accessRole === 'owner' || c.accessRole === 'writer');
           setGcalCalendars(writable);
           // 저장된 선택이 없거나 'primary'면 실제 기본 캘린더 ID로 설정
-          const saved = localStorage.getItem('gcal_selected_cal');
+          const savedProfile = JSON.parse(localStorage.getItem('blogger_profile') || '{}');
+          const saved = savedProfile.gcalSelectedCal || localStorage.getItem('gcal_selected_cal');
           if (!saved || saved === 'primary') {
             const primary = writable.find(c => c.primary);
             if (primary) {
@@ -815,6 +821,10 @@ const BloggerMasterApp = () => {
         if (data.profile && Object.keys(data.profile).length) {
           setProfile(prev => ({ ...prev, ...data.profile }));
           if (data.profile) localStorage.setItem('blogger_profile', JSON.stringify({ ...profile, ...data.profile }));
+          if (data.profile.gcalSelectedCal) {
+            setGcalSelectedCal(data.profile.gcalSelectedCal);
+            localStorage.setItem('gcal_selected_cal', data.profile.gcalSelectedCal);
+          }
         }
         if (data.saved_texts?.length) setSavedTexts(data.saved_texts);
         if (data.plan) setUserPlan(data.plan);
@@ -1492,7 +1502,7 @@ ${text}`
                       <p className="text-[10px] font-bold text-slate-500 mb-2">일정 추가할 캘린더</p>
                       <select
                         value={gcalSelectedCal}
-                        onChange={(e) => { setGcalSelectedCal(e.target.value); localStorage.setItem('gcal_selected_cal', e.target.value); }}
+                        onChange={(e) => { setGcalSelectedCal(e.target.value); localStorage.setItem('gcal_selected_cal', e.target.value); setProfile(prev => ({ ...prev, gcalSelectedCal: e.target.value })); }}
                         className="w-full px-3 py-2 rounded-xl bg-white ring-1 ring-sky-200 text-xs font-bold text-slate-700 outline-none"
                       >
                         {gcalCalendars.map(c => (
