@@ -2808,6 +2808,15 @@ ${text}`
                       <Copy size={11} /> 공정위
                     </button>
                   )}
+                  {gcalToken && item.visitDate && (
+                    <button onClick={async () => {
+                      const ok = await addToGoogleCalendar(item, item.visitDate, item.visitSetTime || '12:00');
+                      if (ok) alert('구글 캘린더에 추가되었습니다!');
+                      else alert('캘린더 추가 실패. 연동 상태를 확인해주세요.');
+                    }} className="text-[11px] font-black text-blue-600 flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm bg-blue-50 active:scale-95 transition-all whitespace-nowrap">
+                      <Calendar size={11} /> 캘린더 추가
+                    </button>
+                  )}
                 </div>
               </div>
 
