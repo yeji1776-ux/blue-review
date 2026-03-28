@@ -566,7 +566,7 @@ const BloggerMasterApp = () => {
       },
       error_callback: () => setGcalConnecting(false),
     });
-    tokenClient.requestAccessToken({ prompt: 'consent' });
+    tokenClient.requestAccessToken({ prompt: '' });
   };
 
   const disconnectGoogleCalendar = () => {
