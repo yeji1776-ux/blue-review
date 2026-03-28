@@ -616,7 +616,7 @@ const BloggerMasterApp = () => {
     if (!token || Date.now() > parseInt(expiry || '0')) return false;
     const [h, m] = (visitTime || '12:00').split(':');
     const endHour = String(parseInt(h) + 1).padStart(2, '0');
-    const calId = gcalSelectedCal || 'primary';
+    const calId = localStorage.getItem('gcal_selected_cal') || 'primary';
     const event = {
       summary: `[협찬] ${schedule.title || schedule.brand}`,
       location: schedule.address || '',
