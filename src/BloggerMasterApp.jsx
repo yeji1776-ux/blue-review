@@ -540,21 +540,10 @@ const BloggerMasterApp = () => {
     localStorage.setItem('theme_color', themeColor);
   }, [themeColor]);
 
-  // --- 구글 캘린더 연동 ---
+  // --- 구글 캘린더 연동 (PKCE) ---
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+  const GCAL_REDIRECT_URI = 'https://blue-review.com';
   const [gcalToken, setGcalToken] = useState(() => {
-    // URL 해시에서 access_token 확인 (리디렉션 후)
-    if (window.location.hash.includes('access_token=')) {
-      const params = new URLSearchParams(window.location.hash.substring(1));
-      const token = params.get('access_token');
-      const expiresIn = params.get('expires_in');
-      if (token) {
-        localStorage.setItem('gcal_token', token);
-        localStorage.setItem('gcal_token_expiry', String(Date.now() + parseInt(expiresIn || '3600') * 1000));
-        window.history.replaceState({}, document.title, window.location.pathname);
-        return token;
-      }
-    }
     const token = localStorage.getItem('gcal_token');
     const expiry = localStorage.getItem('gcal_token_expiry');
     if (token && expiry && Date.now() < parseInt(expiry)) return token;
@@ -562,13 +551,54 @@ const BloggerMasterApp = () => {
   });
   const [gcalConnecting, setGcalConnecting] = useState(false);
 
-  const connectGoogleCalendar = () => {
+  // PKCE 콜백 처리 (리디렉션 후 code 교환)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (!code || !GOOGLE_CLIENT_ID) return;
+    const codeVerifier = sessionStorage.getItem('gcal_code_verifier');
+    if (!codeVerifier) return;
+    sessionStorage.removeItem('gcal_code_verifier');
+    window.history.replaceState({}, document.title, window.location.pathname);
+    setGcalConnecting(true);
+    fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: GOOGLE_CLIENT_ID,
+        redirect_uri: GCAL_REDIRECT_URI,
+        code_verifier: codeVerifier,
+        grant_type: 'authorization_code',
+      }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        setGcalConnecting(false);
+        if (data.access_token) {
+          localStorage.setItem('gcal_token', data.access_token);
+          localStorage.setItem('gcal_token_expiry', String(Date.now() + data.expires_in * 1000));
+          setGcalToken(data.access_token);
+        }
+      })
+      .catch(() => setGcalConnecting(false));
+  }, []);
+
+  const connectGoogleCalendar = async () => {
     if (!GOOGLE_CLIENT_ID) return;
+    const array = new Uint8Array(32);
+    crypto.getRandomValues(array);
+    const codeVerifier = btoa(String.fromCharCode(...array)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(codeVerifier));
+    const codeChallenge = btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    sessionStorage.setItem('gcal_code_verifier', codeVerifier);
     const params = new URLSearchParams({
       client_id: GOOGLE_CLIENT_ID,
-      redirect_uri: 'https://blue-review.com',
-      response_type: 'token',
+      redirect_uri: GCAL_REDIRECT_URI,
+      response_type: 'code',
       scope: 'https://www.googleapis.com/auth/calendar.events',
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
     });
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   };
