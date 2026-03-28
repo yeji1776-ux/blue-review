@@ -574,11 +574,32 @@ const BloggerMasterApp = () => {
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   };
 
+  const [gcalCalendars, setGcalCalendars] = useState([]);
+  const [gcalSelectedCal, setGcalSelectedCal] = useState(() => localStorage.getItem('gcal_selected_cal') || 'primary');
+
   const disconnectGoogleCalendar = () => {
     localStorage.removeItem('gcal_token');
     localStorage.removeItem('gcal_token_expiry');
+    localStorage.removeItem('gcal_selected_cal');
     setGcalToken(null);
+    setGcalCalendars([]);
   };
+
+  // 캘린더 목록 가져오기
+  useEffect(() => {
+    if (!gcalToken) return;
+    fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList', {
+      headers: { Authorization: `Bearer ${gcalToken}` },
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data.items) {
+          const writable = data.items.filter(c => c.accessRole === 'owner' || c.accessRole === 'writer');
+          setGcalCalendars(writable);
+        }
+      })
+      .catch(() => {});
+  }, [gcalToken]);
 
   const addToGoogleCalendar = async (schedule, visitDate, visitTime) => {
     const token = localStorage.getItem('gcal_token');
@@ -586,6 +607,7 @@ const BloggerMasterApp = () => {
     if (!token || Date.now() > parseInt(expiry || '0')) return false;
     const [h, m] = (visitTime || '12:00').split(':');
     const endHour = String(parseInt(h) + 1).padStart(2, '0');
+    const calId = gcalSelectedCal || 'primary';
     const event = {
       summary: `[협찬] ${schedule.title || schedule.brand}`,
       location: schedule.address || '',
@@ -598,7 +620,7 @@ const BloggerMasterApp = () => {
       end: { dateTime: `${visitDate}T${endHour}:${m || '00'}:00`, timeZone: 'Asia/Seoul' },
     };
     try {
-      const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(event),
@@ -1423,12 +1445,28 @@ ${text}`
             <div className="mb-5">
               <p className="text-xs font-black text-slate-500 mb-3">구글 캘린더 연동</p>
               {gcalToken ? (
-                <div className="flex items-center justify-between bg-green-50 border border-green-100 rounded-2xl px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full" />
-                    <span className="text-xs font-bold text-green-600">연동됨 — 체험일 등록 시 자동 추가</span>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between bg-green-50 border border-green-100 rounded-2xl px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-400 rounded-full" />
+                      <span className="text-xs font-bold text-green-600">연동됨</span>
+                    </div>
+                    <button onClick={disconnectGoogleCalendar} className="text-[10px] font-bold text-slate-400 active:scale-95">해제</button>
                   </div>
-                  <button onClick={disconnectGoogleCalendar} className="text-[10px] font-bold text-slate-400 active:scale-95">해제</button>
+                  {gcalCalendars.length > 0 && (
+                    <div className="bg-sky-50 border border-sky-100 rounded-2xl px-4 py-3">
+                      <p className="text-[10px] font-bold text-slate-500 mb-2">일정 추가할 캘린더</p>
+                      <select
+                        value={gcalSelectedCal}
+                        onChange={(e) => { setGcalSelectedCal(e.target.value); localStorage.setItem('gcal_selected_cal', e.target.value); }}
+                        className="w-full px-3 py-2 rounded-xl bg-white ring-1 ring-sky-200 text-xs font-bold text-slate-700 outline-none"
+                      >
+                        {gcalCalendars.map(c => (
+                          <option key={c.id} value={c.id}>{c.summary}{c.primary ? ' (기본)' : ''}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <button
