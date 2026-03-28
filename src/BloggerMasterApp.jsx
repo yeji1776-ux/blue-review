@@ -610,10 +610,10 @@ const BloggerMasterApp = () => {
       .catch(() => {});
   }, [gcalToken]);
 
-  const addToGoogleCalendar = async (schedule, visitDate, visitTime) => {
+  const syncToGoogleCalendar = async (schedule, visitDate, visitTime) => {
     const token = localStorage.getItem('gcal_token');
     const expiry = localStorage.getItem('gcal_token_expiry');
-    if (!token || Date.now() > parseInt(expiry || '0')) return false;
+    if (!token || Date.now() > parseInt(expiry || '0')) return null;
     const [h, m] = (visitTime || '12:00').split(':');
     const endHour = String(parseInt(h) + 1).padStart(2, '0');
     const calId = localStorage.getItem('gcal_selected_cal') || 'primary';
@@ -629,13 +629,35 @@ const BloggerMasterApp = () => {
       end: { dateTime: `${visitDate}T${endHour}:${m || '00'}:00`, timeZone: 'Asia/Seoul' },
     };
     try {
-      const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events`, {
-        method: 'POST',
+      const existingEventId = schedule.gcalEventId;
+      const url = existingEventId
+        ? `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events/${encodeURIComponent(existingEventId)}`
+        : `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events`;
+      const res = await fetch(url, {
+        method: existingEventId ? 'PUT' : 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(event),
       });
-      return res.ok;
-    } catch { return false; }
+      if (res.ok) {
+        const data = await res.json();
+        return data.id || true;
+      }
+      return null;
+    } catch { return null; }
+  };
+
+  const deleteFromGoogleCalendar = async (gcalEventId) => {
+    if (!gcalEventId) return;
+    const token = localStorage.getItem('gcal_token');
+    const expiry = localStorage.getItem('gcal_token_expiry');
+    if (!token || Date.now() > parseInt(expiry || '0')) return;
+    const calId = localStorage.getItem('gcal_selected_cal') || 'primary';
+    try {
+      await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events/${encodeURIComponent(gcalEventId)}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+    } catch {}
   };
 
   // --- 설정 패널 ---
@@ -717,6 +739,8 @@ const BloggerMasterApp = () => {
   const [detailSections, setDetailSections] = useState({ extraInfo: false, caution: false, mission: false, personalMission: true, publishedContent: false });
 
   const deleteSchedule = (id) => {
+    const target = schedules.find(s => s.id === id);
+    if (target?.gcalEventId && gcalToken) deleteFromGoogleCalendar(target.gcalEventId);
     const updated = schedules.filter(s => s.id !== id);
     setSchedules(updated);
     localStorage.setItem('blogSchedules', JSON.stringify(updated));
@@ -834,6 +858,7 @@ const BloggerMasterApp = () => {
     visitDays: '', visitTime: '', visitDate: '', visitSetTime: '', caution: '', ftcImageUrl: '',
     keywords: '', placeUrl: '',
     platforms: [],
+    gcalEventId: '',
   };
 
   // 임시 파싱 데이터
@@ -2857,11 +2882,15 @@ ${text}`
                   )}
                   {gcalToken && item.visitDate && (
                     <button onClick={async () => {
-                      const ok = await addToGoogleCalendar(item, item.visitDate, item.visitSetTime || '12:00');
-                      if (ok) alert('구글 캘린더에 추가되었습니다!');
-                      else alert('캘린더 추가 실패. 연동 상태를 확인해주세요.');
+                      const eventId = await syncToGoogleCalendar(item, item.visitDate, item.visitSetTime || '12:00');
+                      if (eventId) {
+                        const updated = schedules.map(s => s.id === item.id ? { ...s, gcalEventId: eventId } : s);
+                        setSchedules(updated);
+                        localStorage.setItem('blogSchedules', JSON.stringify(updated));
+                        alert(item.gcalEventId ? '캘린더 일정이 업데이트되었습니다!' : '구글 캘린더에 추가되었습니다!');
+                      } else alert('캘린더 추가 실패. 연동 상태를 확인해주세요.');
                     }} className="text-[11px] font-black text-blue-600 flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm bg-blue-50 active:scale-95 transition-all whitespace-nowrap">
-                      <Calendar size={11} /> 캘린더 추가
+                      <Calendar size={11} /> {item.gcalEventId ? '캘린더 수정' : '캘린더 추가'}
                     </button>
                   )}
                 </div>
@@ -2916,7 +2945,18 @@ ${text}`
                       <textarea className={`flex-1 bg-${color}-50 px-3 py-2 rounded-xl border border-${color}-100 focus:border-${color}-300 focus:bg-white outline-none text-xs font-medium text-${color}-700 h-24 resize-none transition-colors`} value={item[key] || ''} onChange={(e) => updateField(key, e.target.value)} />
                     </div>
                   ))}
-                  <button onClick={() => { localStorage.setItem('blogSchedules', JSON.stringify(schedules)); setEditingScheduleId(null); }} className="w-full jelly-button text-white py-3 rounded-2xl font-black text-sm active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md shadow-sky-200">
+                  <button onClick={async () => {
+                    localStorage.setItem('blogSchedules', JSON.stringify(schedules));
+                    setEditingScheduleId(null);
+                    if (gcalToken && item.gcalEventId && item.visitDate) {
+                      const eventId = await syncToGoogleCalendar(item, item.visitDate, item.visitSetTime || '12:00');
+                      if (eventId) {
+                        const updated = schedules.map(s => s.id === item.id ? { ...s, gcalEventId: eventId } : s);
+                        setSchedules(updated);
+                        localStorage.setItem('blogSchedules', JSON.stringify(updated));
+                      }
+                    }
+                  }} className="w-full jelly-button text-white py-3 rounded-2xl font-black text-sm active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md shadow-sky-200">
                     <Save size={14} /> 수정 완료
                   </button>
                 </div>
@@ -3437,10 +3477,16 @@ ${text}`
                 onClick={async () => {
                   if (!confirmVisitDate.date) return;
                   const targetSchedule = schedules.find(s => s.id === confirmVisitDate.id);
-                  setSchedules(schedules.map(s => s.id === confirmVisitDate.id ? { ...s, visitDate: confirmVisitDate.date, visitSetTime: confirmVisitDate.time } : s));
+                  const updatedSchedules = schedules.map(s => s.id === confirmVisitDate.id ? { ...s, visitDate: confirmVisitDate.date, visitSetTime: confirmVisitDate.time } : s);
+                  setSchedules(updatedSchedules);
                   setConfirmVisitDate(null);
                   if (gcalToken && targetSchedule) {
-                    await addToGoogleCalendar(targetSchedule, confirmVisitDate.date, confirmVisitDate.time);
+                    const eventId = await syncToGoogleCalendar({ ...targetSchedule, gcalEventId: targetSchedule.gcalEventId }, confirmVisitDate.date, confirmVisitDate.time);
+                    if (eventId) {
+                      const withEventId = updatedSchedules.map(s => s.id === targetSchedule.id ? { ...s, gcalEventId: eventId } : s);
+                      setSchedules(withEventId);
+                      localStorage.setItem('blogSchedules', JSON.stringify(withEventId));
+                    }
                   }
                 }}
                 className="flex-1 jelly-button py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all"
