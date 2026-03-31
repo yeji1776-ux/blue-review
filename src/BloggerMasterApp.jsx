@@ -580,13 +580,11 @@ const BloggerMasterApp = () => {
     const token = localStorage.getItem('gcal_token');
     const expiry = localStorage.getItem('gcal_token_expiry');
     if (token && expiry && Date.now() < parseInt(expiry)) return token;
-    // 만료됐지만 refresh token이 있으면 마커 반환 (useEffect에서 갱신)
     if (localStorage.getItem('gcal_refresh_token')) return 'needs_refresh';
     return null;
   });
   const [gcalConnecting, setGcalConnecting] = useState(false);
 
-  // 토큰 만료 시 자동 갱신
   useEffect(() => {
     if (gcalToken === 'needs_refresh') {
       refreshGcalToken().then(newToken => {
