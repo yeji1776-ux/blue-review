@@ -1631,16 +1631,14 @@ ${text}`
               });
               if (unscheduled.length === 0) return null;
               return (
-                <div className="space-y-2">
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-black text-violet-500 px-1 flex items-center gap-1.5">
+                    <CalendarDays size={13} className="text-violet-400" />
+                    방문 일정을 잡아주세요!
+                  </p>
                   {unscheduled.map(item => (
-                    <button key={item.id} onClick={() => setSelectedScheduleId(item.id)} className="w-full flex items-center gap-3 p-3 sm:p-4 rounded-2xl text-left active:scale-[0.99] transition-all bg-sky-50 border border-sky-200 shadow-sky-100 shadow-md">
-                      <div className="p-2 rounded-xl bg-sky-100">
-                        <CalendarDays size={18} className="text-sky-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-black text-sky-500">방문 일정을 잡아주세요!</p>
-                        <p className="text-sm font-bold text-slate-700 truncate">{item.title}</p>
-                      </div>
+                    <button key={item.id} onClick={() => setSelectedScheduleId(item.id)} className="w-full flex items-center gap-2.5 p-2.5 sm:p-3 rounded-xl text-left active:scale-[0.99] transition-all bg-violet-50 border border-violet-200 shadow-sm">
+                      <p className="flex-1 text-sm font-bold text-slate-700 truncate">{item.title}</p>
                       {item.brand && item.brand !== '기타' && <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black border ${getBrandBadge(item.brand)}`}>{item.brand}</span>}
                     </button>
                   ))}
@@ -1713,21 +1711,21 @@ ${text}`
                     return (
                       <div key={date} className="space-y-1.5">
                         <p className="text-[10px] font-black px-1 text-slate-400">
-                          {isToday ? '🔵' : '⚪'} {label} <span className="font-medium">{day.getMonth() + 1}/{day.getDate()}</span>
-                          <span className="ml-1 text-sky-400">({tasks.length})</span>
+                          {isToday ? '🟡' : '⚪'} {label} <span className="font-medium">{day.getMonth() + 1}/{day.getDate()}</span>
+                          <span className={`ml-1 ${isToday ? 'text-amber-500' : 'text-slate-400'}`}>({tasks.length})</span>
                         </p>
                         {tasks.map(task => (
                           <button key={task.id} onClick={() => setSelectedScheduleId(task.id)}
-                            className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left active:scale-[0.99] transition-all shadow-sm ${isToday ? 'bg-sky-50 border border-sky-200 shadow-sky-100' : 'bg-slate-50 border border-slate-200 shadow-slate-100'}`}>
+                            className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left active:scale-[0.99] transition-all shadow-sm ${isToday ? 'bg-amber-50 border border-amber-200 shadow-amber-100' : 'bg-slate-50 border border-slate-200 shadow-slate-100'}`}>
                             {task.brand && task.brand !== '기타' && <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black border ${getBrandBadge(task.brand)}`}>{task.brand}</span>}
                             <p className="flex-1 text-sm font-bold text-slate-700 truncate">{task.title}</p>
                             {task.visitDate === date && task.visitSetTime && (() => {
                               const now = new Date(); const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
                               if (date < todayStr) return null;
                               if (isToday) { const [hh, mm] = (task.visitSetTime || '').split(':').map(Number); if (now.getHours() > hh || (now.getHours() === hh && now.getMinutes() >= (mm || 0))) return null; }
-                              return <span className={`shrink-0 text-[10px] font-black ${isToday ? 'text-sky-600' : 'text-slate-500'}`}>{task.visitSetTime}</span>;
+                              return <span className={`shrink-0 text-[10px] font-black ${isToday ? 'text-amber-600' : 'text-slate-500'}`}>{task.visitSetTime}</span>;
                             })()}
-                            <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${isToday ? 'text-sky-500 bg-sky-100' : 'text-slate-500 bg-slate-100'}`}>
+                            <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full ${isToday ? 'text-amber-600 bg-amber-100' : 'text-slate-500 bg-slate-100'}`}>
                               {task.visitDate === date ? '체험일' : '마감일'}
                             </span>
                           </button>
