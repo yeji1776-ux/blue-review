@@ -1774,17 +1774,6 @@ ${text}`
                       ))}
                     </div>
                   )}
-                  {/* 공정위 URL 브랜드별 복사 */}
-                  {profile.brandFtcUrls && Object.entries(profile.brandFtcUrls).some(([, v]) => v) && (
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-[9px] font-black text-orange-400">공정위</span>
-                      {Object.entries(profile.brandFtcUrls || {}).filter(([, v]) => v).map(([brand, url]) => (
-                        <button key={brand} onClick={() => copyWithCheck(url, `${brand} 공정위`)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-500 active:scale-95 transition-all">
-                          <Copy size={10} /> {brand}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
               )}
             </section>
