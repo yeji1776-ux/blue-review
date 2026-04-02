@@ -933,15 +933,15 @@ const BloggerMasterApp = () => {
 
   const getBrandBadge = (brand) => {
     const map = {
-      '리뷰노트': 'bg-teal-50 text-teal-600 border-teal-100',
-      '강남맛집': 'bg-orange-50 text-orange-600 border-orange-100',
-      '레뷰': 'bg-pink-50 text-pink-600 border-pink-100',
-      '슈퍼멤버스': 'bg-violet-50 text-violet-600 border-violet-100',
-      '디너의여왕': 'bg-amber-50 text-amber-600 border-amber-100',
-      '리뷰플레이스': 'bg-green-50 text-green-600 border-green-100',
-      'WE:U': 'bg-cyan-50 text-cyan-600 border-cyan-100',
+      '리뷰노트': 'bg-teal-500 text-white border-teal-500',
+      '강남맛집': 'bg-orange-500 text-white border-orange-500',
+      '레뷰': 'bg-rose-500 text-white border-rose-500',
+      '슈퍼멤버스': 'bg-violet-500 text-white border-violet-500',
+      '디너의여왕': 'bg-amber-500 text-white border-amber-500',
+      '리뷰플레이스': 'bg-emerald-500 text-white border-emerald-500',
+      'WE:U': 'bg-cyan-500 text-white border-cyan-500',
     };
-    return map[brand] || 'bg-slate-50 text-slate-600 border-slate-100';
+    return map[brand] || 'bg-slate-400 text-white border-slate-400';
   };
 
   const getDdayLabel = (deadlineStr) => {
@@ -1867,16 +1867,16 @@ ${text}`
                 }));
                 const brandNames = Object.keys(brandGroups);
                 const brandColors = {
-                  '리뷰노트': { bg: 'bg-teal-50', border: 'border-teal-200', text: 'text-teal-600', badge: 'bg-teal-100 text-teal-600', dot: 'bg-teal-400' },
-                  '강남맛집': { bg: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-600', badge: 'bg-orange-100 text-orange-600', dot: 'bg-orange-400' },
-                  '레뷰': { bg: 'bg-pink-50', border: 'border-pink-200', text: 'text-pink-600', badge: 'bg-pink-100 text-pink-600', dot: 'bg-pink-400' },
-                  '슈퍼멤버스': { bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-600', badge: 'bg-violet-100 text-violet-600', dot: 'bg-violet-400' },
-                  '디너의여왕': { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-600', badge: 'bg-amber-100 text-amber-600', dot: 'bg-amber-400' },
-                  '리뷰플레이스': { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-600', badge: 'bg-green-100 text-green-600', dot: 'bg-green-400' },
-                  'WE:U': { bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-600', badge: 'bg-cyan-100 text-cyan-600', dot: 'bg-cyan-400' },
-                  '기타': { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-600', badge: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400' },
+                  '리뷰노트': { bg: 'bg-white', border: 'border-l-4 border-l-teal-500 border-slate-100', text: 'text-teal-600', badge: 'bg-teal-500 text-white', dot: 'bg-teal-500', typeText: 'text-teal-500' },
+                  '강남맛집': { bg: 'bg-white', border: 'border-l-4 border-l-orange-500 border-slate-100', text: 'text-orange-600', badge: 'bg-orange-500 text-white', dot: 'bg-orange-500', typeText: 'text-orange-500' },
+                  '레뷰': { bg: 'bg-white', border: 'border-l-4 border-l-rose-500 border-slate-100', text: 'text-rose-600', badge: 'bg-rose-500 text-white', dot: 'bg-rose-500', typeText: 'text-rose-500' },
+                  '슈퍼멤버스': { bg: 'bg-white', border: 'border-l-4 border-l-violet-500 border-slate-100', text: 'text-violet-600', badge: 'bg-violet-500 text-white', dot: 'bg-violet-500', typeText: 'text-violet-500' },
+                  '디너의여왕': { bg: 'bg-white', border: 'border-l-4 border-l-amber-500 border-slate-100', text: 'text-amber-600', badge: 'bg-amber-500 text-white', dot: 'bg-amber-500', typeText: 'text-amber-500' },
+                  '리뷰플레이스': { bg: 'bg-white', border: 'border-l-4 border-l-emerald-500 border-slate-100', text: 'text-emerald-600', badge: 'bg-emerald-500 text-white', dot: 'bg-emerald-500', typeText: 'text-emerald-500' },
+                  'WE:U': { bg: 'bg-white', border: 'border-l-4 border-l-cyan-500 border-slate-100', text: 'text-cyan-600', badge: 'bg-cyan-500 text-white', dot: 'bg-cyan-500', typeText: 'text-cyan-500' },
+                  '기타': { bg: 'bg-white', border: 'border-l-4 border-l-slate-400 border-slate-100', text: 'text-slate-600', badge: 'bg-slate-400 text-white', dot: 'bg-slate-400', typeText: 'text-slate-500' },
                 };
-                const getColor = (brand) => brandColors[brand] || { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-600', badge: 'bg-blue-100 text-blue-600', dot: 'bg-blue-400' };
+                const getColor = (brand) => brandColors[brand] || { bg: 'bg-white', border: 'border-l-4 border-l-blue-500 border-slate-100', text: 'text-blue-600', badge: 'bg-blue-500 text-white', dot: 'bg-blue-500', typeText: 'text-blue-500' };
                 const colClass = brandNames.length <= 2 ? 'sm:grid-cols-2' : brandNames.length === 3 ? 'sm:grid-cols-3' : 'sm:grid-cols-4';
 
                 return brandNames.length > 0 ? (
@@ -1884,7 +1884,7 @@ ${text}`
                     {brandNames.map(brand => {
                       const c = getColor(brand);
                       return (
-                        <div key={brand} className={`jelly-card p-2.5 sm:p-4 ${c.bg} ${c.border} border`}>
+                        <div key={brand} className={`jelly-card p-2.5 sm:p-4 ${c.bg} ${c.border} border shadow-sm`}>
                           <button onClick={() => toggleBrand(brand)} className="w-full flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
                             <span className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${c.dot}`}></span>
                             <h4 className={`text-[10px] sm:text-xs font-black ${c.text} truncate`}>{brand}</h4>
@@ -1901,11 +1901,11 @@ ${text}`
                                   className="w-full flex items-center gap-1.5 sm:gap-2 p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-white/80 active:bg-white transition-all text-left shadow-sm"
                                 >
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-[9px] sm:text-[10px] font-bold text-sky-500 mb-0.5">{item.type}</p>
+                                    <p className={`text-[9px] sm:text-[10px] font-bold ${c.typeText} mb-0.5`}>{item.type}</p>
                                     <div className="flex items-center gap-1">
                                       {item.visitDate
-                                        ? <span className="shrink-0 w-2 h-2 rounded-full bg-sky-400"></span>
-                                        : <span className="shrink-0 w-2 h-2 rounded-full border-2 border-sky-300"></span>
+                                        ? <span className={`shrink-0 w-2 h-2 rounded-full ${c.dot}`}></span>
+                                        : <span className={`shrink-0 w-2 h-2 rounded-full border-2 ${c.dot.replace('bg-', 'border-')}`}></span>
                                       }
                                       <p className="text-sm font-bold text-slate-700 truncate">{item.title}</p>
                                     </div>
@@ -1917,7 +1917,7 @@ ${text}`
                             {brandGroups[brand].length > 3 && (
                               <button
                                 onClick={() => toggleExpandBrand(brand)}
-                                className={`w-full py-1.5 rounded-lg text-[9px] font-bold ${c.text} ${c.bg} border ${c.border} active:opacity-70 transition-all`}
+                                className={`w-full py-1.5 rounded-lg text-[9px] font-bold ${c.text} bg-slate-50 border border-slate-200 active:opacity-70 transition-all`}
                               >
                                 {expandedBrands[brand] ? '▲ 접기' : `▼ 더보기 +${brandGroups[brand].length - 3}`}
                               </button>
