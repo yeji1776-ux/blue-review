@@ -939,6 +939,7 @@ const BloggerMasterApp = () => {
       '슈퍼멤버스': 'bg-violet-50 text-violet-600 border-violet-100',
       '디너의여왕': 'bg-amber-50 text-amber-600 border-amber-100',
       '리뷰플레이스': 'bg-green-50 text-green-600 border-green-100',
+      'WE:U': 'bg-cyan-50 text-cyan-600 border-cyan-100',
     };
     return map[brand] || 'bg-slate-50 text-slate-600 border-slate-100';
   };
@@ -1266,7 +1267,7 @@ const BloggerMasterApp = () => {
 - 반드시 아래 JSON 형식만 반환 (다른 텍스트 없이 JSON만)
 
 {
-  "brand": "체험단 플랫폼명 (레뷰, 강남맛집, 리뷰노트, 미블 등. 모르면 '기타')",
+  "brand": "체험단 플랫폼명 (레뷰, 강남맛집, 리뷰노트, 미블, WE:U 등. 모르면 '기타')",
   "type": "카테고리 (맛집, 헤어, 뷰티, 운동, 제품, 기자단 중 하나)",
   "title": "업체명 (지역 접두사 제외, 순수 상호명만)",
   "address": "방문 주소 (전체 주소)",
@@ -1310,8 +1311,8 @@ ${text}`
     try {
       const result = await parseWithGemini(text);
       setParsedData({
-        brand: (['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스'].includes(result.brand)) ? result.brand : (parsedData.brand || '리뷰노트'),
-        brandCustom: (['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스'].includes(result.brand)) ? '' : (parsedData.brandCustom || ''),
+        brand: (['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스','WE:U'].includes(result.brand)) ? result.brand : (parsedData.brand || '리뷰노트'),
+        brandCustom: (['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스','WE:U'].includes(result.brand)) ? '' : (parsedData.brandCustom || ''),
         type: result.type || '맛집',
         title: result.title || '',
         address: result.address || '',
@@ -1872,6 +1873,7 @@ ${text}`
                   '슈퍼멤버스': { bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-600', badge: 'bg-violet-100 text-violet-600', dot: 'bg-violet-400' },
                   '디너의여왕': { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-600', badge: 'bg-amber-100 text-amber-600', dot: 'bg-amber-400' },
                   '리뷰플레이스': { bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-600', badge: 'bg-green-100 text-green-600', dot: 'bg-green-400' },
+                  'WE:U': { bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-600', badge: 'bg-cyan-100 text-cyan-600', dot: 'bg-cyan-400' },
                   '기타': { bg: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-600', badge: 'bg-slate-100 text-slate-600', dot: 'bg-slate-400' },
                 };
                 const getColor = (brand) => brandColors[brand] || { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-600', badge: 'bg-blue-100 text-blue-600', dot: 'bg-blue-400' };
@@ -2956,11 +2958,11 @@ ${text}`
                   <div className="flex items-center gap-3">
                     <div className="w-14 shrink-0 text-[10px] font-bold text-sky-400">브랜드</div>
                     <div className="flex-1 flex gap-2">
-                      {item.brand && !['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스','기타'].includes(item.brand) ? (
+                      {item.brand && !['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스','WE:U','기타'].includes(item.brand) ? (
                         <input className="flex-1 bg-white px-3 py-2 rounded-xl ring-1 ring-sky-100 focus:ring-2 focus:ring-sky-300 outline-none text-sm font-bold text-slate-700" placeholder="브랜드명 직접 입력" value={item.brand || ''} onChange={(e) => updateField('brand', e.target.value)} />
                       ) : (
-                        <select className="flex-1 bg-white px-3 py-2 rounded-xl ring-1 ring-sky-100 focus:ring-2 focus:ring-sky-300 outline-none text-sm font-bold text-slate-700" value={['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스','기타'].includes(item.brand) ? item.brand : '기타'} onChange={(e) => updateField('brand', e.target.value === '기타' ? '' : e.target.value)}>
-                          {['리뷰노트', '강남맛집', '레뷰', '슈퍼멤버스', '디너의여왕', '리뷰플레이스', '기타'].map(t => <option key={t} value={t}>{t === '기타' ? '기타 (직접입력)' : t}</option>)}
+                        <select className="flex-1 bg-white px-3 py-2 rounded-xl ring-1 ring-sky-100 focus:ring-2 focus:ring-sky-300 outline-none text-sm font-bold text-slate-700" value={['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스','WE:U','기타'].includes(item.brand) ? item.brand : '기타'} onChange={(e) => updateField('brand', e.target.value === '기타' ? '' : e.target.value)}>
+                          {['리뷰노트', '강남맛집', '레뷰', '슈퍼멤버스', '디너의여왕', '리뷰플레이스', 'WE:U', '기타'].map(t => <option key={t} value={t}>{t === '기타' ? '기타 (직접입력)' : t}</option>)}
                         </select>
                       )}
                     </div>
@@ -3601,7 +3603,7 @@ ${text}`
                     {parsedData.brand === '기타(수기)' ? (
                       <input className="w-full bg-sky-50 border border-sky-100 rounded-xl font-bold text-slate-700 outline-none text-sm py-2 px-3" placeholder="브랜드명 직접 입력" value={parsedData.brandCustom || ''} onChange={(e) => setParsedData({ ...parsedData, brandCustom: e.target.value })} />
                     ) : (
-                      <select className="w-full bg-white/60 backdrop-blur-md shadow-inner border border-white ring-1 ring-sky-100 rounded-xl font-black text-slate-700 outline-none appearance-none text-sm py-2 px-3 pr-8" value={parsedData.brand || '리뷰노트'} onChange={(e) => setParsedData({ ...parsedData, brand: e.target.value, brandCustom: '' })}>{['리뷰노트', '강남맛집', '레뷰', '슈퍼멤버스', '디너의여왕', '리뷰플레이스', '기타(수기)'].map(t => <option key={t} value={t}>{t === '기타(수기)' ? '기타 (직접입력)' : t}</option>)}</select>
+                      <select className="w-full bg-white/60 backdrop-blur-md shadow-inner border border-white ring-1 ring-sky-100 rounded-xl font-black text-slate-700 outline-none appearance-none text-sm py-2 px-3 pr-8" value={parsedData.brand || '리뷰노트'} onChange={(e) => setParsedData({ ...parsedData, brand: e.target.value, brandCustom: '' })}>{['리뷰노트', '강남맛집', '레뷰', '슈퍼멤버스', '디너의여왕', '리뷰플레이스', 'WE:U', '기타(수기)'].map(t => <option key={t} value={t}>{t === '기타(수기)' ? '기타 (직접입력)' : t}</option>)}</select>
                     )}
                     {parsedData.brand === '기타(수기)' ? (
                       <button onClick={() => setParsedData({ ...parsedData, brand: '리뷰노트', brandCustom: '' })} className="shrink-0 text-[9px] font-bold text-sky-500 bg-sky-50 border border-sky-100 rounded-xl px-2.5">목록</button>
@@ -3876,7 +3878,7 @@ ${text}`
                   <span className="text-sky-500"><ExternalLink size={18} /></span>브랜드별 사이트 URL
                 </label>
                 <div className="space-y-2">
-                  {['리뷰노트', '강남맛집', '레뷰', '슈퍼멤버스', '디너의여왕', '리뷰플레이스'].map(brand => (
+                  {['리뷰노트', '강남맛집', '레뷰', '슈퍼멤버스', '디너의여왕', '리뷰플레이스', 'WE:U'].map(brand => (
                     <div key={brand} className="flex items-center gap-2">
                       <span className="w-16 shrink-0 text-[10px] font-black text-sky-400">{brand}</span>
                       <input
