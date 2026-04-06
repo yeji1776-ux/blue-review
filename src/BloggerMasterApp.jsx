@@ -1634,12 +1634,24 @@ ${text}`
         {/* 탭 메뉴 */}
         {activeTab === 'home' && (
           <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-            {/* 인사말 */}
-            {profile.nickname && (
-              <div className="px-1">
+            {/* 인사말 + 문구 버튼 */}
+            <div className="flex items-center justify-between px-1">
+              {profile.nickname && (
                 <p className="text-[11px] font-black text-slate-700">안녕하세요! <span className="text-sky-500">{profile.nickname}</span>님 :)</p>
+              )}
+              <div className="flex items-center gap-1.5">
+                <button onClick={() => setEditingTemplateId('list')} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-sky-50 text-sky-600 active:scale-95 transition-all">
+                  <FileText size={10} />
+                  <span className="text-[9px] font-black">신청문구</span>
+                  <span className="px-1 rounded-full bg-sky-200 text-sky-700 text-[8px] font-black">{templates.length}</span>
+                </button>
+                <button onClick={() => setEditingFtcTemplateId('list')} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-orange-50 text-orange-600 active:scale-95 transition-all">
+                  <FileText size={10} />
+                  <span className="text-[9px] font-black">공정위</span>
+                  <span className="px-1 rounded-full bg-orange-200 text-orange-700 text-[8px] font-black">{ftcTemplates.length}</span>
+                </button>
               </div>
-            )}
+            </div>
             {/* 방문일정 미등록 알림 배너 */}
             {(() => {
               const now = new Date();
@@ -1757,20 +1769,6 @@ ${text}`
                 </div>
               );
             })()}
-
-            {/* 문구 목록 — 신청문구 / 공정위 아이콘 */}
-            <section className="flex items-center justify-center gap-3 px-1">
-                <button onClick={() => setEditingTemplateId('list')} className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white shadow-sm border border-sky-100 text-sky-600 active:scale-95 transition-all">
-                  <FileText size={13} />
-                  <span className="text-xs font-black">신청문구</span>
-                  <span className="px-1.5 py-0.5 rounded-full bg-sky-200 text-sky-700 text-[9px] font-black">{templates.length}</span>
-                </button>
-                <button onClick={() => setEditingFtcTemplateId('list')} className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white shadow-sm border border-orange-100 text-orange-600 active:scale-95 transition-all">
-                  <FileText size={13} />
-                  <span className="text-xs font-black">공정위 문구</span>
-                  <span className="px-1.5 py-0.5 rounded-full bg-orange-200 text-orange-700 text-[9px] font-black">{ftcTemplates.length}</span>
-                </button>
-            </section>
 
             {/* Quick Copy */}
             <section className="jelly-card p-4">
