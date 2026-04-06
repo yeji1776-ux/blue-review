@@ -1109,10 +1109,31 @@ const BloggerMasterApp = () => {
   }, [selectedDate, calendarMonth, schedules]);
 
   // --- 리뷰 등록 완료 처리 ---
+  const [scheduledPublishDate, setScheduledPublishDate] = useState(''); // 예약 발행 날짜 선택용
   const markAsDone = (id) => {
-    setSchedules(prev => prev.map(s => s.id === id ? { ...s, isDone: true } : s));
+    setSchedules(prev => prev.map(s => s.id === id ? { ...s, isDone: true, doneAt: new Date().toISOString() } : s));
     setConfirmDoneId(null);
   };
+  const markAsScheduled = (id, date) => {
+    setSchedules(prev => prev.map(s => s.id === id ? { ...s, scheduledPublishDate: date } : s));
+    setConfirmDoneId(null);
+    setScheduledPublishDate('');
+  };
+
+  // 예약 발행일 도래 시 자동 완료 처리
+  useEffect(() => {
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    const updated = schedules.map(s => {
+      if (s.scheduledPublishDate && !s.isDone && s.scheduledPublishDate <= todayStr) {
+        return { ...s, isDone: true, doneAt: s.scheduledPublishDate + 'T00:00:00' };
+      }
+      return s;
+    });
+    if (JSON.stringify(updated) !== JSON.stringify(schedules)) {
+      setSchedules(updated);
+    }
+  }, [schedules]);
 
   // --- 유틸리티 함수 ---
   const [copyWarning, setCopyWarning] = useState('');
@@ -1737,6 +1758,22 @@ ${text}`
               );
             })()}
 
+            {/* 문구 목록 — 신청문구 / 공정위 아이콘 */}
+            <section className="jelly-card p-4">
+              <div className="flex items-center justify-center gap-4">
+                <button onClick={() => setEditingTemplateId('list')} className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-sky-50 text-sky-600 active:scale-95 transition-all">
+                  <FileText size={16} />
+                  <span className="text-sm font-black">신청문구</span>
+                  <span className="ml-1 px-2 py-0.5 rounded-full bg-sky-200 text-sky-700 text-[10px] font-black">{templates.length}</span>
+                </button>
+                <button onClick={() => setEditingFtcTemplateId('list')} className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-orange-50 text-orange-600 active:scale-95 transition-all">
+                  <FileText size={16} />
+                  <span className="text-sm font-black">공정위 문구</span>
+                  <span className="ml-1 px-2 py-0.5 rounded-full bg-orange-200 text-orange-700 text-[10px] font-black">{ftcTemplates.length}</span>
+                </button>
+              </div>
+            </section>
+
             {/* Quick Copy */}
             <section className="jelly-card p-4">
               <button onClick={() => setHomeQuickCopyOpen(o => !o)} className="w-full flex items-center justify-between mb-3">
@@ -1776,40 +1813,6 @@ ${text}`
                   )}
                 </div>
               )}
-            </section>
-
-            {/* 신청 문구 + 공정위 문구 — 컴팩트 */}
-            <section className="jelly-card p-4">
-              <div className="space-y-2">
-                {/* 신청 문구 */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] font-black text-sky-400 shrink-0">신청문구</span>
-                  <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
-                    {templates.map(t => (
-                      <button key={t.id} onClick={() => setEditingTemplateId(t.id)} className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-600 active:scale-95 transition-all whitespace-nowrap">
-                        <FileText size={10} /> {t.title}
-                      </button>
-                    ))}
-                    <button onClick={addTemplate} className="shrink-0 flex items-center gap-0.5 px-2 py-1.5 rounded-full text-[10px] font-bold text-sky-400 bg-sky-50/50 active:scale-95 transition-all">
-                      <Plus size={10} />
-                    </button>
-                  </div>
-                </div>
-                {/* 공정위 문구 */}
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[9px] font-black text-orange-400 shrink-0">공정위</span>
-                  <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
-                    {ftcTemplates.map(t => (
-                      <button key={t.id} onClick={() => setEditingFtcTemplateId(t.id)} className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-orange-50 text-orange-600 active:scale-95 transition-all whitespace-nowrap">
-                        <FileText size={10} /> {t.title}
-                      </button>
-                    ))}
-                    <button onClick={addFtcTemplate} className="shrink-0 flex items-center gap-0.5 px-2 py-1.5 rounded-full text-[10px] font-bold text-orange-400 bg-orange-50/50 active:scale-95 transition-all">
-                      <Plus size={10} />
-                    </button>
-                  </div>
-                </div>
-              </div>
             </section>
 
             {/* 일정 리스트 - 브랜드별 분할 */}
@@ -3237,17 +3240,21 @@ ${text}`
                 <button onClick={() => setSelectedScheduleId(null)} className="flex-1 bg-slate-100 text-slate-500 py-3.5 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5">
                   <X size={14} /> 닫기
                 </button>
-                {!item.isDone ? (
+                {item.isDone ? (
+                  <div className="flex-1 bg-slate-100 text-slate-500 py-3.5 rounded-2xl font-bold text-xs text-center flex items-center justify-center gap-1.5">
+                    <CheckCircle2 size={14} /> 등록 완료
+                  </div>
+                ) : item.scheduledPublishDate ? (
+                  <div className="flex-1 bg-orange-50 text-orange-600 py-3.5 rounded-2xl font-bold text-xs text-center flex items-center justify-center gap-1.5">
+                    <Calendar size={14} /> {item.scheduledPublishDate.slice(5).replace('-','/')} 예약
+                  </div>
+                ) : (
                   <button
                     onClick={() => { setSelectedScheduleId(null); setConfirmDoneId(item.id); }}
                     className="flex-1 jelly-button py-3.5 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5"
                   >
                     <CheckCircle2 size={14} /> 리뷰 등록
                   </button>
-                ) : (
-                  <div className="flex-1 bg-slate-100 text-slate-500 py-3.5 rounded-2xl font-bold text-xs text-center flex items-center justify-center gap-1.5">
-                    <CheckCircle2 size={14} /> 등록 완료
-                  </div>
                 )}
               </div>
             </div>
@@ -3339,27 +3346,48 @@ ${text}`
 
       {/* --- 리뷰 등록 확인 팝업 --- */}
       {confirmDoneId && (
-        <div className="fixed inset-0 bg-slate-400/30 backdrop-blur-md z-50 flex items-center justify-center p-6">
-          <div className="bg-white w-full max-w-sm rounded-[32px] p-8 text-center shadow-2xl">
+        <div className="fixed inset-0 bg-slate-400/30 backdrop-blur-md z-50 flex items-center justify-center p-6" onClick={() => { setConfirmDoneId(null); setScheduledPublishDate(''); }}>
+          <div className="bg-white w-full max-w-sm rounded-[32px] p-8 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="w-16 h-16 bg-sky-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 size={32} className="text-sky-600" />
             </div>
-            <h3 className="text-xl font-black text-slate-800 mb-2">리뷰 등록 완료</h3>
-            <p className="text-sm text-slate-500 mb-8">블로그에 리뷰를 등록하셨나요?<br />완료 처리하면 되돌릴 수 없습니다.</p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setConfirmDoneId(null)}
-                className="flex-1 bg-slate-100 text-slate-600 py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all"
-              >
-                아직이요
-              </button>
-              <button
-                onClick={() => markAsDone(confirmDoneId)}
-                className="flex-1 jelly-button py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all"
-              >
-                네, 완료!
-              </button>
+            <h3 className="text-xl font-black text-slate-800 mb-2 text-center">리뷰 등록</h3>
+            <p className="text-sm text-slate-500 mb-6 text-center">등록 방식을 선택하세요</p>
+
+            {/* 당일 등록완료 */}
+            <button
+              onClick={() => markAsDone(confirmDoneId)}
+              className="w-full jelly-button py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all flex items-center justify-center gap-2 mb-3"
+            >
+              <CheckCircle2 size={16} /> 당일 등록완료
+            </button>
+
+            {/* 예약 발행 */}
+            <div className="bg-orange-50 rounded-2xl p-4 space-y-3">
+              <p className="text-xs font-black text-orange-600 text-center">예약 발행</p>
+              <input
+                type="date"
+                value={scheduledPublishDate}
+                onChange={e => setScheduledPublishDate(e.target.value)}
+                min={(() => { const d = new Date(); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); })()}
+                className="w-full px-4 py-3 rounded-xl bg-white ring-1 ring-orange-200 focus:ring-2 focus:ring-orange-400 outline-none text-sm font-bold text-center"
+              />
+              {scheduledPublishDate && (
+                <button
+                  onClick={() => markAsScheduled(confirmDoneId, scheduledPublishDate)}
+                  className="w-full bg-orange-500 text-white py-3.5 rounded-2xl font-bold text-sm active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <Calendar size={14} /> {scheduledPublishDate} 예약 등록
+                </button>
+              )}
             </div>
+
+            <button
+              onClick={() => { setConfirmDoneId(null); setScheduledPublishDate(''); }}
+              className="w-full bg-slate-100 text-slate-500 py-3.5 rounded-2xl font-bold text-sm active:scale-95 transition-all mt-3"
+            >
+              취소
+            </button>
           </div>
         </div>
       )}
