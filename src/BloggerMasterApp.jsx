@@ -1647,7 +1647,7 @@ ${text}`
                 </button>
                 <button onClick={() => setEditingFtcTemplateId('list')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 text-orange-600 active:scale-95 transition-all">
                   <FileText size={12} />
-                  <span className="text-[10px] font-black">공정위</span>
+                  <span className="text-[10px] font-black">공정위 문구</span>
                   <span className="px-1.5 py-0.5 rounded-full bg-orange-200 text-orange-700 text-[9px] font-black">{ftcTemplates.length}</span>
                 </button>
               </div>
