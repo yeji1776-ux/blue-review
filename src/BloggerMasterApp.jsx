@@ -4221,7 +4221,7 @@ ${text}`
         <button onClick={() => setActiveTab('home')} className={`transition-all ${activeTab === 'home' ? 'text-sky-500 scale-110 drop-shadow-md' : 'text-slate-500 hover:text-sky-400'}`}><ClipboardList size={26} /></button>
         <button onClick={() => setActiveTab('calendar')} className={`transition-all ${activeTab === 'calendar' ? 'text-sky-500 scale-110 drop-shadow-md' : 'text-slate-500 hover:text-sky-400'}`}><Calendar size={26} /></button>
         <button onClick={() => { setRawText(''); setParsedData({ ...emptyParsed }); setIsModalOpen(true); }} className="jelly-button text-white p-4 sm:p-5 rounded-full -mt-16 sm:-mt-20 shadow-xl shadow-sky-300/50 active:rotate-12 transition-all border-4 border-white"><Plus size={26} /></button>
-        <button onClick={() => { setActiveTab('tool'); setToolSubTab(null); }} className={`transition-all ${activeTab === 'tool' ? 'text-sky-500 scale-110 drop-shadow-md' : 'text-slate-500 hover:text-sky-400'}`}><Calculator size={26} /></button>
+        <button onClick={() => setActiveTab('scheduleManage')} className={`transition-all ${activeTab === 'scheduleManage' ? 'text-sky-500 scale-110 drop-shadow-md' : 'text-slate-500 hover:text-sky-400'}`}><CalendarDays size={26} /></button>
         <button onClick={() => setActiveTab('profile')} className={`transition-all ${activeTab === 'profile' ? 'text-sky-500 scale-110 drop-shadow-md' : 'text-slate-500 hover:text-sky-400'}`}><User size={26} /></button>
       </nav>
 
