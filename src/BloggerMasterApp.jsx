@@ -1777,7 +1777,7 @@ ${text}`
               <button onClick={() => setHomeQuickCopyOpen(o => !o)} className="w-full flex items-center justify-between mb-3">
                 <h3 className="text-[10px] font-black text-slate-500 uppercase">Quick Copy</h3>
                 <div className="flex items-center gap-2">
-                  <p className="text-[10px] font-bold text-slate-500">누르면 주소가 복사됩니다</p>
+                  <p className="text-[10px] font-bold text-slate-500">채널: 복사 · 브랜드: 이동</p>
                   <ChevronRight size={13} className={`text-slate-500 transition-transform ${homeQuickCopyOpen ? 'rotate-90' : ''}`} />
                 </div>
               </button>
