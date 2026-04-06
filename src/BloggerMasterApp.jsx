@@ -1722,9 +1722,9 @@ ${text}`
               </button>
               {homeQuickCopyOpen && (
                 <div className="flex gap-3">
-                  {/* 채널 (왼쪽) */}
-                  <div className="flex-1 flex flex-wrap items-start content-start gap-1.5">
-                    <span className="text-[9px] font-black text-sky-400 w-full">채널</span>
+                  {/* 채널 (왼쪽 1열) */}
+                  <div className="shrink-0 flex flex-col gap-1.5">
+                    <span className="text-[9px] font-black text-sky-400">채널</span>
                     {[
                       { key: 'blogUrl',     label: '블로그',     value: profile.blogUrl,     icon: <Globe size={12} />,     bg: 'bg-sky-50 text-sky-500' },
                       { key: 'blogClipUrl', label: '클립',       value: profile.blogClipId,  icon: <PenTool size={12} />,   bg: 'bg-teal-50 text-teal-500' },
@@ -1738,7 +1738,7 @@ ${text}`
                       </button>
                     ))}
                   </div>
-                  {/* 브랜드 (오른쪽) */}
+                  {/* 브랜드 (오른쪽 3열) */}
                   {profile.brandSiteUrls && Object.entries(profile.brandSiteUrls).some(([, v]) => v) && (
                     <div className="flex-1 flex flex-wrap items-start content-start gap-1.5">
                       <span className="text-[9px] font-black text-sky-400 w-full">브랜드</span>
