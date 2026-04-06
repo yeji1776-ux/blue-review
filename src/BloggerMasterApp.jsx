@@ -3362,21 +3362,27 @@ ${text}`
 
             {/* 예약 발행 */}
             <div className="bg-orange-50 rounded-2xl p-4 space-y-3">
-              <p className="text-xs font-black text-orange-600 text-center">예약 발행</p>
-              <p className="text-[10px] text-orange-400 text-center">발행 예정일을 선택하세요</p>
-              <input
-                type="date"
-                value={scheduledPublishDate}
-                onChange={e => setScheduledPublishDate(e.target.value)}
-                min={(() => { const d = new Date(); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); })()}
-                className="w-full px-4 py-3 rounded-xl bg-white ring-1 ring-orange-200 focus:ring-2 focus:ring-orange-400 outline-none text-sm font-bold text-center"
-              />
+              <div className="relative">
+                <label className="w-full flex items-center justify-center gap-2 px-4 py-3.5 rounded-xl bg-white ring-1 ring-orange-200 cursor-pointer active:scale-95 transition-all">
+                  <Calendar size={14} className="text-orange-500" />
+                  <span className="text-sm font-bold text-orange-600">
+                    {scheduledPublishDate ? `${scheduledPublishDate.slice(5).replace('-','/')} 예약 발행` : '예약 발행 날짜 선택'}
+                  </span>
+                  <input
+                    type="date"
+                    value={scheduledPublishDate}
+                    onChange={e => setScheduledPublishDate(e.target.value)}
+                    min={(() => { const d = new Date(); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); })()}
+                    className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                  />
+                </label>
+              </div>
               {scheduledPublishDate && (
                 <button
                   onClick={() => markAsScheduled(confirmDoneId, scheduledPublishDate)}
                   className="w-full bg-orange-500 text-white py-3.5 rounded-2xl font-bold text-sm active:scale-95 transition-all flex items-center justify-center gap-2"
                 >
-                  <Calendar size={14} /> {scheduledPublishDate} 예약 등록
+                  <CheckCircle2 size={14} /> 예약 등록 확인
                 </button>
               )}
             </div>
