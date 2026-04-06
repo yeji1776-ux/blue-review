@@ -1759,17 +1759,17 @@ ${text}`
             })()}
 
             {/* 문구 목록 — 신청문구 / 공정위 아이콘 */}
-            <section className="jelly-card p-4">
-              <div className="flex items-center justify-center gap-4">
-                <button onClick={() => setEditingTemplateId('list')} className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-sky-50 text-sky-600 active:scale-95 transition-all">
-                  <FileText size={16} />
-                  <span className="text-sm font-black">신청문구</span>
-                  <span className="ml-1 px-2 py-0.5 rounded-full bg-sky-200 text-sky-700 text-[10px] font-black">{templates.length}</span>
+            <section className="jelly-card p-3">
+              <div className="flex items-center justify-center gap-2">
+                <button onClick={() => setEditingTemplateId('list')} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-50 text-sky-600 active:scale-95 transition-all">
+                  <FileText size={13} />
+                  <span className="text-xs font-black">신청문구</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-sky-200 text-sky-700 text-[9px] font-black">{templates.length}</span>
                 </button>
-                <button onClick={() => setEditingFtcTemplateId('list')} className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-orange-50 text-orange-600 active:scale-95 transition-all">
-                  <FileText size={16} />
-                  <span className="text-sm font-black">공정위 문구</span>
-                  <span className="ml-1 px-2 py-0.5 rounded-full bg-orange-200 text-orange-700 text-[10px] font-black">{ftcTemplates.length}</span>
+                <button onClick={() => setEditingFtcTemplateId('list')} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 text-orange-600 active:scale-95 transition-all">
+                  <FileText size={13} />
+                  <span className="text-xs font-black">공정위 문구</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-orange-200 text-orange-700 text-[9px] font-black">{ftcTemplates.length}</span>
                 </button>
               </div>
             </section>
