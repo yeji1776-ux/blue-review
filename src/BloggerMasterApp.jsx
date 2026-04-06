@@ -3822,31 +3822,6 @@ ${text}`
                 </div>
               </div>
 
-              {/* 채널 선택 토글 */}
-              <div className="jelly-card p-4">
-                <p className="text-xs font-black text-slate-500 mb-3">사용 중인 채널 선택</p>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { key: 'blogUrl',     label: '블로그',     icon: <Globe size={14} /> },
-                    { key: 'blogClipUrl', label: '클립',       icon: <PenTool size={14} /> },
-                    { key: 'instaId',     label: '인스타',     icon: <Instagram size={14} /> },
-                    { key: 'reelsUrl',    label: '릴스',       icon: <Eye size={14} /> },
-                    { key: 'facebookUrl', label: '페이스북',   icon: <ExternalLink size={14} /> },
-                    { key: 'youtubeUrl',  label: '유튜브',     icon: <Youtube size={14} /> },
-                    { key: 'email',       label: '이메일',     icon: <Mail size={14} /> },
-                  ].map(({ key, label, icon }) => {
-                    const enabled = profile.enabledPlatforms?.[key];
-                    return (
-                      <button key={key}
-                        onClick={() => updateProfile('enabledPlatforms', { ...profile.enabledPlatforms, [key]: !enabled })}
-                        className={`flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold transition-all border-2 ${enabled ? 'bg-sky-500 text-white border-sky-500 shadow-sm shadow-sky-200' : 'bg-white text-slate-500 border-slate-100'}`}>
-                        {icon} {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
               {/* 닉네임 */}
               <div className="jelly-card p-4">
                 <label className="flex items-center gap-2 text-xs font-black text-slate-500 mb-2">
@@ -3855,6 +3830,31 @@ ${text}`
                 <input className="w-full px-4 py-3 rounded-xl bg-sky-50/50 ring-1 ring-slate-100 focus:ring-2 focus:ring-sky-400 outline-none text-sm transition-all"
                   placeholder="블로거 닉네임이나 이름" value={profile.nickname}
                   onChange={(e) => updateProfile('nickname', e.target.value)} />
+              </div>
+
+              {/* 채널 선택 토글 */}
+              <div className="jelly-card p-4">
+                <p className="text-xs font-black text-slate-500 mb-3">사용 중인 채널 선택</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { key: 'blogUrl',     label: '블로그',     icon: <Globe size={12} /> },
+                    { key: 'blogClipUrl', label: '클립',       icon: <PenTool size={12} /> },
+                    { key: 'instaId',     label: '인스타',     icon: <Instagram size={12} /> },
+                    { key: 'reelsUrl',    label: '릴스',       icon: <Eye size={12} /> },
+                    { key: 'facebookUrl', label: '페이스북',   icon: <ExternalLink size={12} /> },
+                    { key: 'youtubeUrl',  label: '유튜브',     icon: <Youtube size={12} /> },
+                    { key: 'email',       label: '이메일',     icon: <Mail size={12} /> },
+                  ].map(({ key, label, icon }) => {
+                    const enabled = profile.enabledPlatforms?.[key];
+                    return (
+                      <button key={key}
+                        onClick={() => updateProfile('enabledPlatforms', { ...profile.enabledPlatforms, [key]: !enabled })}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold active:scale-95 transition-all ${enabled ? 'bg-sky-500 text-white shadow-sm shadow-sky-200' : 'bg-slate-100 text-slate-400'}`}>
+                        {icon} {label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* 채널별 주소/ID */}
