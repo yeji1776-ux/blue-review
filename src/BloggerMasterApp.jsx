@@ -1639,16 +1639,16 @@ ${text}`
               {profile.nickname && (
                 <p className="text-[11px] font-black text-slate-700">안녕하세요! <span className="text-sky-500">{profile.nickname}</span>님 :)</p>
               )}
-              <div className="flex items-center gap-1.5">
-                <button onClick={() => setEditingTemplateId('list')} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-sky-50 text-sky-600 active:scale-95 transition-all">
-                  <FileText size={10} />
-                  <span className="text-[9px] font-black">신청문구</span>
-                  <span className="px-1 rounded-full bg-sky-200 text-sky-700 text-[8px] font-black">{templates.length}</span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setEditingTemplateId('list')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-50 text-sky-600 active:scale-95 transition-all">
+                  <FileText size={12} />
+                  <span className="text-[10px] font-black">신청문구</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-sky-200 text-sky-700 text-[9px] font-black">{templates.length}</span>
                 </button>
-                <button onClick={() => setEditingFtcTemplateId('list')} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-orange-50 text-orange-600 active:scale-95 transition-all">
-                  <FileText size={10} />
-                  <span className="text-[9px] font-black">공정위</span>
-                  <span className="px-1 rounded-full bg-orange-200 text-orange-700 text-[8px] font-black">{ftcTemplates.length}</span>
+                <button onClick={() => setEditingFtcTemplateId('list')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 text-orange-600 active:scale-95 transition-all">
+                  <FileText size={12} />
+                  <span className="text-[10px] font-black">공정위</span>
+                  <span className="px-1.5 py-0.5 rounded-full bg-orange-200 text-orange-700 text-[9px] font-black">{ftcTemplates.length}</span>
                 </button>
               </div>
             </div>
@@ -3237,13 +3237,19 @@ ${text}`
                   <X size={14} /> 닫기
                 </button>
                 {item.isDone ? (
-                  <div className="flex-1 bg-slate-100 text-slate-500 py-3.5 rounded-2xl font-bold text-xs text-center flex items-center justify-center gap-1.5">
+                  <button
+                    onClick={() => { setSelectedScheduleId(null); setConfirmDoneId(item.id); }}
+                    className="flex-1 bg-emerald-50 text-emerald-600 py-3.5 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                  >
                     <CheckCircle2 size={14} /> 등록 완료
-                  </div>
+                  </button>
                 ) : item.scheduledPublishDate ? (
-                  <div className="flex-1 bg-orange-50 text-orange-600 py-3.5 rounded-2xl font-bold text-xs text-center flex items-center justify-center gap-1.5">
+                  <button
+                    onClick={() => { setSelectedScheduleId(null); setConfirmDoneId(item.id); }}
+                    className="flex-1 bg-orange-50 text-orange-600 py-3.5 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5"
+                  >
                     <Calendar size={14} /> {item.scheduledPublishDate.slice(5).replace('-','/')} 예약
-                  </div>
+                  </button>
                 ) : (
                   <button
                     onClick={() => { setSelectedScheduleId(null); setConfirmDoneId(item.id); }}
@@ -3350,7 +3356,20 @@ ${text}`
             <h3 className="text-xl font-black text-slate-800 mb-2 text-center">리뷰 등록</h3>
             <p className="text-sm text-slate-500 mb-6 text-center">등록 방식을 선택하세요</p>
 
-            {/* 당일 등록완료 */}
+            {/* 되돌리기 — isDone 또는 예약된 항목일 때 */}
+            {(() => { const s = schedules.find(x => x.id === confirmDoneId); return s && (s.isDone || s.scheduledPublishDate); })() && (
+              <button
+                onClick={() => {
+                  setSchedules(prev => prev.map(s => s.id === confirmDoneId ? { ...s, isDone: false, doneAt: undefined, scheduledPublishDate: undefined } : s));
+                  setConfirmDoneId(null);
+                }}
+                className="w-full bg-slate-100 text-slate-600 py-3.5 rounded-2xl font-bold text-sm active:scale-95 transition-all flex items-center justify-center gap-2 mb-3"
+              >
+                <X size={14} /> 등록 취소 (되돌리기)
+              </button>
+            )}
+
+            {/* 등록완료 */}
             <button
               onClick={() => markAsDone(confirmDoneId)}
               className="w-full jelly-button py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all flex items-center justify-center gap-2 mb-3"
