@@ -3359,12 +3359,13 @@ ${text}`
               onClick={() => markAsDone(confirmDoneId)}
               className="w-full jelly-button py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all flex items-center justify-center gap-2 mb-3"
             >
-              <CheckCircle2 size={16} /> 당일 등록완료
+              <CheckCircle2 size={16} /> 등록완료
             </button>
 
             {/* 예약 발행 */}
             <div className="bg-orange-50 rounded-2xl p-4 space-y-3">
               <p className="text-xs font-black text-orange-600 text-center">예약 발행</p>
+              <p className="text-[10px] text-orange-400 text-center">발행 예정일을 선택하세요</p>
               <input
                 type="date"
                 value={scheduledPublishDate}
