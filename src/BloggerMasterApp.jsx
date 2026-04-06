@@ -1759,19 +1759,17 @@ ${text}`
             })()}
 
             {/* 문구 목록 — 신청문구 / 공정위 아이콘 */}
-            <section className="jelly-card p-3">
-              <div className="flex items-center justify-center gap-2">
-                <button onClick={() => setEditingTemplateId('list')} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-sky-50 text-sky-600 active:scale-95 transition-all">
+            <section className="flex items-center justify-center gap-3 px-1">
+                <button onClick={() => setEditingTemplateId('list')} className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white shadow-sm border border-sky-100 text-sky-600 active:scale-95 transition-all">
                   <FileText size={13} />
                   <span className="text-xs font-black">신청문구</span>
                   <span className="px-1.5 py-0.5 rounded-full bg-sky-200 text-sky-700 text-[9px] font-black">{templates.length}</span>
                 </button>
-                <button onClick={() => setEditingFtcTemplateId('list')} className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 text-orange-600 active:scale-95 transition-all">
+                <button onClick={() => setEditingFtcTemplateId('list')} className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white shadow-sm border border-orange-100 text-orange-600 active:scale-95 transition-all">
                   <FileText size={13} />
                   <span className="text-xs font-black">공정위 문구</span>
                   <span className="px-1.5 py-0.5 rounded-full bg-orange-200 text-orange-700 text-[9px] font-black">{ftcTemplates.length}</span>
                 </button>
-              </div>
             </section>
 
             {/* Quick Copy */}
