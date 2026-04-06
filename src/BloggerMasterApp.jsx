@@ -1711,48 +1711,6 @@ ${text}`
               );
             })()}
 
-            {/* Quick Copy */}
-            <section className="jelly-card p-4">
-              <button onClick={() => setHomeQuickCopyOpen(o => !o)} className="w-full flex items-center justify-between mb-3">
-                <h3 className="text-[10px] font-black text-slate-500 uppercase">Quick Copy</h3>
-                <div className="flex items-center gap-2">
-                  <p className="text-[10px] font-bold text-slate-500">채널: 복사 · 브랜드: 이동</p>
-                  <ChevronRight size={13} className={`text-slate-500 transition-transform ${homeQuickCopyOpen ? 'rotate-90' : ''}`} />
-                </div>
-              </button>
-              {homeQuickCopyOpen && (
-                <div className="flex gap-3">
-                  {/* 채널 (왼쪽 1열) */}
-                  <div className="shrink-0 flex flex-col gap-1.5">
-                    <span className="text-[9px] font-black text-sky-400">채널</span>
-                    {[
-                      { key: 'blogUrl',     label: '블로그',     value: profile.blogUrl,     icon: <Globe size={12} />,     bg: 'bg-sky-50 text-sky-500' },
-                      { key: 'blogClipUrl', label: '클립',       value: profile.blogClipId,  icon: <PenTool size={12} />,   bg: 'bg-teal-50 text-teal-500' },
-                      { key: 'instaId',     label: '인스타',     value: profile.instaId,     icon: <Instagram size={12} />, bg: 'bg-pink-50 text-pink-500' },
-                      { key: 'reelsUrl',    label: '릴스',       value: profile.reelsUrl,    icon: <Eye size={12} />,       bg: 'bg-violet-50 text-violet-500' },
-                      { key: 'youtubeUrl',  label: '유튜브',     value: profile.youtubeUrl,  icon: <Youtube size={12} />,   bg: 'bg-rose-50 text-rose-500' },
-                      { key: 'email',       label: '이메일',     value: profile.email,       icon: <Mail size={12} />,      bg: 'bg-emerald-50 text-emerald-500' },
-                    ].filter(({ key }) => profile.enabledPlatforms?.[key]).map(({ label, value, icon, bg }) => (
-                      <button key={label} onClick={() => copyWithCheck(value, label)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold active:scale-95 transition-all ${bg}`}>
-                        {icon} {label}
-                      </button>
-                    ))}
-                  </div>
-                  {/* 브랜드 (오른쪽 3열) */}
-                  {profile.brandSiteUrls && Object.entries(profile.brandSiteUrls).some(([, v]) => v) && (
-                    <div className="flex-1 flex flex-wrap items-start content-start gap-1.5">
-                      <span className="text-[9px] font-black text-sky-400 w-full">브랜드</span>
-                      {Object.entries(profile.brandSiteUrls || {}).filter(([, v]) => v).map(([brand, url]) => (
-                        <a key={brand} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-500 active:scale-95 transition-all">
-                          <ExternalLink size={10} /> {brand}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </section>
-
             {/* 3일치 할일 */}
             {(() => {
               const _now = new Date();
@@ -3827,23 +3785,40 @@ ${text}`
               <div className="jelly-card p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-xs font-black text-slate-500">Quick Copy</h4>
-                  <p className="text-[10px] font-bold text-slate-500">누르면 복사됩니다</p>
+                  <p className="text-[10px] font-bold text-slate-500">채널: 복사 · 브랜드: 이동</p>
                 </div>
-                <div className="grid grid-cols-3 gap-1.5">
-                  {[
-                    { key: 'blogUrl',     label: '블로그',      value: profile.blogUrl },
-                    { key: 'blogClipUrl', label: '클립',        value: profile.blogClipId },
-                    { key: 'instaId',     label: '인스타',      value: profile.instaId },
-                    { key: 'reelsUrl',    label: '릴스',        value: profile.reelsUrl },
-                    { key: 'facebookUrl', label: '페이스북',    value: profile.facebookUrl },
-                    { key: 'youtubeUrl',  label: '유튜브',      value: profile.youtubeUrl },
-                    { key: 'email',       label: '이메일',      value: profile.email },
-                  ].filter(({ key }) => profile.enabledPlatforms?.[key]).map(({ label, value }) => (
-                    <button key={label} onClick={() => copyWithCheck(value, label)}
-                      className="flex items-center justify-center gap-1.5 px-2 py-2 rounded-xl bg-sky-50 text-[10px] font-bold text-slate-600 active:bg-sky-100 transition-all">
-                      <Copy size={12} /> {label}
-                    </button>
-                  ))}
+                <div className="space-y-3">
+                  {/* 채널 (위) */}
+                  <div>
+                    <span className="text-[9px] font-black text-sky-400 mb-1.5 block">채널</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        { key: 'blogUrl',     label: '블로그',     value: profile.blogUrl,     icon: <Globe size={12} />,     bg: 'bg-sky-50 text-sky-500' },
+                        { key: 'blogClipUrl', label: '클립',       value: profile.blogClipId,  icon: <PenTool size={12} />,   bg: 'bg-teal-50 text-teal-500' },
+                        { key: 'instaId',     label: '인스타',     value: profile.instaId,     icon: <Instagram size={12} />, bg: 'bg-pink-50 text-pink-500' },
+                        { key: 'reelsUrl',    label: '릴스',       value: profile.reelsUrl,    icon: <Eye size={12} />,       bg: 'bg-violet-50 text-violet-500' },
+                        { key: 'youtubeUrl',  label: '유튜브',     value: profile.youtubeUrl,  icon: <Youtube size={12} />,   bg: 'bg-rose-50 text-rose-500' },
+                        { key: 'email',       label: '이메일',     value: profile.email,       icon: <Mail size={12} />,      bg: 'bg-emerald-50 text-emerald-500' },
+                      ].filter(({ key }) => profile.enabledPlatforms?.[key]).map(({ label, value, icon, bg }) => (
+                        <button key={label} onClick={() => copyWithCheck(value, label)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold active:scale-95 transition-all ${bg}`}>
+                          {icon} {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {/* 브랜드 (아래) */}
+                  {profile.brandSiteUrls && Object.entries(profile.brandSiteUrls).some(([, v]) => v) && (
+                    <div>
+                      <span className="text-[9px] font-black text-sky-400 mb-1.5 block">브랜드</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {Object.entries(profile.brandSiteUrls || {}).filter(([, v]) => v).map(([brand, url]) => (
+                          <a key={brand} href={url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-500 active:scale-95 transition-all">
+                            <ExternalLink size={10} /> {brand}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
