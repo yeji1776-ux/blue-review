@@ -32,7 +32,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 6 plans
 Plans:
 - [x] 01-01-setup-constants-PLAN.md — 라이브러리 설치, feature/ui 폴더 구조, 상수 추출
-- [ ] 01-02-safe-parser-PLAN.md — parseWithSchema 유틸 + 5 도메인 schemas + 9개 JSON.parse 교체
+- [x] 01-02-safe-parser-PLAN.md — parseWithSchema 유틸 + 5 도메인 schemas + 9개 JSON.parse 교체
 - [ ] 01-03-error-boundary-PLAN.md — ErrorBoundary 컴포넌트 + 3곳 적용
 - [ ] 01-04-hooks-weather-profile-PLAN.md — useWeather, useProfile 훅 추출
 - [ ] 01-05-hooks-templates-schedules-PLAN.md — useTemplates, useSchedules 훅 추출
