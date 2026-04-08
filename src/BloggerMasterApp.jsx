@@ -17,6 +17,12 @@ import { CSS } from '@dnd-kit/utilities';
 import { STORAGE_KEYS } from './constants/storageKeys'
 import { PLAN_LIMITS, PLAN_META } from './constants/plans'
 import { ADMIN_EMAILS } from './constants/admin'
+import { parseWithSchema } from './lib/parseWithSchema'
+import { profileSchema } from './features/profile/schemas'
+import { templatesSchema, ftcTemplatesSchema } from './features/template/schemas'
+import { schedulesSchema, geminiParsedSchema } from './features/schedule/schemas'
+import { gcalSelectedSchema } from './features/calendar/schemas'
+import { hashtagsSchema, savedTextsSchema } from './features/settings/schemas'
 
 const SortableTemplateItem = ({ t, onEdit }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: t.id });
@@ -365,7 +371,6 @@ const BloggerMasterApp = () => {
 
   // --- 프로필 ---
   const [profile, setProfile] = useState(() => {
-    const saved = localStorage.getItem('blogger_profile');
     const defaults = {
       nickname: '',
       blogUrl: '',
@@ -379,8 +384,8 @@ const BloggerMasterApp = () => {
       email: '',
       enabledPlatforms: { blogUrl: true, blogClipUrl: false, instaId: true, reelsUrl: false, facebookUrl: false, youtubeUrl: false, email: false },
     };
-    if (!saved) return defaults;
-    const parsed = JSON.parse(saved);
+    const parsed = parseWithSchema(profileSchema, localStorage.getItem(STORAGE_KEYS.PROFILE), null);
+    if (!parsed) return defaults;
     // 기존 저장 데이터에 enabledPlatforms 없으면 기본값 병합
     if (!parsed.enabledPlatforms) parsed.enabledPlatforms = defaults.enabledPlatforms;
     // 신규 필드 병합
@@ -406,10 +411,10 @@ const BloggerMasterApp = () => {
 
   // --- 협찬 신청 문구 템플릿 ---
   const [templates, setTemplates] = useState(() => {
-    const saved = localStorage.getItem('blogger_templates');
-    return saved ? JSON.parse(saved) : [
+    const defaults = [
       { id: 1, title: '기본 신청 문구', content: '안녕하세요! 블로그 체험단 신청합니다.\n일일 방문자 수: \n블로그 주소: \n인스타그램: \n정성스럽게 리뷰하겠습니다!' },
     ];
+    return parseWithSchema(templatesSchema, localStorage.getItem(STORAGE_KEYS.TEMPLATES), defaults);
   });
   const [editingTemplateId, setEditingTemplateId] = useState(null);
 
@@ -450,10 +455,10 @@ const BloggerMasterApp = () => {
 
   // --- 공정위 문구 템플릿 ---
   const [ftcTemplates, setFtcTemplates] = useState(() => {
-    const saved = localStorage.getItem('blogger_ftc_templates');
-    return saved ? JSON.parse(saved) : [
+    const defaults = [
       { id: 1, title: '기본 공정위 문구', content: '본 포스팅은 업체로부터 제품/서비스를 무상으로 제공받아 작성된 솔직한 리뷰입니다.' },
     ];
+    return parseWithSchema(ftcTemplatesSchema, localStorage.getItem(STORAGE_KEYS.FTC_TEMPLATES), defaults);
   });
   const [editingFtcTemplateId, setEditingFtcTemplateId] = useState(null);
 
@@ -481,14 +486,14 @@ const BloggerMasterApp = () => {
 
   // --- 해시태그 모음 ---
   const [hashtags, setHashtags] = useState(() => {
-    const saved = localStorage.getItem('blogger_hashtags');
-    return saved ? JSON.parse(saved) : {
+    const defaults = {
       '맛집': ['#맛집추천', '#맛집탐방', '#먹스타그램', '#맛스타그램', '#푸드스타그램', '#맛집리뷰', '#오늘뭐먹지', '#맛집블로거'],
       '뷰티': ['#뷰티블로거', '#뷰티리뷰', '#화장품추천', '#스킨케어', '#데일리메이크업', '#뷰티스타그램'],
       '카페': ['#카페추천', '#카페스타그램', '#카페투어', '#디저트맛집', '#브런치카페', '#감성카페'],
       '숙박': ['#호텔추천', '#숙소추천', '#여행숙소', '#호캉스', '#펜션추천', '#숙박리뷰'],
       '체험': ['#체험단', '#협찬', '#블로거체험단', '#리뷰어', '#체험단모집', '#인플루언서'],
     };
+    return parseWithSchema(hashtagsSchema, localStorage.getItem(STORAGE_KEYS.HASHTAGS), defaults);
   });
   const [editingHashtagCat, setEditingHashtagCat] = useState(null);
   const [newHashtag, setNewHashtag] = useState('');
@@ -599,8 +604,12 @@ const BloggerMasterApp = () => {
 
   const [gcalCalendars, setGcalCalendars] = useState([]);
   const [gcalSelectedCal, setGcalSelectedCal] = useState(() => {
-    const fromProfile = JSON.parse(localStorage.getItem('blogger_profile') || '{}').gcalSelectedCal;
-    return fromProfile || localStorage.getItem('gcal_selected_cal') || 'primary';
+    const savedProfile = parseWithSchema(profileSchema, localStorage.getItem(STORAGE_KEYS.PROFILE), {});
+    const fromProfile = savedProfile?.gcalSelectedCal;
+    // gcal_selected_cal은 평문 문자열로 저장되어 있어 직접 검증
+    const rawKey = localStorage.getItem(STORAGE_KEYS.GCAL_SELECTED_CAL);
+    const fromKey = gcalSelectedSchema.safeParse(rawKey).success ? rawKey : null;
+    return fromProfile || fromKey || 'primary';
   });
 
   const disconnectGoogleCalendar = () => {
@@ -635,8 +644,8 @@ const BloggerMasterApp = () => {
           const writable = data.items.filter(c => c.accessRole === 'owner' || c.accessRole === 'writer');
           setGcalCalendars(writable);
           // 저장된 선택이 없거나 'primary'면 실제 기본 캘린더 ID로 설정
-          const savedProfile = JSON.parse(localStorage.getItem('blogger_profile') || '{}');
-          const saved = savedProfile.gcalSelectedCal || localStorage.getItem('gcal_selected_cal');
+          const savedProfile = parseWithSchema(profileSchema, localStorage.getItem(STORAGE_KEYS.PROFILE), {});
+          const saved = savedProfile?.gcalSelectedCal || localStorage.getItem(STORAGE_KEYS.GCAL_SELECTED_CAL);
           if (!saved || saved === 'primary') {
             const primary = writable.find(c => c.primary);
             if (primary) {
@@ -751,8 +760,7 @@ const BloggerMasterApp = () => {
   const [editingTextId, setEditingTextId] = useState(null);
   const [showSaveTextToast, setShowSaveTextToast] = useState(false);
   const [savedTexts, setSavedTexts] = useState(() => {
-    const saved = localStorage.getItem('blogger_saved_texts');
-    return saved ? JSON.parse(saved) : [];
+    return parseWithSchema(savedTextsSchema, localStorage.getItem(STORAGE_KEYS.SAVED_TEXTS), []);
   });
   const [showSavedTexts, setShowSavedTexts] = useState(false);
   const [rawText, setRawText] = useState('');
@@ -813,13 +821,12 @@ const BloggerMasterApp = () => {
   ];
 
   const [schedules, setSchedules] = useState(() => {
-    const saved = localStorage.getItem('blogSchedules');
-    if (saved) {
-      const parsed = JSON.parse(saved);
+    const parsed = parseWithSchema(schedulesSchema, localStorage.getItem(STORAGE_KEYS.SCHEDULES), null);
+    if (parsed && parsed.length > 0) {
       // 예시 데이터(id 1,2)만 있으면 빈 배열로 초기화 (로그인 유저용 정리)
       const isOnlyExamples = parsed.every(s => s.id === 1 || s.id === 2);
       if (isOnlyExamples) {
-        localStorage.removeItem('blogSchedules');
+        localStorage.removeItem(STORAGE_KEYS.SCHEDULES);
         return [];
       }
       return parsed;
@@ -1310,7 +1317,16 @@ ${text}`
     // JSON 블록 추출 (```json ... ``` 또는 순수 JSON)
     const jsonMatch = content.match(/```json\s*([\s\S]*?)```/) || content.match(/(\{[\s\S]*\})/);
     if (jsonMatch) {
-      return JSON.parse(jsonMatch[1]);
+      try {
+        const raw = JSON.parse(jsonMatch[1]);
+        const result = geminiParsedSchema.safeParse(raw);
+        if (result.success) return result.data;
+        console.warn('[parseWithSchema] Gemini 응답 스키마 검증 실패, 기본값 사용:', result.error);
+        return {};
+      } catch (err) {
+        console.warn('[parseWithSchema] Gemini 응답 JSON 파싱 실패, 기본값 사용:', err);
+        return {};
+      }
     }
     throw new Error('JSON 파싱 실패');
   };
