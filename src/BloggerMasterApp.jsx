@@ -15,6 +15,7 @@ import { DndContext, PointerSensor, TouchSensor, useSensor, useSensors, closestC
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { STORAGE_KEYS } from './constants/storageKeys'
+import { AppErrorBoundary } from './components/ui/ErrorBoundary'
 import { PLAN_LIMITS, PLAN_META } from './constants/plans'
 import { ADMIN_EMAILS } from './constants/admin'
 import { parseWithSchema } from './lib/parseWithSchema'
@@ -2214,6 +2215,7 @@ ${text}`
 
 
         {activeTab === 'tool' && (
+          <AppErrorBoundary key="tool">
           <div className="animate-in fade-in duration-300">
 
             {/* ── 허브 (카테고리 선택) ── */}
@@ -2487,9 +2489,11 @@ ${text}`
             )}
 
           </div>
+          </AppErrorBoundary>
         )}
 
         {activeTab === 'calendar' && (
+          <AppErrorBoundary key="calendar">
           <div className="space-y-6 animate-in fade-in duration-500">
             <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-4">
               <section className="jelly-card p-6 sm:w-[380px]">
@@ -2643,6 +2647,7 @@ ${text}`
             )}
 
           </div>
+          </AppErrorBoundary>
         )}
 
       </main>
