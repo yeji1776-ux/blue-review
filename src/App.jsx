@@ -1,7 +1,12 @@
 import BloggerMasterApp from './BloggerMasterApp'
+import { AppErrorBoundary } from './components/ui/ErrorBoundary'
 
 function App() {
-  return <BloggerMasterApp />
+  return (
+    <AppErrorBoundary>
+      <BloggerMasterApp />
+    </AppErrorBoundary>
+  )
 }
 
 export default App
