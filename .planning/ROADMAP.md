@@ -29,7 +29,15 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. src/constants/storageKeys.js가 존재하고 모든 localStorage 키가 이 파일에서만 참조된다
   4. src/features/ 폴더 구조가 생성되어 있다
   5. 도메인 훅(useSchedules, useTemplates, useProfile, useWeather, useGoogleCalendar 등)이 각자의 상태와 사이드이펙트를 소유한다
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [ ] 01-01-setup-constants-PLAN.md — 라이브러리 설치, feature/ui 폴더 구조, 상수 추출
+- [ ] 01-02-safe-parser-PLAN.md — parseWithSchema 유틸 + 5 도메인 schemas + 9개 JSON.parse 교체
+- [ ] 01-03-error-boundary-PLAN.md — ErrorBoundary 컴포넌트 + 3곳 적용
+- [ ] 01-04-hooks-weather-profile-PLAN.md — useWeather, useProfile 훅 추출
+- [ ] 01-05-hooks-templates-schedules-PLAN.md — useTemplates, useSchedules 훅 추출
+- [ ] 01-06-hooks-gcal-cleanup-PLAN.md — useGoogleCalendar 훅 + 코드 정리 + Phase 1 회귀 UAT
+
 
 ### Phase 2: Data Layer + Security
 **Goal**: Supabase DB가 유일한 영속 저장소가 되고, 기존 사용자 데이터가 유실 없이 이전되며, 보안 취약점이 해소된다
