@@ -643,17 +643,13 @@ Phase 1 완료 기준 (ROADMAP.md 성공 기준):
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Supabase 복합 로드 이펙트 소유자**
-   - What we know: 라인 848~882의 useEffect는 schedules/templates/profile/hashtags/savedTexts를 모두 로드
-   - What's unclear: 어느 훅이 이 이펙트를 소유해야 하는가
-   - Recommendation: `useSchedules`에 넣되, 다른 도메인 setter들을 인자로 받는다. Phase 2에서 각 테이블로 분리되면 자연히 해소.
+1. **Supabase 복합 로드 이펙트 소유자** — RESOLVED (Plan 05)
+   - Decision: 복합 useEffect는 BloggerMasterApp.jsx에 그대로 유지 (Pitfall 1). 여러 도메인 setter를 한 번에 필요로 하므로 Phase 1에서 분리하면 N번 API 호출 위험. Phase 2 테이블 분리 시 자연 해소.
 
-2. **settings 도메인 분리 범위**
-   - What we know: fontSize, themeColor, hashtags는 논리적으로 settings 도메인
-   - What's unclear: savedTexts, userPlan도 settings인가, 아니면 각각 별도인가
-   - Recommendation: `savedTexts`는 schedule/tool 탭에서 사용되므로 `useSchedules`에 포함. `userPlan`/`isAdmin`은 Supabase에서 오는 값이므로 settings 훅이 아닌 별도 `useUserPlan` 훅 또는 BloggerMasterApp에 유지.
+2. **settings 도메인 분리 범위** — RESOLVED (Plan 05)
+   - Decision: `savedTexts`는 `useSchedules`에 포함. `userPlan`/`isAdmin`은 BloggerMasterApp에 유지 (Phase 1에서 별도 훅 추출하지 않음).
 
 ---
 
