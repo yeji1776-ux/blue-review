@@ -9,8 +9,8 @@
 
 - [ ] **INFRA-01**: 앱 전체와 주요 기능(Calendar, Templates)에 React Error Boundary 적용
 - [ ] **INFRA-02**: 9개 JSON.parse 호출에 Zod v4 스키마 검증 적용, 파싱 실패 시 안전한 기본값 반환
-- [ ] **INFRA-03**: 매직 스트링(탭명, 플랜 제한, 관리자 이메일)을 src/constants/로 추출
-- [ ] **INFRA-04**: Feature 기반 폴더 구조 적용 (src/features/{schedule,template,calendar,profile,settings}/)
+- [x] **INFRA-03**: 매직 스트링(탭명, 플랜 제한, 관리자 이메일)을 src/constants/로 추출
+- [x] **INFRA-04**: Feature 기반 폴더 구조 적용 (src/features/{schedule,template,calendar,profile,settings}/)
 
 ### State Management
 
@@ -81,8 +81,8 @@
 |-------------|-------|--------|
 | INFRA-01 | Phase 1 | Pending |
 | INFRA-02 | Phase 1 | Pending |
-| INFRA-03 | Phase 1 | Pending |
-| INFRA-04 | Phase 1 | Pending |
+| INFRA-03 | Phase 1 | Complete |
+| INFRA-04 | Phase 1 | Complete |
 | STATE-01 | Phase 1 | Pending |
 | STATE-02 | Phase 1 | Pending |
 | DATA-01 | Phase 2 | Pending |

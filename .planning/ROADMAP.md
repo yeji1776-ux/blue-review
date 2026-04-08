@@ -31,7 +31,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   5. 도메인 훅(useSchedules, useTemplates, useProfile, useWeather, useGoogleCalendar 등)이 각자의 상태와 사이드이펙트를 소유한다
 **Plans**: 6 plans
 Plans:
-- [ ] 01-01-setup-constants-PLAN.md — 라이브러리 설치, feature/ui 폴더 구조, 상수 추출
+- [x] 01-01-setup-constants-PLAN.md — 라이브러리 설치, feature/ui 폴더 구조, 상수 추출
 - [ ] 01-02-safe-parser-PLAN.md — parseWithSchema 유틸 + 5 도메인 schemas + 9개 JSON.parse 교체
 - [ ] 01-03-error-boundary-PLAN.md — ErrorBoundary 컴포넌트 + 3곳 적용
 - [ ] 01-04-hooks-weather-profile-PLAN.md — useWeather, useProfile 훅 추출
