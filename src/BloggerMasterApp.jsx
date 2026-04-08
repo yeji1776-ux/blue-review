@@ -14,18 +14,9 @@ import { supabase } from './lib/supabase';
 import { DndContext, PointerSensor, TouchSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-
-// ── 플랜 설정 ──
-const ADMIN_EMAILS = ['hare_table@naver.com'];
-const PLAN_LIMITS = {
-  schedule: { free: 5,  standard: 20, pro: Infinity },
-  template: { free: 2,  standard: 4,  pro: Infinity },
-};
-const PLAN_META = {
-  free:     { label: '무료',      color: 'bg-slate-100 text-slate-600',                              desc: '협찬 월 5건 · 템플릿 2개' },
-  standard: { label: '스탠다드',  color: 'bg-sky-100 text-sky-700',                                  desc: '협찬 월 20건 · 템플릿 4개' },
-  pro:      { label: '프로',      color: 'bg-gradient-to-r from-amber-400 to-orange-400 text-white',  desc: '모든 기능 무제한' },
-};
+import { STORAGE_KEYS } from './constants/storageKeys'
+import { PLAN_LIMITS, PLAN_META } from './constants/plans'
+import { ADMIN_EMAILS } from './constants/admin'
 
 const SortableTemplateItem = ({ t, onEdit }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: t.id });
