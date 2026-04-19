@@ -3215,30 +3215,30 @@ ${text}`
               {!isEditing && <><div className="space-y-2">
                 {item.address && (
                   <div className="flex items-start gap-2">
-                    <a href={item.placeUrl || `https://map.naver.com/v5/search/${encodeURIComponent((item.address ? item.address + ' ' : '') + item.title)}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-start gap-3 text-xs text-slate-600 bg-slate-50 p-3 rounded-2xl active:bg-slate-100 transition-all border border-slate-100">
+                    <a href={item.placeUrl || `https://map.naver.com/v5/search/${encodeURIComponent((item.address ? item.address + ' ' : '') + item.title)}`} target="_blank" rel="noopener noreferrer" className="flex-1 flex items-start gap-3 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-2xl active:bg-slate-100 transition-all border border-slate-100">
                       <MapPin size={14} className="text-slate-400 shrink-0 mt-0.5" /> <span className="break-words line-clamp-2">{item.address}</span>
                       <ExternalLink size={12} className="text-slate-300 shrink-0 ml-auto mt-0.5" />
                     </a>
-                    <button onClick={() => copyToClipboard(item.address)} className="p-3 bg-slate-50 rounded-2xl text-slate-400 active:scale-90 transition-all shrink-0 border border-slate-100">
+                    <button onClick={() => copyToClipboard(item.address)} className="p-2.5 bg-slate-50 rounded-2xl text-slate-400 active:scale-90 transition-all shrink-0 border border-slate-100">
                       <Copy size={14} />
                     </button>
                   </div>
                 )}
                 {item.contact && (
                   <div className="flex items-center gap-2">
-                    <a href={`tel:${item.contact}`} className="flex-1 flex items-center gap-3 text-xs text-slate-600 bg-slate-50 p-3 rounded-2xl active:bg-slate-100 transition-all border border-slate-100">
+                    <a href={`tel:${item.contact}`} className="flex-1 flex items-center gap-3 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-2xl active:bg-slate-100 transition-all border border-slate-100">
                       <Phone size={14} className="text-slate-400 shrink-0" /> <span>{item.contact}</span>
                     </a>
-                    <button onClick={() => copyToClipboard(item.contact)} className="p-3 bg-slate-50 rounded-2xl text-slate-400 active:scale-90 transition-all shrink-0 border border-slate-100">
+                    <button onClick={() => copyToClipboard(item.contact)} className="p-2.5 bg-slate-50 rounded-2xl text-slate-400 active:scale-90 transition-all shrink-0 border border-slate-100">
                       <Copy size={14} />
                     </button>
-                    <a href={`sms:${item.contact}`} className="p-3 bg-emerald-50 rounded-2xl text-emerald-400 active:scale-90 transition-all shrink-0 border border-emerald-100">
+                    <a href={`sms:${item.contact}`} className="p-2.5 bg-emerald-50 rounded-2xl text-emerald-400 active:scale-90 transition-all shrink-0 border border-emerald-100">
                       <MessageCircle size={14} />
                     </a>
                   </div>
                 )}
                 {item.provided && (
-                  <div className="flex items-start gap-3 text-xs text-slate-600 bg-emerald-50 p-3 rounded-2xl border border-emerald-100">
+                  <div className="flex items-start gap-3 text-xs text-slate-600 bg-emerald-50 p-2.5 rounded-2xl border border-emerald-100">
                     <Gift size={14} className="text-emerald-500 shrink-0 mt-0.5" /> <span className="break-words line-clamp-2">{item.provided}</span>
                   </div>
                 )}
@@ -3248,26 +3248,26 @@ ${text}`
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     {item.experiencePeriod && (
-                      <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                      <div className="bg-blue-50 p-2.5 rounded-xl border border-blue-100">
                         <p className="text-[9px] font-black text-blue-500 mb-1">체험기간</p>
                         <p className="text-xs font-medium text-slate-600 break-words">{item.experiencePeriod}</p>
                       </div>
                     )}
                     {item.deadline && (
-                      <div className="bg-rose-50 p-3 rounded-xl border border-rose-100">
+                      <div className="bg-rose-50 p-2.5 rounded-xl border border-rose-100">
                         <p className="text-[9px] font-black text-rose-400 mb-1">리뷰마감</p>
                         <p className="text-xs font-medium text-slate-600 break-words">{item.deadline}</p>
                       </div>
                     )}
                   </div>
                   {item.visitDays && (
-                    <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
+                    <div className="bg-indigo-50 p-2.5 rounded-xl border border-indigo-100">
                       <p className="text-[9px] font-black text-indigo-500 mb-1">가능요일</p>
                       <p className="text-xs font-medium text-slate-600 break-words">{item.visitDays}</p>
                     </div>
                   )}
                   {item.visitTime && (
-                    <div className="bg-amber-50 p-3 rounded-xl border border-amber-100">
+                    <div className="bg-amber-50 p-2.5 rounded-xl border border-amber-100">
                       <p className="text-[9px] font-black text-amber-500 mb-1">가능시간</p>
                       <p className="text-xs font-medium text-slate-600 break-words">{item.visitTime}</p>
                     </div>
