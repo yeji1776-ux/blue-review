@@ -5,7 +5,7 @@ import {
   CheckCircle2, Globe, Map as MapIcon, DollarSign, Sun, Star, X, Check,
   ChevronRight, Hash, Eye, Heart, Type, Gift, AlertTriangle, CalendarDays,
   Download, ChevronLeft, User, Save, Instagram, Pencil, Cloud, CloudRain, CloudSun, Snowflake,
-  Wallet, PenTool, Youtube, Mail, Settings, Trash2, FileText, MessageCircle, Upload
+  Wallet, PenTool, Youtube, Mail, Settings, Trash2, FileText, MessageCircle, Upload, BookOpen
 } from 'lucide-react';
 import { domToPng } from 'modern-screenshot';
 import { useAuth } from './hooks/useAuth';
@@ -4497,11 +4497,15 @@ ${text}`
 
       {/* 탭 바 */}
       {/* 하단 제작자 & 경고문 */}
-      <footer className="text-center py-6 pb-28 sm:pb-32 space-y-2">
+      <footer className="text-center py-6 pb-28 sm:pb-32 space-y-3">
+        <a
+          href="/guide.html"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-black text-white jelly-button shadow-md shadow-sky-200 active:scale-95 transition-all"
+        >
+          <BookOpen size={14} /> 사용 가이드 보기
+        </a>
         <p className="text-[10px] text-slate-500 leading-relaxed">본 앱은 협찬 일정 관리를 위한 개인 보조 도구이며, 각 플랫폼의 공식 서비스가 아닙니다.<br />협찬 콘텐츠 작성 시 공정위 광고 표시 가이드라인을 준수해주세요.</p>
         <div className="flex items-center justify-center gap-3">
-          <a href="/guide.html" className="text-[10px] text-slate-500 hover:text-sky-500 transition-colors">사용 가이드</a>
-          <span className="text-slate-500 text-[10px]">·</span>
           <a href="/terms.html" className="text-[10px] text-slate-500 hover:text-sky-500 transition-colors">이용약관</a>
           <span className="text-slate-500 text-[10px]">·</span>
           <a href="/privacy.html" className="text-[10px] text-slate-500 hover:text-sky-500 transition-colors">개인정보처리방침</a>
