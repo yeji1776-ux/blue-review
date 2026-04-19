@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-06)
 Phase: 01 (foundation) — EXECUTING
 Plan: 3 of 6
 Status: Ready to execute
-Last activity: 2026-04-08
+Last activity: 2026-04-19 - Completed quick task 260419-tce: 스케줄 상세 카드 UI 조정
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -74,6 +74,12 @@ None yet.
 
 - Phase 2: 마이그레이션 브릿지 — 부분 이전 사용자(일부는 Supabase, 일부는 localStorage) 케이스 처리 전략을 plan-phase 시점에 확정 필요
 - Phase 2: Google Calendar 토큰 httpOnly 쿠키 전략 — Vercel api/ 디렉토리 구조 및 도메인 스코프 확인 필요
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260419-tce | 스케줄 상세 카드 UI 조정: 배지 줄 폰트 축소 + 정보 박스 패딩 축소 | 2026-04-19 | dbac3e1 | [260419-tce-ui](./quick/260419-tce-ui/) |
 
 ## Session Continuity
 
