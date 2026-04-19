@@ -3052,21 +3052,21 @@ ${text}`
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-1.5">
                     {item.brand && (
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border whitespace-nowrap ${getBrandBadge(item.brand)}`}>{item.brand}</span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black border whitespace-nowrap ${getBrandBadge(item.brand)}`}>{item.brand}</span>
                     )}
-                    <span className="text-[10px] font-bold text-sky-500 whitespace-nowrap">{item.type}</span>
+                    <span className="text-[11px] font-bold text-sky-500 whitespace-nowrap">{item.type}</span>
                     {(item.platforms || []).map(p => (
-                      <span key={p} className="px-2 py-0.5 rounded-full text-[10px] font-black bg-sky-50 text-sky-500 border border-sky-100 whitespace-nowrap">
+                      <span key={p} className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-sky-50 text-sky-500 border border-sky-100 whitespace-nowrap">
                         {{ blog:'블로그', blogClip:'클립', insta:'인스타', reels:'릴스', facebook:'페이스북', youtube:'유튜브' }[p]}
                       </span>
                     ))}
                   </div>
                   <div className="flex items-center gap-1 shrink-0" data-no-image="true">
-                    <button onClick={() => setShowTemplatePickerId(item.id)} className="text-[10px] font-black text-emerald-600 flex items-center gap-0.5 px-2 py-1 rounded-full bg-emerald-50 active:scale-95 transition-all whitespace-nowrap">
-                      <FileText size={10} /> 신청문구
+                    <button onClick={() => setShowTemplatePickerId(item.id)} className="text-[11px] font-black text-emerald-600 flex items-center gap-0.5 px-2.5 py-1 rounded-full bg-emerald-50 active:scale-95 transition-all whitespace-nowrap">
+                      <FileText size={11} /> 신청문구
                     </button>
-                    <button onClick={() => setNotePopupId(item.id)} className={`text-[10px] font-black flex items-center gap-0.5 px-2 py-1 rounded-full active:scale-95 transition-all whitespace-nowrap ${item.experienceNote ? 'bg-violet-500 text-white' : 'bg-violet-100 text-violet-500'}`}>
-                      <PenTool size={10} /> {item.experienceNote ? '메모 보기' : '체험메모'}
+                    <button onClick={() => setNotePopupId(item.id)} className={`text-[11px] font-black flex items-center gap-0.5 px-2.5 py-1 rounded-full active:scale-95 transition-all whitespace-nowrap ${item.experienceNote ? 'bg-violet-500 text-white' : 'bg-violet-100 text-violet-500'}`}>
+                      <PenTool size={11} /> {item.experienceNote ? '메모 보기' : '체험메모'}
                     </button>
                   </div>
                 </div>
