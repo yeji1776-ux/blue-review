@@ -1503,38 +1503,63 @@ ${text}`
     throw new Error('JSON 파싱 실패');
   };
 
-  const handleFileUpload = async (file) => {
-    if (!file) return;
+  // 공통 파일 파서: File → Gemini 결과 객체 반환
+  const parseFileToResult = async (file) => {
     const MAX_SIZE = 20 * 1024 * 1024; // 20MB
     if (file.size > MAX_SIZE) {
       alert('파일이 너무 큽니다. 20MB 이하로 업로드해주세요.');
-      return;
+      return null;
     }
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     const isDocx = file.name.toLowerCase().endsWith('.docx');
     if (!isPdf && !isDocx) {
       alert('PDF 또는 Word(.docx) 파일만 지원됩니다.');
-      return;
+      return null;
     }
+    if (isPdf) return await parsePdfWithGemini(file);
+    const mammoth = (await import('mammoth/mammoth.browser')).default;
+    const arrayBuffer = await file.arrayBuffer();
+    const { value: text } = await mammoth.extractRawText({ arrayBuffer });
+    if (!text || text.trim().length < 20) {
+      alert('Word 파일에서 텍스트를 충분히 추출하지 못했습니다.');
+      return null;
+    }
+    return await parseWithGemini(text);
+  };
 
+  const handleFileUpload = async (file) => {
+    if (!file) return;
     setIsParsing(true);
     try {
-      if (isPdf) {
-        const result = await parsePdfWithGemini(file);
-        setRawText(`[PDF 업로드: ${file.name}]`);
-        applyParseResult(result);
-      } else {
-        const mammoth = (await import('mammoth/mammoth.browser')).default;
-        const arrayBuffer = await file.arrayBuffer();
-        const { value: text } = await mammoth.extractRawText({ arrayBuffer });
-        if (!text || text.trim().length < 20) {
-          alert('Word 파일에서 텍스트를 충분히 추출하지 못했습니다.');
-          return;
-        }
-        setRawText(text);
-        const result = await parseWithGemini(text);
-        applyParseResult(result);
-      }
+      const result = await parseFileToResult(file);
+      if (!result) return;
+      setRawText(`[업로드: ${file.name}]`);
+      applyParseResult(result);
+    } catch (err) {
+      console.error('파일 파싱 에러:', err);
+      alert('파일 분석에 실패했습니다.\n' + err.message);
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+  // 수정 모드 전용: 기존 일정에 파일에서 추출한 값 병합 (빈 값은 덮어쓰지 않음)
+  const handleFileUpdateForItem = async (file, scheduleId) => {
+    if (!file) return;
+    setIsParsing(true);
+    try {
+      const result = await parseFileToResult(file);
+      if (!result) return;
+      const KNOWN_BRANDS = ['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스','WE:U'];
+      setSchedules(prev => prev.map(s => {
+        if (s.id !== scheduleId) return s;
+        const patch = {};
+        const fields = ['type','title','address','contact','experiencePeriod','deadline','draftDeadline','provided','visitDays','visitTime','caution','keywords','mission','personalMission','ftcImageUrl','extraInfo','placeUrl'];
+        fields.forEach(k => { if (result[k]) patch[k] = result[k]; });
+        if (result.brand && KNOWN_BRANDS.includes(result.brand)) patch.brand = result.brand;
+        return { ...s, ...patch };
+      }));
+      alert('파일에서 추출한 정보로 업데이트되었습니다.');
     } catch (err) {
       console.error('파일 파싱 에러:', err);
       alert('파일 분석에 실패했습니다.\n' + err.message);
@@ -3107,6 +3132,18 @@ ${text}`
               {isEditing && (
                 <div data-no-image="true" className="bg-sky-50 p-5 rounded-2xl space-y-3 border-2 border-sky-200">
                   <p className="text-[10px] font-black text-sky-500 uppercase tracking-widest mb-1">스케줄 수정</p>
+                  <label className={`block p-3 bg-emerald-50 border-2 border-dashed border-emerald-200 rounded-xl cursor-pointer active:scale-[0.99] transition-all ${isParsing ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <input
+                      type="file"
+                      accept=".pdf,.docx,application/pdf"
+                      className="hidden"
+                      onChange={(e) => { handleFileUpdateForItem(e.target.files?.[0], item.id); e.target.value = ''; }}
+                    />
+                    <div className="flex items-center justify-center gap-1.5 text-emerald-600">
+                      <Upload size={13} />
+                      <span className="text-[11px] font-black">{isParsing ? '분석 중...' : 'PDF · Word 파일로 업데이트'}</span>
+                    </div>
+                  </label>
                   <div className="flex items-center gap-3">
                     <div className="w-14 shrink-0 text-[10px] font-bold text-sky-400">브랜드</div>
                     <div className="flex-1 flex gap-2">
