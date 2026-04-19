@@ -3276,7 +3276,7 @@ ${text}`
 
                 {/* 키워드 */}
                 {item.keywords && (
-                  <div className="bg-violet-50/60 rounded-2xl border border-dashed border-violet-200 px-5 py-3">
+                  <div className="bg-violet-50/60 rounded-2xl border border-dashed border-violet-200 px-4 py-2.5">
                     <p className="text-[10px] font-black text-violet-400 mb-2">키워드</p>
                     <p className="text-xs text-slate-600 font-medium leading-relaxed">{item.keywords}</p>
                     <div className="mt-2">
