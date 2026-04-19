@@ -5,7 +5,7 @@ import {
   CheckCircle2, Globe, Map as MapIcon, DollarSign, Sun, Star, X, Check,
   ChevronRight, Hash, Eye, Heart, Type, Gift, AlertTriangle, CalendarDays,
   Download, ChevronLeft, User, Save, Instagram, Pencil, Cloud, CloudRain, CloudSun, Snowflake,
-  Wallet, PenTool, Youtube, Mail, Settings, Trash2, FileText, MessageCircle
+  Wallet, PenTool, Youtube, Mail, Settings, Trash2, FileText, MessageCircle, Upload
 } from 'lucide-react';
 import { domToPng } from 'modern-screenshot';
 import { useAuth } from './hooks/useAuth';
@@ -694,6 +694,45 @@ const BloggerMasterApp = () => {
     } catch { return null; }
   };
 
+  // 초안/최종 마감을 구글 캘린더에 종일 이벤트로 등록/수정
+  // kind: 'draft' | 'final'
+  const syncDeadlineToGoogleCalendar = async (schedule, deadlineStr, kind, existingId) => {
+    const token = await getValidGcalToken();
+    if (!token) return null;
+    const date = parseDeadlineToDate(deadlineStr);
+    if (!date) return null;
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const nextDay = new Date(date); nextDay.setDate(nextDay.getDate() + 1);
+    const endStr = `${nextDay.getFullYear()}-${String(nextDay.getMonth() + 1).padStart(2, '0')}-${String(nextDay.getDate()).padStart(2, '0')}`;
+    const calId = localStorage.getItem('gcal_selected_cal') || 'primary';
+    const title = schedule.title || schedule.brand || '협찬';
+    const tag = kind === 'draft' ? '초안 마감' : '최종 마감';
+    const event = {
+      summary: `[${tag}] ${title}`,
+      description: [
+        schedule.mission ? `📋 기본미션:\n${schedule.mission}` : '',
+        schedule.personalMission ? `\n✨ 개인미션:\n${schedule.personalMission}` : '',
+      ].filter(Boolean).join(''),
+      start: { date: dateStr },
+      end: { date: endStr },
+    };
+    try {
+      const url = existingId
+        ? `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events/${encodeURIComponent(existingId)}`
+        : `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events`;
+      const res = await fetch(url, {
+        method: existingId ? 'PUT' : 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(event),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.id || true;
+      }
+      return null;
+    } catch { return null; }
+  };
+
   const deleteFromGoogleCalendar = async (gcalEventId) => {
     if (!gcalEventId) return;
     const token = await getValidGcalToken();
@@ -782,7 +821,7 @@ const BloggerMasterApp = () => {
   const toggleBrand = (brand) => setCollapsedBrands(prev => ({ ...prev, [brand]: !prev[brand] }));
   const [expandedBrands, setExpandedBrands] = useState({});
   const toggleExpandBrand = (brand) => setExpandedBrands(prev => ({ ...prev, [brand]: !prev[brand] }));
-  const [detailSections, setDetailSections] = useState({ extraInfo: false, caution: false, mission: false, personalMission: true, publishedContent: false });
+  const [detailSections, setDetailSections] = useState({ extraInfo: true, caution: true, mission: true, personalMission: true, publishedContent: false });
 
   const deleteSchedule = (id) => {
     const target = schedules.find(s => s.id === id);
@@ -898,12 +937,12 @@ const BloggerMasterApp = () => {
   }, [schedules, templates, hashtags, profile, savedTexts]);
 
   useEffect(() => {
-    setDetailSections({ extraInfo: false, caution: false, mission: false, personalMission: true });
+    setDetailSections({ extraInfo: true, caution: true, mission: true, personalMission: true });
   }, [selectedScheduleId]);
 
   const emptyParsed = {
     brand: '리뷰노트', type: '맛집', title: '', address: '', contact: '',
-    mission: '', personalMission: '', experiencePeriod: '', deadline: '', provided: '',
+    mission: '', personalMission: '', experiencePeriod: '', deadline: '', draftDeadline: '', provided: '',
     visitDays: '', visitTime: '', visitDate: '', visitSetTime: '', caution: '', ftcImageUrl: '',
     keywords: '', placeUrl: '',
     platforms: [],
@@ -943,14 +982,29 @@ const BloggerMasterApp = () => {
     return map[brand] || 'bg-slate-400 text-white border-slate-400';
   };
 
-  const getDdayLabel = (deadlineStr) => {
-    const diff = getDday(deadlineStr);
+  // 카테고리에 따라 활성 마감일 결정: 기자단/제품에서 초안 미경과면 초안, 아니면 최종
+  const getActiveDeadline = (item) => {
+    if (!item || typeof item !== 'object') return { dateStr: item, prefix: '' };
+    const isTwoStage = item.type === '기자단' || item.type === '제품';
+    if (isTwoStage && item.draftDeadline) {
+      const draftDiff = getDday(item.draftDeadline);
+      if (draftDiff !== null && draftDiff >= 0) {
+        return { dateStr: item.draftDeadline, prefix: '초안 ' };
+      }
+    }
+    return { dateStr: item.deadline, prefix: isTwoStage && item.draftDeadline ? '최종 ' : '' };
+  };
+
+  const getDdayLabel = (input) => {
+    const { dateStr, prefix } = typeof input === 'string' ? { dateStr: input, prefix: '' } : getActiveDeadline(input);
+    const diff = getDday(dateStr);
     if (diff === null) return null;
-    if (diff === 0) return { text: 'D-Day', color: 'bg-red-500' };
-    if (diff < 0) return { text: `D+${Math.abs(diff)}`, color: 'bg-slate-400' };
-    if (diff <= 3) return { text: `D-${diff}`, color: 'bg-red-500' };
-    if (diff <= 7) return { text: `D-${diff}`, color: 'bg-orange-500' };
-    return { text: `D-${diff}`, color: 'bg-sky-500' };
+    const label = (suffix) => `${prefix}${suffix}`;
+    if (diff === 0) return { text: label('D-Day'), color: 'bg-red-500' };
+    if (diff < 0) return { text: label(`D+${Math.abs(diff)}`), color: 'bg-slate-400' };
+    if (diff <= 3) return { text: label(`D-${diff}`), color: 'bg-red-500' };
+    if (diff <= 7) return { text: label(`D-${diff}`), color: 'bg-orange-500' };
+    return { text: label(`D-${diff}`), color: 'bg-sky-500' };
   };
 
   // --- 이미지 저장 ---
@@ -1196,14 +1250,19 @@ const BloggerMasterApp = () => {
   const [pullY, setPullY] = useState(0);
   const pullStartY = useRef(0);
   const PULL_THRESHOLD = 38;
-  const handleTouchStart = (e) => { if (window.scrollY === 0 && !selectedScheduleId && !notePopupId && !confirmDeleteId && !confirmDoneId) pullStartY.current = e.touches[0].clientY; else pullStartY.current = 0; };
+  const isAnyModalOpen = () => (
+    !!selectedScheduleId || !!notePopupId || !!confirmDeleteId || !!confirmDoneId ||
+    isModalOpen || !!editingTemplateId || !!editingFtcTemplateId || !!showTemplatePickerId ||
+    !!confirmVisitDate || !!confirmDeleteTemplateId || showUpgradeModal || locationPopup
+  );
+  const handleTouchStart = (e) => { if (window.scrollY === 0 && !isAnyModalOpen()) pullStartY.current = e.touches[0].clientY; else pullStartY.current = 0; };
   const handleTouchMove = (e) => {
-    if (window.scrollY !== 0 || selectedScheduleId || notePopupId || confirmDeleteId || confirmDoneId) return;
+    if (window.scrollY !== 0 || isAnyModalOpen()) return;
     const dy = e.touches[0].clientY - pullStartY.current;
     if (dy > 0) { setIsPulling(true); setPullY(Math.min(dy, PULL_THRESHOLD + 20)); }
   };
   const handleTouchEnd = () => {
-    if (pullY >= PULL_THRESHOLD && !selectedScheduleId && !notePopupId && !confirmDeleteId && !confirmDoneId) window.location.reload();
+    if (pullY >= PULL_THRESHOLD && !isAnyModalOpen()) window.location.reload();
     setIsPulling(false); setPullY(0);
   };
   const [confirmDeleteAccount2, setConfirmDeleteAccount2] = useState(false);
@@ -1293,7 +1352,8 @@ const BloggerMasterApp = () => {
   "address": "방문 주소 (전체 주소)",
   "contact": "담당자 연락처 (전화번호)",
   "experiencePeriod": "체험 기간 (예: 3/10 ~ 3/23)",
-  "deadline": "리뷰 마감일",
+  "deadline": "최종 리뷰 마감일",
+  "draftDeadline": "초안 제출 마감일 (기자단/제품 카테고리에 주로 있음. 초안 검수 후 최종 등록하는 형태일 때만 추출. 없으면 빈 문자열)",
   "provided": "제공 서비스/물품 (실제 제공되는 메뉴나 서비스)",
   "visitDays": "체험 가능 요일",
   "visitTime": "체험 가능 시간",
@@ -1332,6 +1392,30 @@ ${text}`
     throw new Error('JSON 파싱 실패');
   };
 
+  const applyParseResult = (result) => {
+    const KNOWN_BRANDS = ['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스','WE:U'];
+    setParsedData({
+      brand: KNOWN_BRANDS.includes(result.brand) ? result.brand : (parsedData.brand || '리뷰노트'),
+      brandCustom: KNOWN_BRANDS.includes(result.brand) ? '' : (parsedData.brandCustom || ''),
+      type: result.type || '맛집',
+      title: result.title || '',
+      address: result.address || '',
+      contact: result.contact || '',
+      experiencePeriod: result.experiencePeriod || '',
+      deadline: result.deadline || '',
+      draftDeadline: result.draftDeadline || '',
+      provided: result.provided || '',
+      visitDays: result.visitDays || '',
+      visitTime: result.visitTime || '',
+      caution: result.caution || '',
+      keywords: result.keywords || '',
+      mission: result.mission || '',
+      personalMission: result.personalMission || '',
+      ftcImageUrl: result.ftcImageUrl || '',
+      extraInfo: result.extraInfo || '',
+    });
+  };
+
   const handleSmartParsing = async (text) => {
     setRawText(text);
     if (text.trim().length < 20) return; // 너무 짧으면 무시
@@ -1339,28 +1423,121 @@ ${text}`
     setIsParsing(true);
     try {
       const result = await parseWithGemini(text);
-      setParsedData({
-        brand: (['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스','WE:U'].includes(result.brand)) ? result.brand : (parsedData.brand || '리뷰노트'),
-        brandCustom: (['리뷰노트','강남맛집','레뷰','슈퍼멤버스','디너의여왕','리뷰플레이스','WE:U'].includes(result.brand)) ? '' : (parsedData.brandCustom || ''),
-        type: result.type || '맛집',
-        title: result.title || '',
-        address: result.address || '',
-        contact: result.contact || '',
-        experiencePeriod: result.experiencePeriod || '',
-        deadline: result.deadline || '',
-        provided: result.provided || '',
-        visitDays: result.visitDays || '',
-        visitTime: result.visitTime || '',
-        caution: result.caution || '',
-        keywords: result.keywords || '',
-        mission: result.mission || '',
-        personalMission: result.personalMission || '',
-        ftcImageUrl: result.ftcImageUrl || '',
-        extraInfo: result.extraInfo || '',
-      });
+      applyParseResult(result);
     } catch (err) {
       console.error('Gemini 파싱 에러:', err);
       alert('AI 분석에 실패했습니다. 다시 시도해주세요.\n' + err.message);
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+  // --- PDF/Word 파일 업로드 파서 ---
+  const parsePdfWithGemini = async (file) => {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    const prompt = `너는 블로그 체험단 정보 추출 전문가야. 첨부된 PDF의 내용에서 체험단 관련 정보를 정확하게 추출해서 JSON으로 반환해.
+
+규칙:
+- mission(기본 미션)은 "키워드 삽입, 사진 15장 이상, 1000자 이상, 지도첨부, 동영상, 공정위표기" 같은 블로거가 지켜야 할 작성 조건/규칙만 정리
+- personalMission(개인 미션)은 업체 소개, 음식/서비스 설명, 특징, 홍보 포인트 등 블로거가 포스팅에 녹여야 하는 업체 관련 내용을 그대로 추출 (홍보 문구 포함)
+- 주의사항은 "예약 필수, 당일 방문 불가, 최소 하루 전 연락" 같은 예약/방문 관련 주의사항만 정리
+- 값이 없으면 빈 문자열 ""로 반환
+- 반드시 아래 JSON 형식만 반환 (다른 텍스트 없이 JSON만)
+
+{
+  "brand": "체험단 플랫폼명 (레뷰, 강남맛집, 리뷰노트, 미블, WE:U 등. 모르면 '기타')",
+  "type": "카테고리 (맛집, 헤어, 뷰티, 운동, 제품, 기자단 중 하나)",
+  "title": "업체명 (지역 접두사 제외, 순수 상호명만)",
+  "address": "방문 주소 (전체 주소)",
+  "contact": "담당자 연락처 (전화번호)",
+  "experiencePeriod": "체험 기간 (예: 3/10 ~ 3/23)",
+  "deadline": "최종 리뷰 마감일",
+  "draftDeadline": "초안 제출 마감일 (기자단/제품 카테고리에 주로 있음. 초안 검수 후 최종 등록하는 형태일 때만 추출. 없으면 빈 문자열)",
+  "provided": "제공 서비스/물품 (실제 제공되는 메뉴나 서비스)",
+  "visitDays": "체험 가능 요일",
+  "visitTime": "체험 가능 시간",
+  "caution": "예약 시 주의사항 (줄바꿈 대신 / 로 구분)",
+  "keywords": "업체가 요구하는 검색 키워드 (예: 연남동맛집, 파스타맛집, 데이트코스 등. 없으면 빈 문자열)",
+  "mission": "기본 미션 (사진 수, 글자 수, 키워드, 동영상 등 작성 조건. 항목별로 줄바꿈(\\n)하여 정리)",
+  "personalMission": "개인 미션 (업체 소개, 음식/서비스 설명 등 포스팅에 담아야 할 내용. 문장 단위로 줄바꿈(\\n)하여 가독성 좋게 추출)",
+  "ftcImageUrl": "공정위 문구 이미지 URL (http/https로 시작하는 이미지 주소. 없으면 빈 문자열)",
+  "extraInfo": "위 항목에 담기 어려운 기타 중요 정보 (예: 상세 영업시간 설명, 예약 방법, 특이사항 등. 없으면 빈 문자열)"
+}`;
+
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: prompt },
+              { inlineData: { mimeType: 'application/pdf', data: base64 } },
+            ],
+          }],
+        }),
+      }
+    );
+    const data = await res.json();
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const jsonMatch = content.match(/```json\s*([\s\S]*?)```/) || content.match(/(\{[\s\S]*\})/);
+    if (jsonMatch) {
+      try {
+        const raw = JSON.parse(jsonMatch[1]);
+        const result = geminiParsedSchema.safeParse(raw);
+        if (result.success) return result.data;
+        console.warn('[parseWithSchema] Gemini PDF 응답 스키마 검증 실패:', result.error);
+        return {};
+      } catch (err) {
+        console.warn('[parseWithSchema] Gemini PDF 응답 JSON 파싱 실패:', err);
+        return {};
+      }
+    }
+    throw new Error('JSON 파싱 실패');
+  };
+
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+    const MAX_SIZE = 20 * 1024 * 1024; // 20MB
+    if (file.size > MAX_SIZE) {
+      alert('파일이 너무 큽니다. 20MB 이하로 업로드해주세요.');
+      return;
+    }
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    const isDocx = file.name.toLowerCase().endsWith('.docx');
+    if (!isPdf && !isDocx) {
+      alert('PDF 또는 Word(.docx) 파일만 지원됩니다.');
+      return;
+    }
+
+    setIsParsing(true);
+    try {
+      if (isPdf) {
+        const result = await parsePdfWithGemini(file);
+        setRawText(`[PDF 업로드: ${file.name}]`);
+        applyParseResult(result);
+      } else {
+        const mammoth = (await import('mammoth/mammoth.browser')).default;
+        const arrayBuffer = await file.arrayBuffer();
+        const { value: text } = await mammoth.extractRawText({ arrayBuffer });
+        if (!text || text.trim().length < 20) {
+          alert('Word 파일에서 텍스트를 충분히 추출하지 못했습니다.');
+          return;
+        }
+        setRawText(text);
+        const result = await parseWithGemini(text);
+        applyParseResult(result);
+      }
+    } catch (err) {
+      console.error('파일 파싱 에러:', err);
+      alert('파일 분석에 실패했습니다.\n' + err.message);
     } finally {
       setIsParsing(false);
     }
@@ -1846,7 +2023,7 @@ ${text}`
                           </button>
                           {!collapsedBrands[brand] && <div className="space-y-2">
                             {(expandedBrands[brand] ? brandGroups[brand] : brandGroups[brand].slice(0, 3)).map(item => {
-                              const dday = getDdayLabel(item.deadline);
+                              const dday = getDdayLabel(item);
                               return (
                                 <button
                                   key={item.id}
@@ -1984,7 +2161,7 @@ ${text}`
                   <div className="jelly-card overflow-hidden divide-y divide-slate-100">
                     {mOngoing.length > 0 ? (
                       mOngoing.map(item => {
-                        const dday = getDdayLabel(item.deadline);
+                        const dday = getDdayLabel(item);
                         return (
                           <div key={item.id} className="flex items-center gap-1 pr-2 active:bg-sky-50 transition-all">
                             <button onClick={() => setSelectedScheduleId(item.id)} className="flex-1 flex items-center gap-2 px-3 py-3 text-left min-w-0">
@@ -2630,7 +2807,7 @@ ${text}`
                     <p className="text-sm text-slate-500 font-bold">이 날의 일정이 없습니다</p>
                   </div>
                 ) : selectedSchedules.map(item => {
-                  const dday = getDdayLabel(item.deadline);
+                  const dday = getDdayLabel(item);
                   return (
                     <div key={item.id} onClick={() => setSelectedScheduleId(item.id)} className="jelly-card p-5 cursor-pointer active:scale-[0.98] transition-all">
                       <div className="flex items-center gap-2 mb-2">
@@ -2667,7 +2844,7 @@ ${text}`
               <div className="space-y-2 max-h-[50vh] overflow-y-auto">
                 <DndContext sensors={dndSensors} collisionDetection={closestCenter}
                   onDragEnd={({ active, over }) => {
-                    if (active.id !== over?.id) {
+                    if (over && active.id !== over.id) {
                       const oldIdx = templates.findIndex(t => t.id === active.id);
                       const newIdx = templates.findIndex(t => t.id === over.id);
                       saveTemplates(arrayMove(templates, oldIdx, newIdx));
@@ -2830,7 +3007,8 @@ ${text}`
       {selectedScheduleId && (() => {
         const item = schedules.find(s => s.id === selectedScheduleId);
         if (!item) return null;
-        const dday = getDdayLabel(item.deadline);
+        const dday = getDdayLabel(item);
+        const isTwoStage = item.type === '기자단' || item.type === '제품';
         const isEditing = editingScheduleId === item.id;
         const updateField = (key, val) => setSchedules(schedules.map(s => s.id === item.id ? { ...s, [key]: val } : s));
         return (
@@ -2845,17 +3023,27 @@ ${text}`
                   <button onClick={() => setConfirmDeleteId(item.id)} className="p-2 bg-rose-50 rounded-xl text-rose-400 active:scale-90 transition-all"><Trash2 size={15} /></button>
                   <button onClick={() => { setEditingScheduleId(null); setSelectedScheduleId(null); }} className="p-2 bg-sky-50 rounded-full"><X size={15} /></button>
                 </div>
-                {/* 2행: 브랜드·카테고리·플랫폼 배지 */}
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {item.brand && (
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border whitespace-nowrap ${getBrandBadge(item.brand)}`}>{item.brand}</span>
-                  )}
-                  <span className="text-[10px] font-bold text-sky-500 whitespace-nowrap">{item.type}</span>
-                  {(item.platforms || []).map(p => (
-                    <span key={p} className="px-2 py-0.5 rounded-full text-[10px] font-black bg-sky-50 text-sky-500 border border-sky-100 whitespace-nowrap">
-                      {{ blog:'블로그', blogClip:'클립', insta:'인스타', reels:'릴스', facebook:'페이스북', youtube:'유튜브' }[p]}
-                    </span>
-                  ))}
+                {/* 2행: 브랜드·카테고리·플랫폼 배지 + 신청문구·메모 */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {item.brand && (
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border whitespace-nowrap ${getBrandBadge(item.brand)}`}>{item.brand}</span>
+                    )}
+                    <span className="text-[10px] font-bold text-sky-500 whitespace-nowrap">{item.type}</span>
+                    {(item.platforms || []).map(p => (
+                      <span key={p} className="px-2 py-0.5 rounded-full text-[10px] font-black bg-sky-50 text-sky-500 border border-sky-100 whitespace-nowrap">
+                        {{ blog:'블로그', blogClip:'클립', insta:'인스타', reels:'릴스', facebook:'페이스북', youtube:'유튜브' }[p]}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0" data-no-image="true">
+                    <button onClick={() => setShowTemplatePickerId(item.id)} className="text-[10px] font-black text-emerald-600 flex items-center gap-0.5 px-2 py-1 rounded-full bg-emerald-50 active:scale-95 transition-all whitespace-nowrap">
+                      <FileText size={10} /> 신청문구
+                    </button>
+                    <button onClick={() => setNotePopupId(item.id)} className={`text-[10px] font-black flex items-center gap-0.5 px-2 py-1 rounded-full active:scale-95 transition-all whitespace-nowrap ${item.experienceNote ? 'bg-violet-500 text-white' : 'bg-violet-100 text-violet-500'}`}>
+                      <PenTool size={10} /> {item.experienceNote ? '메모 보기' : '체험메모'}
+                    </button>
+                  </div>
                 </div>
                 {/* 3행: 제목 + D-day */}
                 <div className="flex items-start justify-between gap-2">
@@ -2881,28 +3069,35 @@ ${text}`
                   <button onClick={() => saveCardAsImage(`share_${item.id}`)} className="text-[11px] font-black text-sky-600 flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm bg-sky-50 active:scale-95 transition-all whitespace-nowrap">
                     <Download size={11} /> 일정 공유
                   </button>
-                  <button onClick={() => setShowTemplatePickerId(item.id)} className="text-[11px] font-black text-emerald-600 flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm bg-emerald-50 active:scale-95 transition-all whitespace-nowrap">
-                    <FileText size={11} /> 신청문구
-                  </button>
-                  <button onClick={() => setNotePopupId(item.id)} className={`text-[11px] font-black flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm active:scale-95 transition-all whitespace-nowrap ${item.experienceNote ? 'bg-violet-500 text-white shadow-violet-200' : 'bg-violet-100 text-violet-500'}`}>
-                    <PenTool size={11} /> {item.experienceNote ? '메모 보기' : '체험 메모'}
-                  </button>
-                  {item.ftcImageUrl && (
+{item.ftcImageUrl && (
                     <button onClick={() => copyToClipboard(item.ftcImageUrl)} className="text-[11px] font-black text-orange-600 flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm bg-orange-50 active:scale-95 transition-all whitespace-nowrap">
                       <Copy size={11} /> 공정위
                     </button>
                   )}
-                  {gcalToken && item.visitDate && (
+                  {gcalToken && (item.visitDate || item.deadline || item.draftDeadline) && (
                     <button onClick={async () => {
-                      const eventId = await syncToGoogleCalendar(item, item.visitDate, item.visitSetTime || '12:00');
-                      if (eventId) {
-                        const updated = schedules.map(s => s.id === item.id ? { ...s, gcalEventId: eventId } : s);
+                      const patch = {};
+                      let anyOk = false;
+                      if (item.visitDate) {
+                        const eventId = await syncToGoogleCalendar(item, item.visitDate, item.visitSetTime || '12:00');
+                        if (eventId) { patch.gcalEventId = eventId; anyOk = true; }
+                      }
+                      if (isTwoStage && item.draftDeadline) {
+                        const draftId = await syncDeadlineToGoogleCalendar(item, item.draftDeadline, 'draft', item.gcalDraftDeadlineEventId);
+                        if (draftId) { patch.gcalDraftDeadlineEventId = draftId; anyOk = true; }
+                      }
+                      if (item.deadline) {
+                        const dlId = await syncDeadlineToGoogleCalendar(item, item.deadline, 'final', item.gcalDeadlineEventId);
+                        if (dlId) { patch.gcalDeadlineEventId = dlId; anyOk = true; }
+                      }
+                      if (anyOk) {
+                        const updated = schedules.map(s => s.id === item.id ? { ...s, ...patch } : s);
                         setSchedules(updated);
                         localStorage.setItem('blogSchedules', JSON.stringify(updated));
-                        alert(item.gcalEventId ? '캘린더 일정이 업데이트되었습니다!' : '구글 캘린더에 추가되었습니다!');
+                        alert(item.gcalEventId || item.gcalDeadlineEventId ? '캘린더 일정이 업데이트되었습니다!' : '구글 캘린더에 추가되었습니다!');
                       } else alert('캘린더 추가 실패. 연동 상태를 확인해주세요.');
                     }} className="text-[11px] font-black text-blue-600 flex items-center gap-1 px-3 py-1.5 rounded-full shadow-sm bg-blue-50 active:scale-95 transition-all whitespace-nowrap">
-                      <Calendar size={11} /> {item.gcalEventId ? '캘린더 수정' : '캘린더 추가'}
+                      <Calendar size={11} /> {(item.gcalEventId || item.gcalDeadlineEventId || item.gcalDraftDeadlineEventId) ? '캘린더 수정' : '캘린더 추가'}
                     </button>
                   )}
                 </div>
@@ -2932,15 +3127,20 @@ ${text}`
                   </div>
                   {[
                     { label: '업체명', key: 'title' },
-                    { label: '주소', key: 'address' },
-                    { label: '지도URL', key: 'placeUrl' },
+                    { label: '주소', key: 'address', hideForTwoStage: true },
+                    { label: '지도URL', key: 'placeUrl', hideForTwoStage: true },
                     { label: '연락처', key: 'contact' },
                     { label: '제공내역', key: 'provided' },
                     { label: '체험기간', key: 'experiencePeriod' },
+                    { label: '초안마감', key: 'draftDeadline', onlyForTwoStage: true },
                     { label: '리뷰마감', key: 'deadline' },
-                    { label: '가능요일', key: 'visitDays' },
-                    { label: '가능시간', key: 'visitTime' },
-                  ].map(({ label, key }) => (
+                    { label: '가능요일', key: 'visitDays', hideForTwoStage: true },
+                    { label: '가능시간', key: 'visitTime', hideForTwoStage: true },
+                  ].filter(({ hideForTwoStage, onlyForTwoStage }) => {
+                    if (hideForTwoStage && isTwoStage) return false;
+                    if (onlyForTwoStage && !isTwoStage) return false;
+                    return true;
+                  }).map(({ label, key }) => (
                     <div key={key} className="flex items-center gap-3">
                       <div className="w-14 shrink-0 text-[10px] font-bold text-sky-400">{label}</div>
                       <input className="flex-1 bg-sky-50 px-3 py-2 rounded-xl border border-sky-100 focus:border-sky-300 focus:bg-white outline-none text-xs font-medium text-slate-700 transition-colors" value={item[key] || ''} onChange={(e) => updateField(key, e.target.value)} />
@@ -3199,11 +3399,26 @@ ${text}`
                 </div>
               )}
 
-              {/* 하단 버튼 3개: 글자수계산기 | 닫기 | 리뷰등록 */}
+              {/* 하단 버튼 3개: 브랜드 바로가기 | 닫기 | 리뷰등록 */}
               <div data-no-image="true" className="flex items-center gap-2">
-                <button onClick={() => { setSelectedScheduleId(null); setActiveTab('tool'); setTextToCount(''); }} className="flex-1 bg-violet-50 text-violet-600 py-3.5 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5">
-                  <Calculator size={14} /> 글자수계산기
-                </button>
+                {(() => {
+                  const brandUrls = {
+                    '리뷰노트': 'https://www.reviewnote.co.kr',
+                    '레뷰': 'https://www.revu.net',
+                    '슈퍼멤버스': 'https://www.supermembers.co.kr',
+                    '디너의여왕': 'https://www.dinnerqueen.net',
+                    '리뷰플레이스': 'https://www.reviewplace.co.kr',
+                    'WE:U': 'https://www.weu.me',
+                    '강남맛집': 'https://www.gangnamfood.com',
+                  };
+                  const url = brandUrls[item.brand];
+                  const label = item.brand ? `${item.brand} 바로가기` : '바로가기';
+                  return url ? (
+                    <a href={url} target="_blank" rel="noopener noreferrer" className="flex-1 bg-slate-50 text-slate-500 py-3.5 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
+                      <ExternalLink size={13} /> {label}
+                    </a>
+                  ) : null;
+                })()}
                 <button onClick={() => setSelectedScheduleId(null)} className="flex-1 bg-slate-100 text-slate-500 py-3.5 rounded-2xl font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-1.5">
                   <X size={14} /> 닫기
                 </button>
@@ -3594,6 +3809,26 @@ ${text}`
               onChange={(e) => setRawText(e.target.value)}
             />
 
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-px bg-slate-200" />
+              <span className="text-[10px] font-bold text-slate-400">또는 파일 업로드</span>
+              <div className="flex-1 h-px bg-slate-200" />
+            </div>
+
+            <label className={`block w-full p-5 bg-emerald-50 border-2 border-dashed border-emerald-200 rounded-3xl cursor-pointer active:scale-[0.99] transition-all ${isParsing ? 'opacity-50 pointer-events-none' : ''}`}>
+              <input
+                type="file"
+                accept=".pdf,.docx,application/pdf"
+                className="hidden"
+                onChange={(e) => { handleFileUpload(e.target.files?.[0]); e.target.value = ''; }}
+              />
+              <div className="flex items-center justify-center gap-2 text-emerald-600">
+                <Upload size={16} />
+                <span className="text-xs font-black">PDF · Word 파일 분석</span>
+              </div>
+              <p className="text-[10px] font-bold text-emerald-500/70 text-center mt-1">업체가 보낸 파일을 첨부하면 자동 추출돼요 (최대 20MB)</p>
+            </label>
+
             <button
               onClick={() => handleSmartParsing(rawText)}
               disabled={isParsing || rawText.trim().length < 20}
@@ -3653,21 +3888,29 @@ ${text}`
                     <ChevronRight size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 rotate-90 text-sky-400 pointer-events-none" />
                   </div>
                 </div>
-                {[
-                  { label: '업체명', key: 'title' },
-                  { label: '주소', key: 'address' },
-                  { label: '연락처', key: 'contact' },
-                  { label: '체험기간', key: 'experiencePeriod' },
-                  { label: '리뷰마감', key: 'deadline' },
-                  { label: '제공내역', key: 'provided' },
-                  { label: '가능요일', key: 'visitDays' },
-                  { label: '가능시간', key: 'visitTime' },
-                ].map(({ label, key }) => (
-                  <div key={key} className="flex items-center gap-3">
-                    <div className="w-14 shrink-0 text-[10px] font-bold text-sky-300">{label}</div>
-                    <input className="flex-1 bg-transparent border-b border-sky-100 font-bold text-slate-700 outline-none text-sm py-1" value={parsedData[key]} onChange={(e) => setParsedData({ ...parsedData, [key]: e.target.value })} />
-                  </div>
-                ))}
+                {(() => {
+                  const isTwoStage = parsedData.type === '기자단' || parsedData.type === '제품';
+                  return [
+                    { label: '업체명', key: 'title' },
+                    { label: '주소', key: 'address', hideForTwoStage: true },
+                    { label: '연락처', key: 'contact' },
+                    { label: '체험기간', key: 'experiencePeriod' },
+                    { label: '초안마감', key: 'draftDeadline', onlyForTwoStage: true },
+                    { label: '리뷰마감', key: 'deadline' },
+                    { label: '제공내역', key: 'provided' },
+                    { label: '가능요일', key: 'visitDays', hideForTwoStage: true },
+                    { label: '가능시간', key: 'visitTime', hideForTwoStage: true },
+                  ].filter(({ hideForTwoStage, onlyForTwoStage }) => {
+                    if (hideForTwoStage && isTwoStage) return false;
+                    if (onlyForTwoStage && !isTwoStage) return false;
+                    return true;
+                  }).map(({ label, key }) => (
+                    <div key={key} className="flex items-center gap-3">
+                      <div className="w-14 shrink-0 text-[10px] font-bold text-sky-300">{label}</div>
+                      <input className="flex-1 bg-transparent border-b border-sky-100 font-bold text-slate-700 outline-none text-sm py-1" value={parsedData[key] || ''} onChange={(e) => setParsedData({ ...parsedData, [key]: e.target.value })} />
+                    </div>
+                  ));
+                })()}
                 <div className="flex gap-3">
                   <div className="w-14 shrink-0 text-[10px] font-bold text-slate-500 pt-2">기타정보</div>
                   <textarea className="flex-1 bg-slate-50/60 border border-slate-100 rounded-xl font-medium text-slate-700 outline-none text-xs p-3 h-20 resize-none" placeholder="위 항목에 담기 어려운 기타 정보" value={parsedData.extraInfo || ''} onChange={(e) => setParsedData({ ...parsedData, extraInfo: e.target.value })} />
