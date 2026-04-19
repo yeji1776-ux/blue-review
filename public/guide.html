@@ -181,9 +181,8 @@
       <a href="#section-4" class="toc-link" onclick="closeSidebar()">4. 스케줄 상세 보기 · 수정</a>
       <a href="#section-5" class="toc-link" onclick="closeSidebar()">5. 캘린더</a>
       <a href="#section-6" class="toc-link" onclick="closeSidebar()">6. 스케줄 관리 & 분석</a>
-      <a href="#section-7" class="toc-link" onclick="closeSidebar()">7. 도구</a>
-      <a href="#section-8" class="toc-link" onclick="closeSidebar()">8. 내 프로필</a>
-      <a href="#section-9" class="toc-link" onclick="closeSidebar()">9. 환경 설정</a>
+      <a href="#section-7" class="toc-link" onclick="closeSidebar()">7. 내 프로필</a>
+      <a href="#section-8" class="toc-link" onclick="closeSidebar()">8. 환경 설정</a>
       <div class="mt-6 px-3">
         <p class="text-xs text-gray-400">Made by <strong>hare_table</strong></p>
       </div>
@@ -950,92 +949,13 @@
     </section>
 
     <!-- ============================================================ -->
-    <!-- SECTION 7: 도구 -->
+    <!-- SECTION 7: 내 프로필 -->
     <!-- ============================================================ -->
     <section id="section-7" class="guide-section mb-10">
       <div class="accordion-toggle open" onclick="toggleAccordion(this)">
         <div class="flex items-center justify-between bg-white rounded-xl shadow-sm px-5 py-4 cursor-pointer" style="border-left: 5px solid var(--sky-500);">
           <h2 class="text-xl font-bold flex items-center gap-2" style="color: var(--sky-800);">
             <span class="flex items-center justify-center w-8 h-8 rounded-full text-white text-sm font-bold" style="background: var(--sky-500);">7</span>
-            도구
-          </h2>
-          <span class="chevron text-gray-400">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-          </span>
-        </div>
-        <div class="accordion-body">
-          <div class="bg-white rounded-b-xl shadow-sm px-5 pb-5 pt-3 space-y-6 -mt-2">
-
-            <!-- 글자 수 측정 -->
-            <div>
-              <h3 class="font-bold text-gray-700 text-lg mt-2">글자 수 측정</h3>
-              <p class="text-sm text-gray-600 leading-relaxed mt-1">블로그 리뷰 작성 시 글자 수 조건을 충족하는지 빠르게 확인합니다. 텍스트를 입력하거나 붙여넣으면 공백 포함 / 제외 글자 수가 실시간으로 표시됩니다.</p>
-              <div class="grid gap-3 sm:grid-cols-3 mt-3">
-                <div class="border border-gray-100 rounded-lg p-3 text-center">
-                  <p class="font-semibold text-gray-700 text-sm">글 저장하기</p>
-                  <p class="text-xs text-gray-500 mt-1">작성한 글을 <strong>작성글</strong> 탭에 저장합니다. 저장 시 "작성글에 저장되었습니다" 팝업이 표시됩니다.</p>
-                </div>
-                <div class="border border-gray-100 rounded-lg p-3 text-center">
-                  <p class="font-semibold text-gray-700 text-sm">복사</p>
-                  <p class="text-xs text-gray-500 mt-1">입력한 전체 텍스트를 클립보드에 복사합니다.</p>
-                </div>
-                <div class="border border-gray-100 rounded-lg p-3 text-center">
-                  <p class="font-semibold text-gray-700 text-sm">닫기</p>
-                  <p class="text-xs text-gray-500 mt-1">글자 수 측정 화면을 닫습니다. 다시 열면 내용이 초기화됩니다.</p>
-                </div>
-              </div>
-              <div class="tip-box mt-3">
-                <strong>TIP:</strong> 글자 수 측정 화면은 열 때마다 새로 시작됩니다. 작성한 글을 나중에 다시 보려면 <strong>글 저장하기</strong>를 눌러 작성글에 보관하세요.
-              </div>
-            </div>
-
-            <!-- 작성글 -->
-            <div>
-              <h3 class="font-bold text-gray-700 text-lg">작성글</h3>
-              <p class="text-sm text-gray-600 leading-relaxed mt-1">저장된 리뷰 글을 모아두는 공간입니다. 글의 <strong>첫 번째 줄</strong>이 제목으로 표시됩니다.</p>
-              <div class="space-y-3 mt-3">
-                <div class="step-card" data-step="1">
-                  <p class="font-semibold text-gray-700">글 목록 확인</p>
-                  <p class="text-sm text-gray-500 mt-0.5">글자 수 측정에서 저장한 글이 작성글 탭에 목록으로 표시됩니다. 첫 줄이 제목으로 보입니다.</p>
-                </div>
-                <div class="step-card" data-step="2">
-                  <p class="font-semibold text-gray-700">수정</p>
-                  <p class="text-sm text-gray-500 mt-0.5">목록에서 글을 탭하면 수정 화면이 열립니다. 수정 후 저장하면 새 글로 추가되는 것이 아니라 <strong>해당 글이 그대로 업데이트</strong>됩니다.</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- 해시태그 모음 -->
-            <div>
-              <h3 class="font-bold text-gray-700 text-lg">해시태그 모음</h3>
-              <p class="text-sm text-gray-600 leading-relaxed mt-1">자주 사용하는 해시태그를 카테고리별로 정리하여 관리합니다.</p>
-              <div class="space-y-3 mt-3">
-                <div class="step-card" data-step="1">
-                  <p class="font-semibold text-gray-700">카테고리 추가 / 삭제</p>
-                  <p class="text-sm text-gray-500 mt-0.5">맛집, 뷰티, 여행 등 원하는 카테고리를 자유롭게 추가하거나 삭제합니다.</p>
-                </div>
-                <div class="step-card" data-step="2">
-                  <p class="font-semibold text-gray-700">태그 편집 및 복사</p>
-                  <p class="text-sm text-gray-500 mt-0.5">각 카테고리에서 해시태그를 추가, 수정, 삭제합니다. 태그를 탭하면 클립보드에 복사됩니다.</p>
-                </div>
-              </div>
-              <div class="tip-box mt-3">
-                <strong>TIP:</strong> 카테고리별로 태그를 정리해 두면 리뷰 작성 시 필요한 태그를 빠르게 찾아 복사할 수 있습니다.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================================================ -->
-    <!-- SECTION 8: 내 프로필 -->
-    <!-- ============================================================ -->
-    <section id="section-8" class="guide-section mb-10">
-      <div class="accordion-toggle open" onclick="toggleAccordion(this)">
-        <div class="flex items-center justify-between bg-white rounded-xl shadow-sm px-5 py-4 cursor-pointer" style="border-left: 5px solid var(--sky-500);">
-          <h2 class="text-xl font-bold flex items-center gap-2" style="color: var(--sky-800);">
-            <span class="flex items-center justify-center w-8 h-8 rounded-full text-white text-sm font-bold" style="background: var(--sky-500);">8</span>
             내 프로필
           </h2>
           <span class="chevron text-gray-400">
@@ -1097,13 +1017,13 @@
     </section>
 
     <!-- ============================================================ -->
-    <!-- SECTION 9: 환경 설정 -->
+    <!-- SECTION 8: 환경 설정 -->
     <!-- ============================================================ -->
-    <section id="section-9" class="guide-section mb-10">
+    <section id="section-8" class="guide-section mb-10">
       <div class="accordion-toggle open" onclick="toggleAccordion(this)">
         <div class="flex items-center justify-between bg-white rounded-xl shadow-sm px-5 py-4 cursor-pointer" style="border-left: 5px solid var(--sky-500);">
           <h2 class="text-xl font-bold flex items-center gap-2" style="color: var(--sky-800);">
-            <span class="flex items-center justify-center w-8 h-8 rounded-full text-white text-sm font-bold" style="background: var(--sky-500);">9</span>
+            <span class="flex items-center justify-center w-8 h-8 rounded-full text-white text-sm font-bold" style="background: var(--sky-500);">8</span>
             환경 설정
           </h2>
           <span class="chevron text-gray-400">
