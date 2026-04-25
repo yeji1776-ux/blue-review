@@ -217,9 +217,20 @@ const BloggerMasterApp = () => {
   const [isGuest, setIsGuest] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
 
-  // 탭 전환 시 최상단 스크롤
+  // 탭 전환 시 최상단 스크롤 (브라우저 scroll restoration 비활성화 + 여러 타이밍에 실행)
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual';
+  }, []);
+  useEffect(() => {
+    const scroll = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    scroll();
+    const raf = requestAnimationFrame(scroll);
+    const t = setTimeout(scroll, 50);
+    return () => { cancelAnimationFrame(raf); clearTimeout(t); };
   }, [activeTab]);
 
   // 자동 로그인 해제: 탭 닫을 때 세션 제거
@@ -510,11 +521,24 @@ const BloggerMasterApp = () => {
   };
 
   // --- 글씨 크기 ---
+  const getDefaultFontSize = () => {
+    const w = window.innerWidth;
+    if (w < 640) return 16;   // 모바일
+    if (w < 1024) return 17;  // 태블릿
+    return 18;                // 데스크톱
+  };
   const [fontSize, setFontSize] = useState(() => {
     const saved = localStorage.getItem('blogger_font_size');
     if (saved) return parseInt(saved);
-    return window.innerWidth >= 640 ? 22 : 18; // 모바일 기본 +2
+    return getDefaultFontSize();
   });
+  // 뷰포트 변경 시 자동 반영 (사용자가 직접 설정하지 않은 경우만)
+  useEffect(() => {
+    if (localStorage.getItem('blogger_font_size')) return;
+    const handler = () => setFontSize(getDefaultFontSize());
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   // --- 테마 색상 ---
   const COLOR_THEMES = {
@@ -763,8 +787,20 @@ const BloggerMasterApp = () => {
     // 픽셀 고정 오버라이드 제거 (UI 라벨은 항상 원래 크기)
     const styleEl = document.getElementById('font-scale-override');
     if (styleEl) styleEl.textContent = '';
-    localStorage.setItem('blogger_font_size', String(fontSize));
   }, [fontSize]);
+
+  // 사용자가 직접 조정한 경우만 localStorage에 저장
+  const setFontSizeManual = (updater) => {
+    setFontSize(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      localStorage.setItem('blogger_font_size', String(next));
+      return next;
+    });
+  };
+  const resetFontSize = () => {
+    localStorage.removeItem('blogger_font_size');
+    setFontSize(getDefaultFontSize());
+  };
 
   const [userPlan, setUserPlan] = useState('free');
   const [planExpiresAt, setPlanExpiresAt] = useState(null);
@@ -799,6 +835,7 @@ const BloggerMasterApp = () => {
   const [textToCount, setTextToCount] = useState('');
   const [editingTextId, setEditingTextId] = useState(null);
   const [showSaveTextToast, setShowSaveTextToast] = useState(false);
+  const [saveScheduleError, setSaveScheduleError] = useState('');
   const [savedTexts, setSavedTexts] = useState(() => {
     return parseWithSchema(savedTextsSchema, localStorage.getItem(STORAGE_KEYS.SAVED_TEXTS), []);
   });
@@ -1058,13 +1095,19 @@ const BloggerMasterApp = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [platformFilter, setPlatformFilter] = useState('all'); // 'all' | 'blog' | 'insta' | 'reels' | 'facebook' | 'youtube'
 
+  // 컨테이너 내부에서만 스크롤 (페이지 전체 스크롤 방지)
+  const scrollTargetIntoContainer = (container, target) => {
+    if (!container || !target) return;
+    const cRect = container.getBoundingClientRect();
+    const tRect = target.getBoundingClientRect();
+    container.scrollTop += tRect.top - cRect.top;
+  };
+
   // 날짜 선택 시 월 일정 리스트 스크롤
   useEffect(() => {
     if (!selectedDate || !monthListRef.current) return;
     const target = monthListRef.current.querySelector(`[data-day="${selectedDate}"]`);
-    if (target) {
-      target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }
+    scrollTargetIntoContainer(monthListRef.current, target);
   }, [selectedDate]);
 
   // 캘린더 탭 진입 시 오늘 날짜 기준으로 스크롤
@@ -1075,10 +1118,9 @@ const BloggerMasterApp = () => {
     setTimeout(() => {
       if (!monthListRef.current) return;
       if (isCurrentMonth) {
-        // 오늘 날짜 이후 가장 가까운 항목으로 스크롤
         const allItems = Array.from(monthListRef.current.querySelectorAll('[data-day]'));
         const target = allItems.find(el => parseInt(el.dataset.day) >= today.getDate());
-        if (target) { target.scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+        if (target) { scrollTargetIntoContainer(monthListRef.current, target); return; }
       }
       monthListRef.current.scrollTop = 0;
     }, 150);
@@ -1326,17 +1368,7 @@ const BloggerMasterApp = () => {
   };
 
   // --- Gemini AI 스마트 파서 ---
-  const parseWithGemini = async (text) => {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: `너는 블로그 체험단 정보 추출 전문가야. 아래 텍스트에서 체험단 관련 정보를 정확하게 추출해서 JSON으로 반환해.
+  const GEMINI_PROMPT = (text) => `너는 블로그 체험단 정보 추출 전문가야. 아래 텍스트에서 체험단 관련 정보를 정확하게 추출해서 JSON으로 반환해.
 
 규칙:
 - mission(기본 미션)은 "키워드 삽입, 사진 15장 이상, 1000자 이상, 지도첨부, 동영상, 공정위표기" 같은 블로거가 지켜야 할 작성 조건/규칙만 정리
@@ -1366,15 +1398,34 @@ const BloggerMasterApp = () => {
 }
 
 텍스트:
-${text}`
-            }]
-          }]
-        })
-      }
-    );
+${text}`;
 
-    const data = await res.json();
-    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-flash-latest'];
+
+  const callGeminiAPI = async (body) => {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    for (const model of GEMINI_MODELS) {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+      );
+      const data = await res.json();
+      if (res.status === 503 || res.status === 404 || res.status === 429) continue; // 과부하/없음/쿼터 시 다음 모델로
+      if (!res.ok) throw new Error(`API 오류 ${res.status}: ${data.error?.message || JSON.stringify(data)}`);
+      return data;
+    }
+    throw new Error('AI 서버가 일시적으로 혼잡합니다. 잠시 후 다시 시도해주세요.');
+  };
+
+  const parseWithGemini = async (text) => {
+    const data = await callGeminiAPI({
+      contents: [{ parts: [{ text: GEMINI_PROMPT(text) }] }]
+    });
+
+    if (!data) throw new Error('응답 없음');
+    // Gemini 2.5 thinking 모델은 parts[0]이 thinking 텍스트 — 실제 응답만 추출
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const content = parts.filter(p => !p.thought).map(p => p.text).join('') || '';
     // JSON 블록 추출 (```json ... ``` 또는 순수 JSON)
     const jsonMatch = content.match(/```json\s*([\s\S]*?)```/) || content.match(/(\{[\s\S]*\})/);
     if (jsonMatch) {
@@ -1389,7 +1440,7 @@ ${text}`
         return {};
       }
     }
-    throw new Error('JSON 파싱 실패');
+    throw new Error(`응답 파싱 실패 (content 길이: ${content.length}, candidates: ${data.candidates?.length ?? 'none'})`);
   };
 
   const applyParseResult = (result) => {
@@ -1418,7 +1469,7 @@ ${text}`
 
   const handleSmartParsing = async (text) => {
     setRawText(text);
-    if (text.trim().length < 20) return; // 너무 짧으면 무시
+    if (text.trim().length < 10) return; // 너무 짧으면 무시
 
     setIsParsing(true);
     try {
@@ -1470,23 +1521,16 @@ ${text}`
   "extraInfo": "위 항목에 담기 어려운 기타 중요 정보 (예: 상세 영업시간 설명, 예약 방법, 특이사항 등. 없으면 빈 문자열)"
 }`;
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [
-              { text: prompt },
-              { inlineData: { mimeType: 'application/pdf', data: base64 } },
-            ],
-          }],
-        }),
-      }
-    );
-    const data = await res.json();
-    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const data = await callGeminiAPI({
+      contents: [{
+        parts: [
+          { text: prompt },
+          { inlineData: { mimeType: 'application/pdf', data: base64 } },
+        ],
+      }],
+    });
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const content = parts.filter(p => !p.thought).map(p => p.text).join('') || '';
     const jsonMatch = content.match(/```json\s*([\s\S]*?)```/) || content.match(/(\{[\s\S]*\})/);
     if (jsonMatch) {
       try {
@@ -1520,7 +1564,7 @@ ${text}`
     const mammoth = (await import('mammoth/mammoth.browser')).default;
     const arrayBuffer = await file.arrayBuffer();
     const { value: text } = await mammoth.extractRawText({ arrayBuffer });
-    if (!text || text.trim().length < 20) {
+    if (!text || text.trim().length < 10) {
       alert('Word 파일에서 텍스트를 충분히 추출하지 못했습니다.');
       return null;
     }
@@ -1579,7 +1623,11 @@ ${text}`
   }, [schedules]);
 
   const saveNewSchedule = () => {
-    if (!parsedData.title) return alert('최소한 업체명은 있어야 합니다!');
+    if (!parsedData.title) {
+      setSaveScheduleError('업체명을 입력해 주세요!');
+      return;
+    }
+    setSaveScheduleError('');
     const limit = PLAN_LIMITS.schedule[userPlan];
     if (thisMonthScheduleCount >= limit) {
       setUpgradeReason('schedule');
@@ -1668,9 +1716,9 @@ ${text}`
       <header className="bg-white/80 backdrop-blur-md px-4 sm:px-6 pt-6 sm:pt-8 pb-4 sm:pb-6 sticky top-0 z-30 border-b border-sky-100">
         <div className="flex justify-between items-center mb-4 sm:mb-6">
           <div className="flex items-center gap-2 sm:gap-3">
-            <img src="/favicon.png" alt="logo" className="w-12 h-12 sm:w-14 sm:h-14 object-contain hover:scale-110 transition-transform cursor-pointer" onClick={() => setActiveTab('home')} />
+            <img src="/favicon.png" alt="logo" className="w-12 h-12 sm:w-14 sm:h-14 object-contain hover:scale-110 transition-transform cursor-pointer" onClick={() => window.location.reload()} />
             <div>
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 cursor-pointer hover:text-sky-600 transition-colors" onClick={() => setActiveTab('home')}>Blue Review</h2>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 cursor-pointer hover:text-sky-600 transition-colors" onClick={() => window.location.reload()}>Blue Review</h2>
               <p className="text-[10px] sm:text-[12px] font-bold text-slate-500 mt-0.5 hidden sm:block">블로거를 위한 협찬 관리</p>
             </div>
           </div>
@@ -1730,13 +1778,13 @@ ${text}`
             <div className="mb-5">
               <p className="text-xs font-black text-slate-500 mb-3">글씨 크기</p>
               <div className="flex items-center gap-4">
-                <button onClick={() => setFontSize(f => Math.max(13, f - 1))} className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-2xl text-slate-600 font-black text-lg active:scale-90 transition-all">−</button>
+                <button onClick={() => setFontSizeManual(f => Math.max(13, f - 1))} className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-2xl text-slate-600 font-black text-lg active:scale-90 transition-all">−</button>
                 <div className="flex-1 bg-slate-50 rounded-2xl py-2 text-center">
                   <span className="font-black text-slate-700">{fontSize}</span>
                   <span className="text-xs text-slate-500 ml-1">px</span>
                 </div>
-                <button onClick={() => setFontSize(f => Math.min(24, f + 1))} className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-2xl text-slate-600 font-black text-lg active:scale-90 transition-all">+</button>
-                <button onClick={() => setFontSize(window.innerWidth >= 640 ? 22 : 18)} className="text-xs font-bold text-sky-500 underline underline-offset-2">초기화</button>
+                <button onClick={() => setFontSizeManual(f => Math.min(24, f + 1))} className="w-10 h-10 flex items-center justify-center bg-slate-100 rounded-2xl text-slate-600 font-black text-lg active:scale-90 transition-all">+</button>
+                <button onClick={resetFontSize} className="text-xs font-bold text-sky-500 underline underline-offset-2">초기화</button>
               </div>
             </div>
 
@@ -1839,7 +1887,7 @@ ${text}`
         </div>
       )}
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-10">
+      <main className="max-w-5xl xl:max-w-7xl 2xl:max-w-[1600px] mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-6 sm:space-y-10">
 
         {/* 탭 메뉴 */}
         {activeTab === 'home' && (
@@ -3080,7 +3128,7 @@ ${text}`
                   {item.visitDate ? (
                     <p className="text-[11px] font-bold text-sky-500 flex items-center gap-1 flex-wrap">
                       <CalendarDays size={11} />
-                      <span className="whitespace-nowrap">{item.visitDate}{item.visitSetTime && ` · ${item.visitSetTime}`}</span>
+                      <span className="whitespace-nowrap">{item.visitDate}{item.visitDate && ` (${['일','월','화','수','목','금','토'][new Date(item.visitDate).getDay()]})`}{item.visitSetTime && ` · ${item.visitSetTime}`}</span>
                       <button data-no-image="true" onClick={() => setConfirmVisitDate({ id: item.id, date: item.visitDate, time: item.visitSetTime || '12:00' })} className="text-sky-400 underline whitespace-nowrap">변경</button>
                     </p>
                   ) : (
@@ -3365,72 +3413,54 @@ ${text}`
                 <div data-no-image="true" className="w-full">
                   <div
                     ref={(el) => (imageCardRefs.current[`share_${item.id}`] = el)}
-                    className="absolute left-[-9999px] top-0 w-[480px] h-[480px] mesh-bg flex items-center justify-center p-8 font-body text-on-surface antialiased"
+                    className="absolute left-[-9999px] top-0 font-body antialiased"
+                    style={{ width: '360px', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 8px 40px rgba(0,0,0,0.14)', background: 'white' }}
                   >
-                    <div className="relative w-full h-full glass-card rounded-card flex flex-col px-8 pt-7 pb-6 overflow-hidden">
-
-                      {/* Header */}
-                      <div className="relative z-10 flex items-center gap-2.5 mb-4">
-                        <img crossOrigin="anonymous" alt="Logo" className="w-8 h-8 object-contain drop-shadow-sm" src="/favicon.png" />
-                        <div className="h-3.5 w-px bg-primary/20"></div>
-                        <span className="text-[9px] font-bold tracking-[0.2em] text-primary/70 uppercase">Blue Review</span>
+                    {/* Top banner */}
+                    <div style={{ background: 'linear-gradient(160deg, #dbeafe 0%, #eff6ff 60%, #e0e7ff 100%)', height: '160px', position: 'relative', overflow: 'hidden' }}>
+                      {/* Blob shapes */}
+                      <div style={{ position: 'absolute', width: '220px', height: '220px', borderRadius: '50%', background: 'radial-gradient(circle, #bfdbfe 0%, transparent 70%)', top: '-60px', right: '-40px', opacity: 0.7 }} />
+                      <div style={{ position: 'absolute', width: '160px', height: '160px', borderRadius: '50%', background: 'radial-gradient(circle, #c7d2fe 0%, transparent 70%)', bottom: '-60px', left: '40px', opacity: 0.5 }} />
+                      {/* Watermark */}
+                      {['Blue Review', 'Blue Review', 'Blue Review'].map((t, i) => (
+                        <span key={i} style={{ position: 'absolute', left: '-10px', top: `${28 + i * 46}px`, fontSize: '40px', fontWeight: 800, color: '#2563eb', opacity: 0.12, whiteSpace: 'nowrap', letterSpacing: '-1px', transform: 'rotate(-8deg)', userSelect: 'none' }}>{t}</span>
+                      ))}
+                      {/* CONFIRMED badge */}
+                      <div style={{ position: 'absolute', top: '16px', left: '16px', background: '#2563eb', color: 'white', borderRadius: '999px', padding: '5px 14px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em' }}>
+                        CONFIRMED
                       </div>
+                    </div>
 
-                      {/* Title Section */}
-                      <div className="relative z-10 mb-4">
-                        <p className="text-[10px] font-extrabold text-primary tracking-widest uppercase mb-1.5">{item.type || 'Schedule'}</p>
-                        <h1 className="font-headline text-[1.75rem] font-extrabold text-slate-900 leading-[1.15] tracking-tight break-keep">
-                          {item.title}
-                        </h1>
-                      </div>
+                    {/* Content */}
+                    <div style={{ padding: '24px 24px 20px', background: 'white' }}>
+                      <p style={{ fontSize: '11px', fontWeight: 700, color: '#2563eb', letterSpacing: '0.15em', marginBottom: '6px' }}>RESERVATION DETAILS</p>
+                      <h1 style={{ fontSize: '30px', fontWeight: 800, color: '#0f172a', lineHeight: 1.2, marginBottom: '20px', wordBreak: 'keep-all' }}>{item.title}</h1>
 
-                      {/* Date & Time in one row */}
-                      <div className="relative z-10 flex gap-6 mb-3">
-                        <div className="flex items-start gap-2.5">
-                          <div className="mt-0.5 w-5 h-5 flex items-center justify-center text-primary/80">
-                            <Calendar size={18} strokeWidth={2.5} />
-                          </div>
-                          <div>
-                            <p className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest mb-0.5">Date</p>
-                            <p className="font-headline font-bold text-sm text-slate-800 tracking-tight">{item.visitDate || '미정'}</p>
-                          </div>
+                      {/* Date & Time */}
+                      <div style={{ display: 'flex', gap: '36px', marginBottom: '20px' }}>
+                        <div>
+                          <p style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', letterSpacing: '0.1em', marginBottom: '4px' }}>DATE</p>
+                          <p style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>{item.visitDate || '미정'}{item.visitDate && <span style={{ fontSize: '14px', fontWeight: 600, color: '#64748b', marginLeft: '6px' }}>({['일','월','화','수','목','금','토'][new Date(item.visitDate).getDay()]})</span>}</p>
                         </div>
-                        <div className="flex items-start gap-2.5">
-                          <div className="mt-0.5 w-5 h-5 flex items-center justify-center text-primary/80">
-                            <Clock size={18} strokeWidth={2.5} />
-                          </div>
-                          <div>
-                            <p className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest mb-0.5">Time</p>
-                            <p className="font-headline font-bold text-sm text-slate-800 tracking-tight">{item.visitSetTime || item.visitTime || '미정'}</p>
-                          </div>
+                        <div>
+                          <p style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', letterSpacing: '0.1em', marginBottom: '4px' }}>TIME</p>
+                          <p style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>{item.visitSetTime || item.visitTime || '미정'}</p>
                         </div>
                       </div>
 
                       {/* Location */}
-                      <div className="relative z-10 flex items-start gap-2.5">
-                        <div className="mt-0.5 w-5 h-5 flex-shrink-0 flex items-center justify-center text-primary/80">
-                          <MapPin size={18} strokeWidth={2.5} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest mb-0.5">Location</p>
-                          <p className="font-medium text-[12px] leading-relaxed text-slate-600 break-all whitespace-pre-wrap">
-                            {item.address || '주소 정보 없음'}
-                          </p>
-                        </div>
+                      <div style={{ borderLeft: '3px solid #2563eb', paddingLeft: '12px', marginBottom: '24px' }}>
+                        <p style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', letterSpacing: '0.1em', marginBottom: '4px' }}>LOCATION</p>
+                        <p style={{ fontSize: '13px', color: '#334155', lineHeight: 1.6, wordBreak: 'break-all', whiteSpace: 'pre-wrap' }}>{item.address || '주소 정보 없음'}</p>
                       </div>
 
                       {/* Footer */}
-                      <div className="relative z-10 pt-4 border-t border-white/40 flex items-center justify-between mt-auto">
-                        <div className="flex gap-1.5">
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary/40"></span>
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary/30"></span>
-                          <span className="w-1.5 h-1.5 rounded-full bg-primary/20"></span>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '14px', borderTop: '1px solid #f1f5f9' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '22px', height: '22px', borderRadius: '6px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: '#2563eb', fontWeight: 700 }}>✓</div>
+                          <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>Blue Review</span>
                         </div>
-                        <span className="text-[9px] font-bold tracking-widest uppercase text-primary/50">Blue Review</span>
                       </div>
-
-                      {/* Surface Highlight */}
-                      <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent pointer-events-none"></div>
                     </div>
                   </div>
                 </div>
@@ -3780,7 +3810,7 @@ ${text}`
                       value={(confirmVisitDate.time || '12:00').split(':')[1] || '00'}
                       onChange={(e) => { const m = e.target.value; const h = (confirmVisitDate.time || '12:00').split(':')[0]; setConfirmVisitDate(prev => ({ ...prev, time: `${h}:${m}` })); }}
                     >
-                      {['00', '30'].map(m => (
+                      {['00','05','10','15','20','25','30','35','40','45','50','55'].map(m => (
                         <option key={m} value={m}>{m}</option>
                       ))}
                     </select>
@@ -3827,7 +3857,7 @@ ${text}`
           <div className="bg-white/95 backdrop-blur-2xl w-full max-w-lg rounded-t-[40px] sm:rounded-[40px] p-8 space-y-6 animate-in slide-in-from-bottom duration-500 overflow-y-auto max-h-[90vh] shadow-[0_0_40px_rgba(186,230,253,0.3)] border border-white/50">
             <div className="flex justify-between items-center">
               <h3 className="text-2xl font-black text-slate-800 italic">Smart Parser</h3>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 bg-sky-50 rounded-full"><X /></button>
+              <button onClick={() => { setIsModalOpen(false); setSaveScheduleError(''); }} className="p-2 bg-sky-50 rounded-full"><X /></button>
             </div>
 
             <div className="flex items-center justify-between">
@@ -3868,11 +3898,14 @@ ${text}`
 
             <button
               onClick={() => handleSmartParsing(rawText)}
-              disabled={isParsing || rawText.trim().length < 20}
+              disabled={isParsing || rawText.trim().length < 10}
               className="w-full jelly-button py-4 rounded-2xl font-bold text-sm active:scale-95 transition-all disabled:opacity-50"
             >
               {isParsing ? 'BlueReview 분석 중...' : '분석하기'}
             </button>
+            {!isParsing && rawText.trim().length > 0 && rawText.trim().length < 10 && (
+              <p className="text-center text-[11px] font-bold text-slate-400 -mt-2">텍스트를 10자 이상 입력해주세요 (현재 {rawText.trim().length}자)</p>
+            )}
 
             <div className="bg-sky-50/50 p-6 rounded-3xl border border-sky-100 space-y-4">
               <p className="text-[10px] font-black text-sky-400 uppercase tracking-widest">추출된 정보 미리보기</p>
@@ -3943,8 +3976,16 @@ ${text}`
                     return true;
                   }).map(({ label, key }) => (
                     <div key={key} className="flex items-center gap-3">
-                      <div className="w-14 shrink-0 text-[10px] font-bold text-sky-300">{label}</div>
-                      <input className="flex-1 bg-transparent border-b border-sky-100 font-bold text-slate-700 outline-none text-sm py-1" value={parsedData[key] || ''} onChange={(e) => setParsedData({ ...parsedData, [key]: e.target.value })} />
+                      <div className={`w-14 shrink-0 text-[10px] font-bold ${key === 'title' && saveScheduleError ? 'text-rose-400' : 'text-sky-300'}`}>{label}{key === 'title' ? ' *' : ''}</div>
+                      <input
+                        className={`flex-1 bg-transparent border-b font-bold text-slate-700 outline-none text-sm py-1 ${key === 'title' && saveScheduleError ? 'border-rose-400 placeholder-rose-300' : 'border-sky-100'}`}
+                        value={parsedData[key] || ''}
+                        placeholder={key === 'title' ? '필수 입력' : ''}
+                        onChange={(e) => {
+                          setParsedData({ ...parsedData, [key]: e.target.value });
+                          if (key === 'title') setSaveScheduleError('');
+                        }}
+                      />
                     </div>
                   ));
                 })()}
@@ -3975,6 +4016,9 @@ ${text}`
               </div>
             </div>
 
+            {saveScheduleError && (
+              <p className="text-center text-sm font-bold text-rose-500 bg-rose-50 rounded-2xl py-3 px-4">{saveScheduleError}</p>
+            )}
             <button onClick={saveNewSchedule} className="w-full jelly-button py-5 rounded-3xl font-black text-lg shadow-xl shadow-sky-300/50 active:scale-95 transition-all w-full">스케줄 저장</button>
           </div>
         </div>
@@ -3982,7 +4026,7 @@ ${text}`
 
       {/* 프로필 탭 */}
       {activeTab === 'profile' && (
-        <main className="max-w-xl mx-auto p-6 space-y-5 animate-in slide-in-from-bottom-4 duration-500">
+        <main className="max-w-xl sm:max-w-3xl lg:max-w-5xl xl:max-w-7xl 2xl:max-w-[1600px] mx-auto p-6 space-y-5 animate-in slide-in-from-bottom-4 duration-500">
           <div className="flex items-center gap-3 mb-2">
             <div className="p-3 bg-sky-50 rounded-2xl text-sky-500"><User size={24} /></div>
             <div>
